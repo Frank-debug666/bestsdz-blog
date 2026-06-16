@@ -6,10 +6,15 @@ interface Props {
   description?: string;
 }
 
-const { title, description = '去你想去的地方：记录沿途的见闻、想法和那些值得停留的瞬间。' } = Astro.props;
+const {
+  title,
+  description = '去你想去的地方：记录沿途的见闻、想法和那些值得停留的瞬间。',
+} = Astro.props;
+
 const siteTitle = '去你想去的地方';
 const pageTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 const currentPath = Astro.url.pathname;
+const bodyClass = currentPath === '/' ? 'home-page' : 'inner-page';
 ---
 
 <!doctype html>
@@ -18,31 +23,40 @@ const currentPath = Astro.url.pathname;
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#11161d" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="alternate" type="application/rss+xml" title={`${siteTitle} RSS`} href="/rss.xml" />
     <title>{pageTitle}</title>
   </head>
-  <body>
+  <body class={bodyClass}>
     <header class="site-header">
-      <nav class="shell nav" aria-label="主导航">
-        <a class="brand" href="/">
-          <img class="brand-logo" src="/logo.png" alt="" width="36" height="36" aria-hidden="true" />
-          <span class="brand-text">{siteTitle}</span>
-        </a>
-        <div class="nav-links">
-          <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>首页</a>
-          <a href="/posts/" aria-current={currentPath.startsWith('/posts') ? 'page' : undefined}>文章</a>
-          <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined}>关于</a>
-          <a href="/rss.xml">订阅</a>
-        </div>
-      </nav>
+      <div class="shell header-frame">
+        <nav class="nav" aria-label="主导航">
+          <a class="brand" href="/">
+            <img class="brand-logo" src="/logo.png" alt="" width="40" height="40" aria-hidden="true" />
+            <span class="brand-text">{siteTitle}</span>
+          </a>
+          <div class="nav-links">
+            <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>首页</a>
+            <a href="/posts/" aria-current={currentPath.startsWith('/posts') ? 'page' : undefined}>文章</a>
+            <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined}>关于</a>
+            <a href="/rss.xml">订阅</a>
+          </div>
+        </nav>
+      </div>
     </header>
     <slot />
     <footer class="site-footer">
       <div class="shell footer-inner">
-        <span>© {new Date().getFullYear()} {siteTitle}</span>
-        <span>Astro + Markdown + RSS</span>
+        <div>
+          <strong>{siteTitle}</strong>
+          <p>记录旅途、生活与技术笔记，把值得停留的瞬间慢慢写下来。</p>
+        </div>
+        <div class="footer-meta">
+          <span>© {new Date().getFullYear()} {siteTitle}</span>
+          <span>Astro · Markdown · RSS · Cloudflare Pages</span>
+        </div>
       </div>
     </footer>
   </body>

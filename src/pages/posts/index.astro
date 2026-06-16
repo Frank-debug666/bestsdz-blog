@@ -9,16 +9,23 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 ---
 
 <BaseLayout title="文章" description="去你想去的地方的全部文章归档。">
-  <main class="shell section">
-    <div class="section-heading">
-      <div>
-        <span class="section-label">Archive</span>
-        <h1>全部文章</h1>
+  <main class="shell page-shell">
+    <section class="page-hero">
+      <h1>全部文章</h1>
+      <p>按时间整理的文章归档，旅行、生活和技术笔记都会留在这里。</p>
+    </section>
+
+    <section class="page-section">
+      <div class="section-heading">
+        <div>
+          <h2>按时间阅读</h2>
+          <p>从最近更新开始，也可以顺着时间往前回看。</p>
+        </div>
+        <a class="button secondary" href="/rss.xml">RSS 订阅</a>
       </div>
-      <a class="button secondary" href="/rss.xml">RSS 订阅</a>
-    </div>
-    <div class="post-list">
-      {posts.map((post) => <PostRow post={post} />)}
-    </div>
+      <div class="post-list">
+        {posts.map((post) => <PostRow post={post} />)}
+      </div>
+    </section>
   </main>
 </BaseLayout>

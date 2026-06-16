@@ -19,16 +19,23 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft && data.ta
 ---
 
 <BaseLayout title={`标签：${tag}`} description={`去你想去的地方中关于 ${tag} 的文章。`}>
-  <main class="shell section">
-    <div class="section-heading">
-      <div>
-        <span class="section-label">Tag</span>
-        <h1>{tag}</h1>
+  <main class="shell page-shell">
+    <section class="page-hero">
+      <h1>{tag}</h1>
+      <p>和「{tag}」相关的文章都收在这里，方便沿着同一个主题继续读下去。</p>
+    </section>
+
+    <section class="page-section">
+      <div class="section-heading">
+        <div>
+          <h2>标签归档</h2>
+          <p>同一主题下的内容，会更容易看出思路是怎么慢慢长出来的。</p>
+        </div>
+        <a class="button secondary" href="/posts/">全部文章</a>
       </div>
-      <a class="button secondary" href="/posts/">全部文章</a>
-    </div>
-    <div class="post-list">
-      {posts.map((post) => <PostRow post={post} />)}
-    </div>
+      <div class="post-list">
+        {posts.map((post) => <PostRow post={post} />)}
+      </div>
+    </section>
   </main>
 </BaseLayout>

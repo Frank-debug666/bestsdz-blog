@@ -3,17 +3,23 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="关于" description="关于去你想去的地方，以及这个站为什么存在。">
-  <main class="prose">
-    <header>
+  <main class="shell page-shell">
+    <section class="page-hero">
       <h1>关于去你想去的地方</h1>
-      <p class="description">这是一个关于出发、停留、学习和回望的博客。它不只记录去了哪里，也记录为什么出发、路上看见了什么，以及留下些什么。</p>
-    </header>
-    <p>
-      这里可以写旅行见闻，也可以写技术笔记、生活观察、阶段总结，或者那些一时说不清、但值得以后再回来看一眼的念头。
-    </p>
-    <p>
-      这个博客使用 Astro、Markdown 和内容集合构建。文章放在
-      <code>src/content/posts</code>，每一篇都是一个 Markdown 文件，所以写作和维护都会很轻。
-    </p>
+      <p>这是一个关于出发、停留、学习和回望的博客，写旅行，也写生活和技术。</p>
+    </section>
+
+    <article class="prose prose-page">
+      <p>
+        这里会记录去过的地方，也会记录为什么想去、一路上看见了什么，以及那些回来以后仍然留在心里的东西。
+      </p>
+      <p>
+        除了旅行见闻，这里也会写技术笔记、项目复盘、生活观察和阶段总结。对我来说，写作不是额外任务，而是把经历慢慢整理成路标的方式。
+      </p>
+      <p>
+        这个博客使用 Astro、Markdown 和内容集构建。文章放在 <code>src/content/posts</code>
+        里，每一篇都是一个独立文件，所以写作、发布和维护都尽量保持轻一点、稳一点。
+      </p>
+    </article>
   </main>
 </BaseLayout>

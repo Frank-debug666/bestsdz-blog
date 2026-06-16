@@ -6,56 +6,76 @@ import PostRow from '../components/PostRow.astro';
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
 const [featured, ...recent] = posts;
-const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).slice(0, 8);
+const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
 ---
 
 <BaseLayout title="去你想去的地方">
-  <main>
-    <section class="shell hero">
-      <div>
-        <h1>去你想去的地方<br />也别忘了记录沿途</h1>
-        <p>这里写远方，也写日常；写想出发的冲动，也写慢慢抵达的过程。技术、生活、笔记和忽然冒出来的念头，都会在这里留下坐标。</p>
-        <div class="hero-actions">
-          <a class="button" href="/posts/">阅读文章</a>
-          <a class="button secondary" href="/about/">关于这个站</a>
+  <main class="home-main">
+    <section class="hero-scene">
+      <img
+        class="hero-backdrop"
+        src="/images/hero-alpine-sunrise.png"
+        alt="日出时分，一位背着行囊的人站在山脊上眺望远方的雪山与湖谷。"
+        width="1680"
+        height="945"
+      />
+
+      <div class="shell hero-frame">
+        <div class="hero-copy">
+          <h1><span>去你想去</span><span>的地方</span></h1>
+          <p>记录所思所想、旅行见闻、生活点滴与技术笔记。</p>
+          <div class="hero-actions">
+            <a class="button light" href="/posts/">阅读文章</a>
+            <a class="button ghost" href="/about/">关于这个站</a>
+          </div>
         </div>
-      </div>
-      <div class="hero-side">
-        <img
-          class="hero-image"
-          src="/writing-desk.png"
-          alt="一本空白笔记本、钢笔和键盘组成的写作桌面"
-          width="1680"
-          height="900"
-        />
+
         {featured && (
-          <article class="featured">
-            <span>最近更新</span>
-            <h2><a href={`/posts/${featured.id}/`}>{featured.data.title}</a></h2>
-            <p>{featured.data.description}</p>
-            <a class="button secondary" href={`/posts/${featured.id}/`}>继续阅读</a>
+          <article class="featured-story">
+            <img
+              class="featured-thumb"
+              src="/writing-desk.png"
+              alt="笔记本、钢笔与键盘构成的安静写作桌面。"
+              width="1680"
+              height="900"
+            />
+            <div class="featured-content">
+              <span class="featured-kicker">最近更新</span>
+              <h2><a href={`/posts/${featured.id}/`}>{featured.data.title}</a></h2>
+              <p>{featured.data.description}</p>
+              <div class="featured-meta">
+                <time datetime={featured.data.pubDate.toISOString()}>{featuredDate}</time>
+                {featured.data.tags.slice(0, 2).map((tag) => (
+                  <a class="tag dark" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+                ))}
+              </div>
+            </div>
           </article>
         )}
       </div>
     </section>
 
-    <section class="journal-strip" aria-label="博客主题">
-      <div class="shell strip-inner">
-        <p>把每一次出发、停留、转弯和回望，都整理成可以重读的路标，留给未来的自己，也留给刚好路过的人。</p>
-        <div class="tag-cloud">
-          {tags.map((tag) => <a class="tag" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
-        </div>
+    <section class="journey-note">
+      <div class="shell journey-note-inner">
+        <span class="journey-note-label">主题</span>
+        <p>生活不止眼前的代码，还有诗和远方。</p>
+        <a class="journey-note-link" href="/posts/">查看全部文章</a>
       </div>
     </section>
 
-    <section class="shell section">
+    <section class="shell section article-section">
       <div class="section-heading">
         <div>
-          <span class="section-label">最近文章</span>
-          <h2>沿途更新</h2>
+          <h2>最新文章</h2>
+          <p>从最近写下来的内容开始，顺着时间往前翻。</p>
         </div>
-        <a class="button secondary" href="/posts/">查看全部</a>
+        <a class="button secondary" href="/rss.xml">RSS 订阅</a>
       </div>
       <div class="post-list">
         {recent.slice(0, 5).map((post) => <PostRow post={post} />)}
