@@ -1,4 +1,4 @@
-# 小川札记
+# 去你想去的地方
 
 一个基于 Astro、Markdown 和 Content Collections 的个人静态博客。
 

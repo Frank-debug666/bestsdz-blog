@@ -7,7 +7,7 @@ export async function GET(context) {
   );
 
   return rss({
-    title: '小川札记',
+    title: '去你想去的地方',
     description: '用 Markdown 记录可复用的思考。',
     site: context.site,
     items: posts.map((post) => ({

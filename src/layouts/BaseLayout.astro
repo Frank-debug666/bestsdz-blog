@@ -6,8 +6,9 @@ interface Props {
   description?: string;
 }
 
-const { title, description = '小川札记：用 Markdown 记录可复用的思考。' } = Astro.props;
-const pageTitle = title === '小川札记' ? title : `${title} | 小川札记`;
+const { title, description = '去你想去的地方：用 Markdown 记录可复用的思考。' } = Astro.props;
+const siteTitle = '去你想去的地方';
+const pageTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 const currentPath = Astro.url.pathname;
 ---
 
@@ -17,15 +18,17 @@ const currentPath = Astro.url.pathname;
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="alternate" type="application/rss+xml" title="小川札记 RSS" href="/rss.xml" />
+    <link rel="icon" type="image/png" href="/logo.png" />
+    <link rel="apple-touch-icon" href="/logo.png" />
+    <link rel="alternate" type="application/rss+xml" title={`${siteTitle} RSS`} href="/rss.xml" />
     <title>{pageTitle}</title>
   </head>
   <body>
     <header class="site-header">
       <nav class="shell nav" aria-label="主导航">
         <a class="brand" href="/">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <span>小川札记</span>
+          <img class="brand-logo" src="/logo.png" alt="" width="36" height="36" aria-hidden="true" />
+          <span class="brand-text">{siteTitle}</span>
         </a>
         <div class="nav-links">
           <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>首页</a>
@@ -38,7 +41,7 @@ const currentPath = Astro.url.pathname;
     <slot />
     <footer class="site-footer">
       <div class="shell footer-inner">
-        <span>© {new Date().getFullYear()} 小川札记</span>
+        <span>© {new Date().getFullYear()} {siteTitle}</span>
         <span>Astro + Markdown + RSS</span>
       </div>
     </footer>
