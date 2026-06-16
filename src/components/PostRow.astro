@@ -1,0 +1,25 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const date = post.data.pubDate.toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<article class="post-row">
+  <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
+  <div>
+    <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
+    <p>{post.data.description}</p>
+  </div>
+  <div class="post-tags" aria-label="标签">
+    {post.data.tags.map((tag) => <a class="tag" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
+  </div>
+</article>

@@ -1,0 +1,34 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostRow from '../../components/PostRow.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags)));
+  return tags.map((tag) => ({
+    params: { tag },
+    props: { tag },
+  }));
+}
+
+const { tag } = Astro.props;
+const posts = (await getCollection('posts', ({ data }) => !data.draft && data.tags.includes(tag))).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout title={`标签：${tag}`} description={`小川札记中关于 ${tag} 的文章。`}>
+  <main class="shell section">
+    <div class="section-heading">
+      <div>
+        <span class="section-label">Tag</span>
+        <h1>{tag}</h1>
+      </div>
+      <a class="button secondary" href="/posts/">全部文章</a>
+    </div>
+    <div class="post-list">
+      {posts.map((post) => <PostRow post={post} />)}
+    </div>
+  </main>
+</BaseLayout>

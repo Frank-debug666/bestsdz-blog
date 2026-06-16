@@ -1,0 +1,24 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostRow from '../../components/PostRow.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout title="文章" description="小川札记的全部文章归档。">
+  <main class="shell section">
+    <div class="section-heading">
+      <div>
+        <span class="section-label">Archive</span>
+        <h1>全部文章</h1>
+      </div>
+      <a class="button secondary" href="/rss.xml">RSS 订阅</a>
+    </div>
+    <div class="post-list">
+      {posts.map((post) => <PostRow post={post} />)}
+    </div>
+  </main>
+</BaseLayout>

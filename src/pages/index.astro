@@ -1,0 +1,65 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostRow from '../components/PostRow.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const [featured, ...recent] = posts;
+const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).slice(0, 8);
+---
+
+<BaseLayout title="小川札记">
+  <main>
+    <section class="shell hero">
+      <div>
+        <h1>用 Markdown<br />记录可复用的思考</h1>
+        <p>从一个安静、快速、可长期维护的博客开始。这里放技术、生活、笔记，也放那些值得反复打磨的想法。</p>
+        <div class="hero-actions">
+          <a class="button" href="/posts/">阅读文章</a>
+          <a class="button secondary" href="/about/">了解我</a>
+        </div>
+      </div>
+      <div class="hero-side">
+        <img
+          class="hero-image"
+          src="/writing-desk.png"
+          alt="一本空白笔记本、钢笔和键盘组成的写作桌面"
+          width="1680"
+          height="900"
+        />
+        {featured && (
+          <article class="featured">
+            <span>最近更新</span>
+            <h2><a href={`/posts/${featured.id}/`}>{featured.data.title}</a></h2>
+            <p>{featured.data.description}</p>
+            <a class="button secondary" href={`/posts/${featured.id}/`}>继续阅读</a>
+          </article>
+        )}
+      </div>
+    </section>
+
+    <section class="journal-strip" aria-label="博客主题">
+      <div class="shell strip-inner">
+        <p>围绕写作系统、工具实践、长期项目和日常观察，持续沉淀一套自己的知识仓库。</p>
+        <div class="tag-cloud">
+          {tags.map((tag) => <a class="tag" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
+        </div>
+      </div>
+    </section>
+
+    <section class="shell section">
+      <div class="section-heading">
+        <div>
+          <span class="section-label">最近文章</span>
+          <h2>新的札记</h2>
+        </div>
+        <a class="button secondary" href="/posts/">查看全部</a>
+      </div>
+      <div class="post-list">
+        {recent.slice(0, 5).map((post) => <PostRow post={post} />)}
+      </div>
+    </section>
+  </main>
+</BaseLayout>
