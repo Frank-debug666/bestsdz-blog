@@ -6,7 +6,7 @@ interface Props {
   description?: string;
 }
 
-const { title, description = '去你想去的地方：用 Markdown 记录可复用的思考。' } = Astro.props;
+const { title, description = '去你想去的地方：记录沿途的见闻、想法和那些值得停留的瞬间。' } = Astro.props;
 const siteTitle = '去你想去的地方';
 const pageTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 const currentPath = Astro.url.pathname;

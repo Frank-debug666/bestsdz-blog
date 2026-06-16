@@ -14,11 +14,11 @@ const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).slice(
   <main>
     <section class="shell hero">
       <div>
-        <h1>用 Markdown<br />记录可复用的思考</h1>
-        <p>从一个安静、快速、可长期维护的博客开始。这里放技术、生活、笔记，也放那些值得反复打磨的想法。</p>
+        <h1>去你想去的地方<br />也别忘了记录沿途</h1>
+        <p>这里写远方，也写日常；写想出发的冲动，也写慢慢抵达的过程。技术、生活、笔记和忽然冒出来的念头，都会在这里留下坐标。</p>
         <div class="hero-actions">
           <a class="button" href="/posts/">阅读文章</a>
-          <a class="button secondary" href="/about/">了解我</a>
+          <a class="button secondary" href="/about/">关于这个站</a>
         </div>
       </div>
       <div class="hero-side">
@@ -42,7 +42,7 @@ const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).slice(
 
     <section class="journal-strip" aria-label="博客主题">
       <div class="shell strip-inner">
-        <p>围绕写作系统、工具实践、长期项目和日常观察，持续沉淀一套自己的知识仓库。</p>
+        <p>把每一次出发、停留、转弯和回望，都整理成可以重读的路标，留给未来的自己，也留给刚好路过的人。</p>
         <div class="tag-cloud">
           {tags.map((tag) => <a class="tag" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
         </div>
@@ -53,7 +53,7 @@ const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags))).slice(
       <div class="section-heading">
         <div>
           <span class="section-label">最近文章</span>
-          <h2>新的札记</h2>
+          <h2>沿途更新</h2>
         </div>
         <a class="button secondary" href="/posts/">查看全部</a>
       </div>
