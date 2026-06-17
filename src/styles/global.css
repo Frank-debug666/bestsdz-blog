@@ -289,6 +289,7 @@ body.inner-page .nav {
   grid-template-columns: minmax(230px, 280px) minmax(0, 1fr);
   gap: 26px;
   align-items: center;
+  min-width: 0;
   padding: 16px;
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: var(--radius-lg);
@@ -312,6 +313,7 @@ body.inner-page .nav {
 .featured-content {
   display: grid;
   gap: 14px;
+  min-width: 0;
 }
 
 .featured-kicker,
@@ -796,6 +798,11 @@ body.inner-page .nav {
   .featured-story {
     padding: 14px;
     border-radius: 24px;
+  }
+
+  .featured-content h2 {
+    font-size: clamp(1.55rem, 7vw, 2rem);
+    overflow-wrap: anywhere;
   }
 
   .featured-thumb {
