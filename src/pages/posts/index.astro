@@ -23,9 +23,61 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
         </div>
         <a class="button secondary" href="/rss.xml">RSS 订阅</a>
       </div>
+
+      <div class="search-panel" role="search">
+        <label for="post-search">搜索文章</label>
+        <div class="search-box">
+          <input
+            id="post-search"
+            type="search"
+            placeholder="搜索 PyTorch、损失函数、Transformer..."
+            autocomplete="off"
+          />
+          <span id="search-count" aria-live="polite">{posts.length} 篇文章</span>
+        </div>
+      </div>
+
       <div class="post-list">
         {posts.map((post) => <PostRow post={post} />)}
       </div>
+      <p class="empty-search" id="empty-search" hidden>没有找到匹配文章，换个关键词试试。</p>
     </section>
   </main>
+
+  <script>
+    const input = document.querySelector<HTMLInputElement>('#post-search');
+    const count = document.querySelector<HTMLElement>('#search-count');
+    const empty = document.querySelector<HTMLElement>('#empty-search');
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
+
+    const normalize = (value: string) => value.trim().toLowerCase();
+
+    fetch('/search.json')
+      .then((response) => response.json())
+      .then(({ posts }: { posts: Array<{ id: string; searchText: string }> }) => {
+        const index = new Map<string, string>(posts.map((post) => [post.id, post.searchText]));
+
+        const runSearch = () => {
+          const query = normalize(input?.value ?? '');
+          let visible = 0;
+
+          rows.forEach((row) => {
+            const id = row.dataset.postId ?? '';
+            const text = index.get(id) ?? '';
+            const matched = !query || text.includes(query);
+            row.classList.toggle('is-hidden', !matched);
+            if (matched) visible += 1;
+          });
+
+          if (count) count.textContent = `${visible} 篇文章`;
+          if (empty) empty.hidden = visible > 0;
+        };
+
+        input?.addEventListener('input', runSearch);
+        runSearch();
+      })
+      .catch(() => {
+        if (count) count.textContent = `${rows.length} 篇文章`;
+      });
+  </script>
 </BaseLayout>

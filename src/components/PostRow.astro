@@ -13,7 +13,7 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
 });
 ---
 
-<article class="post-row">
+<article class="post-row" data-post-row data-post-id={post.id}>
   <a class="post-row-media" href={`/posts/${post.id}/`}>
     <span class="post-row-media-frame">
       <img

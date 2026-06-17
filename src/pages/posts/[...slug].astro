@@ -3,7 +3,9 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+  );
   return posts.map((post) => ({
     params: { slug: post.id },
     props: { post },
@@ -11,7 +13,14 @@ export async function getStaticPaths() {
 }
 
 const { post } = Astro.props;
-const { Content } = await render(post);
+const { Content, headings } = await render(post);
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const currentIndex = posts.findIndex((item) => item.id === post.id);
+const newerPost = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
+const olderPost = currentIndex >= 0 ? posts[currentIndex + 1] : undefined;
+const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: 'long',
@@ -43,8 +52,42 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
       </figure>
     )}
 
-    <article class="prose article-prose">
-      <Content />
-    </article>
+    <div class="article-layout">
+      {tocHeadings.length > 0 && (
+        <aside class="article-toc" aria-label="文章目录">
+          <strong>目录</strong>
+          <nav>
+            {tocHeadings.map((heading) => (
+              <a class={`toc-depth-${heading.depth}`} href={`#${heading.slug}`}>{heading.text}</a>
+            ))}
+          </nav>
+        </aside>
+      )}
+
+      <article class="prose article-prose">
+        <Content />
+      </article>
+    </div>
+
+    {(newerPost || olderPost) && (
+      <nav class="post-nav" aria-label="上一篇和下一篇">
+        {newerPost ? (
+          <a class="post-nav-card" href={`/posts/${newerPost.id}/`}>
+            <span>上一篇</span>
+            <strong>{newerPost.data.title}</strong>
+          </a>
+        ) : (
+          <span class="post-nav-card is-empty" aria-hidden="true"></span>
+        )}
+        {olderPost ? (
+          <a class="post-nav-card" href={`/posts/${olderPost.id}/`}>
+            <span>下一篇</span>
+            <strong>{olderPost.data.title}</strong>
+          </a>
+        ) : (
+          <span class="post-nav-card is-empty" aria-hidden="true"></span>
+        )}
+      </nav>
+    )}
   </main>
 </BaseLayout>
