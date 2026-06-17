@@ -3,7 +3,7 @@ title: 神经网络到底是什么？一篇给 AI 初学者的入门解释
 description: 不从公式开始，而是从“机器怎样学会判断”这件事讲起，把神经网络、神经元、参数、训练和预测串成一条清楚的线。
 cover: /images/covers/what-is-neural-network.png
 coverAlt: 桌面上的笔记本画着神经网络结构图，旁边的屏幕显示抽象代码和训练曲线。
-pubDate: 2026-06-17T15:00:00+08:00
+pubDate: 2026-06-17T16:00:00+08:00
 tags: [AI基础, 深度学习, 神经网络]
 ---
 
