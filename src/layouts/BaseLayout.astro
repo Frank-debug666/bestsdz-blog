@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import { siteConfig } from '../site.config';
 
 interface Props {
   title: string;
@@ -22,6 +23,9 @@ const bodyClass = currentPath === '/' ? 'home-page' : 'inner-page';
 const siteUrl = Astro.site ?? new URL('https://bestsdz.xyz');
 const canonicalUrl = new URL(currentPath, siteUrl).toString();
 const imageUrl = new URL(image, siteUrl).toString();
+const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
+  ? JSON.stringify({ token: siteConfig.cloudflareAnalyticsToken })
+  : '';
 ---
 
 <!doctype html>
@@ -46,6 +50,14 @@ const imageUrl = new URL(image, siteUrl).toString();
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={imageUrl} />
+    {cloudflareBeacon && (
+      <script
+        defer
+        src="https://static.cloudflareinsights.com/beacon.min.js"
+        data-cf-beacon={cloudflareBeacon}
+        is:inline
+      ></script>
+    )}
     <title>{pageTitle}</title>
   </head>
   <body class={bodyClass}>

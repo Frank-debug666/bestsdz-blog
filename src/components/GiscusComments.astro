@@ -1,0 +1,38 @@
+---
+import { siteConfig } from '../site.config';
+
+const { repo, repoId, category, categoryId } = siteConfig.giscus;
+const commentsEnabled = Boolean(repo && repoId && category && categoryId);
+---
+
+<section class="comments-section" aria-label="评论区">
+  <div class="comments-heading">
+    <span>Discussion</span>
+    <h2>留言讨论</h2>
+  </div>
+
+  {commentsEnabled ? (
+    <script
+      src="https://giscus.app/client.js"
+      data-repo={repo}
+      data-repo-id={repoId}
+      data-category={category}
+      data-category-id={categoryId}
+      data-mapping="pathname"
+      data-strict="0"
+      data-reactions-enabled="1"
+      data-emit-metadata="0"
+      data-input-position="top"
+      data-theme="light"
+      data-lang="zh-CN"
+      crossorigin="anonymous"
+      async
+      is:inline
+    ></script>
+  ) : (
+    <div class="comments-placeholder">
+      <strong>评论区已预留</strong>
+      <p>完成 Giscus 的仓库和分类配置后，这里会自动变成正式评论区。</p>
+    </div>
+  )}
+</section>

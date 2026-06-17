@@ -1,5 +1,6 @@
 ---
 import { getCollection, render } from 'astro:content';
+import GiscusComments from '../../components/GiscusComments.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export async function getStaticPaths() {
@@ -89,5 +90,46 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
         )}
       </nav>
     )}
+    <GiscusComments />
   </main>
+
+  <script is:inline>
+    const codeBlocks = Array.from(document.querySelectorAll('.prose pre'));
+
+    codeBlocks.forEach((block) => {
+      if (block.querySelector('.copy-code-button')) {
+        return;
+      }
+
+      const code = block.querySelector('code');
+      if (!code) {
+        return;
+      }
+
+      const button = document.createElement('button');
+      button.className = 'copy-code-button';
+      button.type = 'button';
+      button.textContent = '复制';
+      button.setAttribute('aria-label', '复制代码');
+
+      button.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(code.textContent || '');
+          button.textContent = '已复制';
+          button.classList.add('is-copied');
+          window.setTimeout(() => {
+            button.textContent = '复制';
+            button.classList.remove('is-copied');
+          }, 1600);
+        } catch {
+          button.textContent = '复制失败';
+          window.setTimeout(() => {
+            button.textContent = '复制';
+          }, 1600);
+        }
+      });
+
+      block.append(button);
+    });
+  </script>
 </BaseLayout>

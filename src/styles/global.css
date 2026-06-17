@@ -840,12 +840,41 @@ body.inner-page .nav {
 }
 
 .prose pre {
+  position: relative;
   overflow-x: auto;
-  padding: 18px;
+  padding: 48px 18px 18px;
   border-radius: 18px;
   background: #11161d;
   color: #f7f3ec;
   box-shadow: 0 18px 44px rgba(17, 22, 29, 0.14);
+}
+
+.copy-code-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(247, 243, 236, 0.88);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.copy-code-button:hover,
+.copy-code-button.is-copied {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
 }
 
 .prose pre code {
@@ -895,6 +924,49 @@ body.inner-page .nav {
 
 .post-nav-card.is-empty {
   visibility: hidden;
+}
+
+.comments-section {
+  margin-top: 44px;
+  padding-top: 30px;
+  border-top: 1px solid var(--line);
+}
+
+.comments-heading {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+
+.comments-heading span {
+  color: var(--accent-deep);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.comments-heading h2 {
+  color: var(--ink);
+  font-size: clamp(1.42rem, 2vw, 1.9rem);
+  line-height: 1.12;
+}
+
+.comments-placeholder {
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: rgba(255, 250, 244, 0.78);
+}
+
+.comments-placeholder strong {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink);
+}
+
+.comments-placeholder p {
+  color: var(--ink-soft);
 }
 
 .archive-grid {
