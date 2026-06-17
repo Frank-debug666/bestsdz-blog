@@ -30,6 +30,19 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
       </div>
     </header>
 
+    {post.data.cover && (
+      <figure class="article-cover">
+        <div class="article-cover-frame">
+          <img
+            src={post.data.cover}
+            alt={post.data.coverAlt ?? post.data.title}
+            width="1680"
+            height="1120"
+          />
+        </div>
+      </figure>
+    )}
+
     <article class="prose article-prose">
       <Content />
     </article>

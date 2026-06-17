@@ -14,6 +14,19 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
 ---
 
 <article class="post-row">
+  <a class="post-row-media" href={`/posts/${post.id}/`}>
+    <span class="post-row-media-frame">
+      <img
+        class="post-row-thumb"
+        src={post.data.cover ?? '/writing-desk.png'}
+        alt={post.data.coverAlt ?? post.data.title}
+        width="1680"
+        height="1120"
+        loading="lazy"
+      />
+    </span>
+  </a>
+
   <div class="post-row-main">
     <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
     <div class="post-row-copy">

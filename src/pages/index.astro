@@ -21,7 +21,7 @@ const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
       <img
         class="hero-backdrop"
         src="/images/hero-alpine-sunrise.png"
-        alt="日出时分，一位背着行囊的人站在山脊上眺望远方的雪山与湖谷。"
+        alt="日出时分，一位背着行囊的人站在山脊上，望向远处的雪山与湖谷。"
         width="1680"
         height="945"
       />
@@ -38,13 +38,15 @@ const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
 
         {featured && (
           <article class="featured-story">
-            <img
-              class="featured-thumb"
-              src="/writing-desk.png"
-              alt="笔记本、钢笔与键盘构成的安静写作桌面。"
-              width="1680"
-              height="900"
-            />
+            <div class="featured-media">
+              <img
+                class="featured-thumb"
+                src={featured.data.cover ?? '/writing-desk.png'}
+                alt={featured.data.coverAlt ?? featured.data.title}
+                width="1680"
+                height="1120"
+              />
+            </div>
             <div class="featured-content">
               <span class="featured-kicker">最近更新</span>
               <h2><a href={`/posts/${featured.id}/`}>{featured.data.title}</a></h2>
