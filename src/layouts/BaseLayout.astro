@@ -4,17 +4,24 @@ import '../styles/global.css';
 interface Props {
   title: string;
   description?: string;
+  image?: string;
+  type?: 'website' | 'article';
 }
 
 const {
   title,
   description = '去你想去的地方：记录沿途的见闻、想法和那些值得停留的瞬间。',
+  image = '/images/hero-qingdao-harbor.jpg',
+  type = 'website',
 } = Astro.props;
 
 const siteTitle = '去你想去的地方';
 const pageTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 const currentPath = Astro.url.pathname;
 const bodyClass = currentPath === '/' ? 'home-page' : 'inner-page';
+const siteUrl = Astro.site ?? new URL('https://bestsdz.xyz');
+const canonicalUrl = new URL(currentPath, siteUrl).toString();
+const imageUrl = new URL(image, siteUrl).toString();
 ---
 
 <!doctype html>
@@ -24,9 +31,21 @@ const bodyClass = currentPath === '/' ? 'home-page' : 'inner-page';
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#11161d" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/png" href="/logo-clean.png" />
     <link rel="apple-touch-icon" href="/logo-clean.png" />
     <link rel="alternate" type="application/rss+xml" title={`${siteTitle} RSS`} href="/rss.xml" />
+    <meta property="og:site_name" content={siteTitle} />
+    <meta property="og:type" content={type} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={imageUrl} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={imageUrl} />
     <title>{pageTitle}</title>
   </head>
   <body class={bodyClass}>
@@ -39,6 +58,7 @@ const bodyClass = currentPath === '/' ? 'home-page' : 'inner-page';
           </a>
           <div class="nav-links">
             <a href="/" aria-current={currentPath === '/' ? 'page' : undefined}>首页</a>
+            <a href="/ai-roadmap/" aria-current={currentPath === '/ai-roadmap/' ? 'page' : undefined}>路线</a>
             <a href="/posts/" aria-current={currentPath.startsWith('/posts') ? 'page' : undefined}>文章</a>
             <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined}>关于</a>
             <a href="/rss.xml">订阅</a>
