@@ -1,7 +1,9 @@
 ---
 import { getCollection, render } from 'astro:content';
+import AuthorCard from '../../components/AuthorCard.astro';
 import GiscusComments from '../../components/GiscusComments.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../site.config';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
@@ -27,12 +29,49 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   month: 'long',
   day: 'numeric',
 });
+const readingMinutes = Math.max(1, Math.ceil((post.body ?? '').length / 500));
+const siteUrl = Astro.site ?? new URL(siteConfig.url);
+const articleUrl = new URL(`/posts/${post.id}/`, siteUrl).toString();
+const articleImage = post.data.cover ?? '/images/hero-qingdao-harbor.jpg';
+const articleImageUrl = new URL(articleImage, siteUrl).toString();
+const articleSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: post.data.title,
+  description: post.data.description,
+  image: articleImageUrl,
+  url: articleUrl,
+  datePublished: post.data.pubDate.toISOString(),
+  dateModified: (post.data.updatedDate ?? post.data.pubDate).toISOString(),
+  author: {
+    '@type': 'Person',
+    name: siteConfig.author.name,
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: siteConfig.name,
+    logo: {
+      '@type': 'ImageObject',
+      url: new URL(siteConfig.author.avatar, siteUrl).toString(),
+    },
+  },
+  mainEntityOfPage: articleUrl,
+};
 ---
 
-<BaseLayout title={post.data.title} description={post.data.description}>
+<BaseLayout
+  title={post.data.title}
+  description={post.data.description}
+  image={articleImage}
+  type="article"
+  structuredData={articleSchema}
+>
   <main class="shell page-shell article-shell">
     <header class="article-hero">
-      <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
+      <div class="article-meta-line">
+        <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
+        <span>{readingMinutes} 分钟读完</span>
+      </div>
       <h1>{post.data.title}</h1>
       <p class="description">{post.data.description}</p>
       <div class="post-tags">
@@ -69,6 +108,8 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
         <Content />
       </article>
     </div>
+
+    <AuthorCard />
 
     {(newerPost || olderPost) && (
       <nav class="post-nav" aria-label="上一篇和下一篇">

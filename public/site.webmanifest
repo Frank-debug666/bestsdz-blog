@@ -1,0 +1,17 @@
+{
+  "name": "去你想去的地方",
+  "short_name": "去你想去",
+  "description": "史迪仔的旅行、生活与 AI 技术学习博客。",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f6f1ea",
+  "theme_color": "#11161d",
+  "icons": [
+    {
+      "src": "/logo-clean.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

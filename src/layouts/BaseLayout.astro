@@ -7,20 +7,22 @@ interface Props {
   description?: string;
   image?: string;
   type?: 'website' | 'article';
+  structuredData?: Record<string, unknown>;
 }
 
 const {
   title,
-  description = '去你想去的地方：记录沿途的见闻、想法和那些值得停留的瞬间。',
+  description = siteConfig.description,
   image = '/images/hero-qingdao-harbor.jpg',
   type = 'website',
+  structuredData,
 } = Astro.props;
 
-const siteTitle = '去你想去的地方';
+const siteTitle = siteConfig.name;
 const pageTitle = title === siteTitle ? title : `${title} | ${siteTitle}`;
 const currentPath = Astro.url.pathname;
 const bodyClass = currentPath === '/' ? 'home-page' : 'inner-page';
-const siteUrl = Astro.site ?? new URL('https://bestsdz.xyz');
+const siteUrl = Astro.site ?? new URL(siteConfig.url);
 const canonicalUrl = new URL(currentPath, siteUrl).toString();
 const imageUrl = new URL(image, siteUrl).toString();
 const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
@@ -36,11 +38,15 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#11161d" />
     <meta name="robots" content="index, follow" />
+    <meta name="author" content={siteConfig.author.name} />
+    <meta name="generator" content="Astro" />
     <link rel="canonical" href={canonicalUrl} />
     <link rel="icon" type="image/png" href="/logo-clean.png" />
     <link rel="apple-touch-icon" href="/logo-clean.png" />
+    <link rel="manifest" href="/site.webmanifest" />
     <link rel="alternate" type="application/rss+xml" title={`${siteTitle} RSS`} href="/rss.xml" />
     <meta property="og:site_name" content={siteTitle} />
+    <meta property="og:locale" content="zh_CN" />
     <meta property="og:type" content={type} />
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={description} />
@@ -58,9 +64,13 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
         is:inline
       ></script>
     )}
+    {structuredData && (
+      <script type="application/ld+json" set:html={JSON.stringify(structuredData)} is:inline />
+    )}
     <title>{pageTitle}</title>
   </head>
   <body class={bodyClass}>
+    <a class="skip-link" href="#main-content">跳到正文</a>
     <header class="site-header">
       <div class="shell header-frame">
         <nav class="nav" aria-label="主导航">
@@ -78,7 +88,9 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
         </nav>
       </div>
     </header>
-    <slot />
+    <div id="main-content">
+      <slot />
+    </div>
     <footer class="site-footer">
       <div class="shell footer-inner">
         <div>

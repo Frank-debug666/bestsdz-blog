@@ -1,0 +1,17 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="没有找到这条路" description="页面不存在，回到去你想去的地方继续阅读。">
+  <main class="shell page-shell not-found-page">
+    <section class="page-hero not-found-hero">
+      <span class="eyebrow">404</span>
+      <h1>这条路暂时走不通</h1>
+      <p>可能是链接写错了，也可能这篇文章还在路上。先回到文章列表，或者按 AI 入门路线继续读。</p>
+      <div class="not-found-actions">
+        <a class="button secondary" href="/posts/">查看文章</a>
+        <a class="button secondary" href="/ai-roadmap/">AI 入门路线</a>
+      </div>
+    </section>
+  </main>
+</BaseLayout>

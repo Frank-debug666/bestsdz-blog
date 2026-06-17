@@ -1,0 +1,27 @@
+---
+import { siteConfig } from '../site.config';
+
+const { author } = siteConfig;
+---
+
+<aside class="author-card" id="author" aria-label="作者介绍">
+  <div class="author-avatar-frame">
+    <img class="author-avatar" src={author.avatar} alt={author.name} width="88" height="88" loading="lazy" />
+  </div>
+  <div class="author-card-main">
+    <div>
+      <span class="author-kicker">Written by</span>
+      <h2>我是{author.name}</h2>
+    </div>
+    <p>{author.bio}</p>
+    <div class="author-meta">
+      <span>{author.role}</span>
+      <span>{author.location}</span>
+    </div>
+  </div>
+  <div class="author-actions" aria-label="作者相关入口">
+    <a href="/about/">关于我</a>
+    <a href="/ai-roadmap/">AI 路线</a>
+    <a href="/rss.xml">订阅</a>
+  </div>
+</aside>
