@@ -13,8 +13,8 @@ export const siteConfig = {
   cloudflareAnalyticsToken: import.meta.env.PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN ?? '',
   giscus: {
     repo: import.meta.env.PUBLIC_GISCUS_REPO ?? 'Frank-debug666/bestsdz-blog',
-    repoId: import.meta.env.PUBLIC_GISCUS_REPO_ID ?? '',
+    repoId: import.meta.env.PUBLIC_GISCUS_REPO_ID ?? 'R_kgDOS8A9rg',
     category: import.meta.env.PUBLIC_GISCUS_CATEGORY ?? 'Announcements',
-    categoryId: import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? '',
+    categoryId: import.meta.env.PUBLIC_GISCUS_CATEGORY_ID ?? 'DIC_kwDOS8A9rs4C_ZTD',
   },
 };
