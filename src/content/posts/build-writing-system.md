@@ -2,7 +2,7 @@
 title: 构建自己的写作系统
 description: 写作系统不需要复杂，关键是让输入、整理、发布和回看都足够顺手。
 
-cover: /images/covers/build-writing-system.png
+cover: /images/covers/build-writing-system.jpg
 coverAlt: 台灯下的笔记本、卡片和回形针整齐铺开，像一套安静的写作系统。
 pubDate: 2026-06-12
 tags: [生活, 笔记]
