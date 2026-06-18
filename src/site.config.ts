@@ -5,6 +5,7 @@ export const siteConfig = {
   author: {
     name: '史迪仔',
     avatar: '/logo-clean.png',
+    github: 'https://github.com/Frank-debug666',
     role: 'AI 学习路上的记录者',
     location: '在路上，也在训练循环里',
     bio: '我会把旅行里的风景、学习里的卡点、项目里的复盘都写下来。这个博客不追求一步到位的完美，更在意把每一次出发和每一次弄懂，认真留档。',
