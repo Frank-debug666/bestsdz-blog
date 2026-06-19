@@ -2,43 +2,89 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostRow from '../../components/PostRow.astro';
+import { contentSections } from '../../learning-path';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+const postById = new Map(posts.map((post) => [post.id, post]));
+const assignedIds = new Set(contentSections.flatMap((section) => section.postIds));
+const unassignedPosts = posts.filter((post) => !assignedIds.has(post.id));
 ---
 
-<BaseLayout title="文章" description="去你想去的地方的全部文章归档。">
+<BaseLayout title="文章" description="按 AI 学习阶段、项目实战和写作记录整理的全部文章。">
   <main class="shell page-shell">
-    <section class="page-hero">
-      <h1>全部文章</h1>
-      <p>按时间整理的文章归档，旅行、生活和技术笔记都会留在这里。</p>
+    <section class="page-hero archive-hero">
+      <h1>文章板块</h1>
+      <p>从 AI 零基础开始按板块阅读。想系统学习可以先走路线，查找具体主题也可以直接搜索。</p>
+      <div class="roadmap-start-actions">
+        <a class="button primary" href="/ai-roadmap/">查看学习路线</a>
+        <a class="button secondary" href="/rss.xml">RSS 订阅</a>
+      </div>
     </section>
 
     <section class="page-section">
-      <div class="section-heading">
-        <div>
-          <h2>按时间阅读</h2>
-          <p>从最近更新开始，也可以顺着时间往前回看。</p>
-        </div>
-        <a class="button secondary" href="/rss.xml">RSS 订阅</a>
-      </div>
-
       <div class="search-panel" role="search">
-        <label for="post-search">搜索文章</label>
+        <label for="post-search">搜索全部文章</label>
         <div class="search-box">
           <input
             id="post-search"
             type="search"
-            placeholder="搜索 PyTorch、损失函数、Transformer..."
+            placeholder="搜索 AI、PyTorch、损失函数、项目复盘..."
             autocomplete="off"
           />
           <span id="search-count" aria-live="polite">{posts.length} 篇文章</span>
         </div>
       </div>
 
-      <div class="post-list">
-        {posts.map((post) => <PostRow post={post} />)}
+      <nav class="section-jump-nav" aria-label="文章板块">
+        {contentSections.map((section) => <a href={`#${section.id}`}>{section.title}</a>)}
+      </nav>
+
+      <div class="content-section-list">
+        {contentSections.map((section, index) => {
+          const sectionPosts = section.postIds
+            .map((id) => postById.get(id))
+            .filter((post) => Boolean(post));
+          return (
+            <section class="content-section" id={section.id} data-section-group>
+              <header class="content-section-header">
+                <span>{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <div class="stage-heading-line">
+                    <h2>{section.title}</h2>
+                    <span class="level-label">{section.level}</span>
+                  </div>
+                  <p>{section.description}</p>
+                </div>
+                <strong>{sectionPosts.length} 篇</strong>
+              </header>
+              {sectionPosts.length > 0 ? (
+                <div class="post-list">
+                  {sectionPosts.map((post) => post && <PostRow post={post} />)}
+                </div>
+              ) : (
+                <p class="section-empty">内容正在准备中，将从 RNN、Attention 和 Transformer 开始更新。</p>
+              )}
+            </section>
+          );
+        })}
+
+        {unassignedPosts.length > 0 && (
+          <section class="content-section" data-section-group>
+            <header class="content-section-header">
+              <span>+</span>
+              <div>
+                <h2>其他文章</h2>
+                <p>尚未放入固定板块的内容。</p>
+              </div>
+              <strong>{unassignedPosts.length} 篇</strong>
+            </header>
+            <div class="post-list">
+              {unassignedPosts.map((post) => <PostRow post={post} />)}
+            </div>
+          </section>
+        )}
       </div>
       <p class="empty-search" id="empty-search" hidden>没有找到匹配文章，换个关键词试试。</p>
     </section>
@@ -49,7 +95,7 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
     const count = document.querySelector<HTMLElement>('#search-count');
     const empty = document.querySelector<HTMLElement>('#empty-search');
     const rows = Array.from(document.querySelectorAll<HTMLElement>('[data-post-row]'));
-
+    const groups = Array.from(document.querySelectorAll<HTMLElement>('[data-section-group]'));
     const normalize = (value: string) => value.trim().toLowerCase();
 
     fetch('/search.json')
@@ -62,11 +108,16 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
           let visible = 0;
 
           rows.forEach((row) => {
-            const id = row.dataset.postId ?? '';
-            const text = index.get(id) ?? '';
+            const text = index.get(row.dataset.postId ?? '') ?? '';
             const matched = !query || text.includes(query);
             row.classList.toggle('is-hidden', !matched);
             if (matched) visible += 1;
+          });
+
+          groups.forEach((group) => {
+            const groupRows = Array.from(group.querySelectorAll<HTMLElement>('[data-post-row]'));
+            const hasMatch = groupRows.some((row) => !row.classList.contains('is-hidden'));
+            group.classList.toggle('search-hidden', Boolean(query) && !hasMatch);
           });
 
           if (count) count.textContent = `${visible} 篇文章`;

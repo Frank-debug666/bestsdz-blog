@@ -4,6 +4,7 @@ import AuthorCard from '../../components/AuthorCard.astro';
 import GiscusComments from '../../components/GiscusComments.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { siteConfig } from '../../site.config';
+import { getPostPlacement } from '../../learning-path';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
@@ -30,6 +31,7 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   day: 'numeric',
 });
 const readingMinutes = Math.max(1, Math.ceil((post.body ?? '').length / 500));
+const placement = getPostPlacement(post.id);
 const siteUrl = Astro.site ?? new URL(siteConfig.url);
 const articleUrl = new URL(`/posts/${post.id}/`, siteUrl).toString();
 const articleImage = post.data.cover ?? '/images/hero-qingdao-harbor.jpg';
@@ -71,12 +73,19 @@ const articleSchema = {
       <div class="article-meta-line">
         <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
         <span>{readingMinutes} 分钟读完</span>
+        {placement.section && <span>{placement.section.title}</span>}
+        {placement.stage && <span>{placement.stage.level}</span>}
       </div>
       <h1>{post.data.title}</h1>
       <p class="description">{post.data.description}</p>
       <div class="post-tags">
         {post.data.tags.map((tag) => <a class="tag soft" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
       </div>
+      {placement.stage && placement.lessonNumber && (
+        <a class="article-route-link" href={`/ai-roadmap/#${placement.stage.id}`}>
+          学习路线：{placement.stage.title} · 第 {placement.lessonNumber} 课
+        </a>
+      )}
     </header>
 
     {post.data.cover && (

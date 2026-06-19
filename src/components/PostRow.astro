@@ -1,11 +1,13 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { getPostPlacement } from '../learning-path';
 
 interface Props {
   post: CollectionEntry<'posts'>;
 }
 
 const { post } = Astro.props;
+const placement = getPostPlacement(post.id);
 const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: '2-digit',
@@ -28,7 +30,10 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   </a>
 
   <div class="post-row-main">
-    <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
+    <div class="post-row-meta-line">
+      <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
+      {placement.stage && <span class="post-level">{placement.stage.level}</span>}
+    </div>
     <div class="post-row-copy">
       <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
       <p>{post.data.description}</p>

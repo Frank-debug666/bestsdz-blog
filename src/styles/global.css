@@ -248,6 +248,17 @@ body.inner-page .nav {
   background: rgba(255, 255, 255, 0.84);
 }
 
+.button.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--ink-inverse);
+  box-shadow: 0 12px 28px rgba(17, 22, 29, 0.16);
+}
+
+.button.primary:hover {
+  background: #2b313a;
+}
+
 .home-main {
   overflow: clip;
 }
@@ -485,6 +496,28 @@ body.inner-page .nav {
   gap: 14px;
 }
 
+.post-row-meta-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.post-level,
+.level-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid rgba(74, 128, 146, 0.18);
+  border-radius: 999px;
+  background: rgba(74, 128, 146, 0.09);
+  color: #3e6572;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 .post-row-copy h3 {
   font-size: clamp(1.42rem, 2vw, 1.88rem);
   line-height: 1.12;
@@ -631,6 +664,13 @@ body.inner-page .nav {
   max-width: 860px;
 }
 
+.roadmap-start-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 26px;
+}
+
 .roadmap-summary {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -663,6 +703,175 @@ body.inner-page .nav {
 
 .roadmap-section {
   padding-top: 42px;
+}
+
+.learning-stages {
+  border-top: 1px solid var(--line);
+}
+
+.learning-stage {
+  padding: 38px 0 44px;
+  border-bottom: 1px solid var(--line);
+}
+
+.learning-stage-header {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+  max-width: 900px;
+}
+
+.stage-number {
+  color: var(--accent-deep);
+  font-family:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Noto Serif SC", "Songti SC",
+    serif;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.stage-heading-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stage-heading-line h2,
+.stage-heading-line h3,
+.learning-stage-header h3 {
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1.12;
+}
+
+.learning-stage-header p {
+  max-width: 720px;
+  margin-top: 8px;
+  color: var(--ink-soft);
+}
+
+.lesson-list.compact {
+  margin-left: 90px;
+}
+
+.section-directory {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-top: 1px solid var(--line);
+}
+
+.section-directory article {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  column-gap: 14px;
+  align-items: baseline;
+  padding: 22px 18px 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.section-directory article:nth-child(odd) {
+  padding-right: 28px;
+}
+
+.section-directory article:nth-child(even) {
+  padding-left: 28px;
+  border-left: 1px solid var(--line);
+}
+
+.section-directory article > span,
+.section-directory article > strong {
+  color: var(--accent-deep);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.section-directory h3 {
+  font-size: 1.15rem;
+}
+
+.section-directory p {
+  grid-column: 2 / -1;
+  margin-top: 5px;
+  color: var(--ink-soft);
+}
+
+.section-jump-nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 24px 0 46px;
+}
+
+.section-jump-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.section-jump-nav a:hover {
+  border-color: rgba(184, 132, 77, 0.36);
+  color: var(--accent-deep);
+}
+
+.content-section-list {
+  display: grid;
+  gap: 64px;
+}
+
+.content-section {
+  scroll-margin-top: 110px;
+}
+
+.content-section.search-hidden {
+  display: none;
+}
+
+.content-section-header {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.content-section-header > span {
+  color: var(--accent-deep);
+  font-family:
+    "Iowan Old Style", "Palatino Linotype", "Book Antiqua", "Noto Serif SC", "Songti SC",
+    serif;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.content-section-header h2 {
+  font-size: clamp(1.6rem, 2.5vw, 2.15rem);
+  line-height: 1.1;
+}
+
+.content-section-header p {
+  margin-top: 7px;
+  color: var(--ink-soft);
+}
+
+.content-section-header > strong {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.section-empty {
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
 }
 
 .lesson-list {
@@ -775,6 +984,18 @@ body.inner-page .nav {
 
 .article-hero .post-tags {
   margin-top: 20px;
+}
+
+.article-route-link {
+  display: inline-flex;
+  margin-top: 18px;
+  color: var(--accent-deep);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.article-route-link:hover {
+  color: var(--ink);
 }
 
 .article-cover {
@@ -1266,6 +1487,20 @@ body.inner-page .nav {
     grid-template-columns: 1fr;
   }
 
+  .section-directory {
+    grid-template-columns: 1fr;
+  }
+
+  .section-directory article:nth-child(odd),
+  .section-directory article:nth-child(even) {
+    padding: 20px 0;
+    border-left: 0;
+  }
+
+  .lesson-list.compact {
+    margin-left: 0;
+  }
+
   .post-row {
     align-items: start;
   }
@@ -1329,6 +1564,19 @@ body.inner-page .nav {
 
   .lesson-list li {
     grid-template-columns: 1fr;
+  }
+
+  .learning-stage-header,
+  .content-section-header {
+    grid-template-columns: 1fr;
+  }
+
+  .content-section-header > strong {
+    justify-self: start;
+  }
+
+  .roadmap-start-actions .button {
+    width: 100%;
   }
 
   .page-hero p,

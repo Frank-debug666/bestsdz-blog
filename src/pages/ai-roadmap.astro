@@ -1,106 +1,114 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { contentSections, learningStages, upcomingLessons } from '../learning-path';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
 const postById = new Map(posts.map((post) => [post.id, post]));
-
-type PostEntry = (typeof posts)[number];
-
-const publishedLessons = [
-  'why-start-ai-blog',
-  'what-is-neural-network',
-  'activation-function',
-  'loss-function',
-  'cross-entropy-loss',
-  'gradient-descent',
-  'what-is-tensor',
-  'pytorch-linear-layer',
-  'pytorch-dataloader',
-  'pytorch-training-flow',
-]
-  .map((id) => postById.get(id))
-  .filter((post): post is PostEntry => Boolean(post));
-
-const upcomingLessons = [
-  ['2026-06-21', 'MSELoss 详解：回归任务为什么常用均方误差', 'AI 基础'],
-  ['2026-06-23', 'SGD 优化器是什么？最基础的参数更新方法', 'AI 基础'],
-  ['2026-06-25', 'Adam 优化器为什么这么常用？原理和直觉版解释', 'AI 基础'],
-  ['2026-06-28', '反向传播到底在做什么？别再只会背公式了', 'AI 基础'],
-  ['2026-06-30', 'Dataset 是什么？为什么训练数据要先封装', 'PyTorch 实战'],
-  ['2026-07-02', 'with torch.no_grad 有什么用？验证和推理为什么要关梯度', 'PyTorch 实战'],
-  ['2026-07-05', 'PyTorch 怎么用 GPU 训练？从 CPU 到 CUDA 的完整流程', 'PyTorch 实战'],
-  ['2026-07-07', '模型怎么保存和加载？state_dict 一次讲明白', 'PyTorch 实战'],
-  ['2026-07-09', '训练过程怎么监控？loss、accuracy、学习率应该怎么看', 'PyTorch 实战'],
-  ['2026-07-12', '决策边界可视化：怎么真正看懂一个分类模型学到了什么', 'PyTorch 实战'],
-  ['2026-07-14', 'Transformer 是什么？为什么它改变了 NLP', 'Transformer 专题'],
-  ['2026-07-16', 'Attention 机制是什么？为什么模型开始会看重点', 'Transformer 专题'],
-  ['2026-07-19', 'Self-Attention 详解：一句话内部的信息怎么交互', 'Transformer 专题'],
-  ['2026-07-21', 'Q、K、V 到底是什么？用最直白的方式解释清楚', 'Transformer 专题'],
-  ['2026-07-23', 'Multi-Head Attention 为什么要多头？不是头越多越玄学', 'Transformer 专题'],
-  ['2026-07-26', 'Position Encoding 是什么？Transformer 为什么还需要位置', 'Transformer 专题'],
-  ['2026-07-28', 'Encoder 结构详解：输入文本是怎么被编码的', 'Transformer 专题'],
-  ['2026-07-30', 'Decoder 结构详解：输出文本是怎么一步步生成的', 'Transformer 专题'],
-  ['2026-08-02', 'GPT 的工作原理是什么？从 Transformer 到生成模型', 'Transformer 专题'],
-  ['2026-08-04', 'Transformer 学习总结：我终于把这一套串起来了', 'Transformer 专题'],
-];
+const publishedLessonCount = learningStages.reduce(
+  (total, stage) => total + stage.postIds.filter((id) => postById.has(id)).length,
+  0,
+);
 ---
 
 <BaseLayout
-  title="AI 入门路线"
-  description="从神经网络、损失函数、梯度下降到 PyTorch 训练流程，按顺序整理 AI 初学者可以持续阅读的学习路线。"
+  title="AI 学习路线"
+  description="从什么是 AI 开始，依次学习机器学习、深度学习、PyTorch、项目实战和大模型应用。"
 >
   <main class="shell page-shell">
     <section class="page-hero roadmap-hero">
-      <span class="eyebrow">AI Learning Roadmap</span>
-      <h1>AI 入门路线</h1>
+      <span class="eyebrow">从零开始，不跳步骤</span>
+      <h1>AI 学习路线</h1>
       <p>
-        这不是一份堆满术语的清单，而是一条从“模型怎么学习”走到“PyTorch 怎么训练”的路线。先把概念讲清楚，再把代码跑起来。
+        先建立 AI 的整体地图，再理解模型怎样学习，最后把概念放进代码和项目。你不需要一次看懂所有公式，只需要沿着顺序把每个问题解决掉。
       </p>
+      <div class="roadmap-start-actions">
+        <a class="button primary" href="/posts/what-is-ai/">从第一课开始</a>
+        <a class="button secondary" href="#learning-stages">查看完整路线</a>
+      </div>
     </section>
 
     <section class="roadmap-summary" aria-label="路线概览">
       <article>
-        <strong>{publishedLessons.length}</strong>
-        <span>已发布入门文章</span>
+        <strong>{publishedLessonCount}</strong>
+        <span>篇已发布课程</span>
       </article>
       <article>
-        <strong>{upcomingLessons.length}</strong>
-        <span>后续选题排期</span>
+        <strong>{learningStages.length}</strong>
+        <span>个当前学习阶段</span>
       </article>
       <article>
-        <strong>3</strong>
-        <span>学习阶段：基础、PyTorch、Transformer</span>
+        <strong>{contentSections.length}</strong>
+        <span>个长期内容板块</span>
       </article>
     </section>
 
-    <section class="page-section roadmap-section">
+    <section class="page-section roadmap-section" id="learning-stages">
       <div class="section-heading">
         <div>
-          <h2>先读这 10 篇</h2>
-          <p>按顺序读，比单篇随机看更容易把神经网络、训练流程和 PyTorch 对象串起来。</p>
+          <h2>按阶段学习</h2>
+          <p>每一阶段都建立在上一阶段之上。初次学习建议按顺序阅读。</p>
         </div>
-        <a class="button secondary" href="/posts/">全部文章</a>
       </div>
 
-      <ol class="lesson-list">
-        {publishedLessons.map((post, index) => (
-          <li>
-            <span class="lesson-index">{String(index + 1).padStart(2, '0')}</span>
-            <div>
-              <a href={`/posts/${post.id}/`}>{post.data.title}</a>
-              <p>{post.data.description}</p>
-            </div>
-          </li>
-        ))}
-      </ol>
+      <div class="learning-stages">
+        {learningStages.map((stage) => {
+          const stagePosts = stage.postIds.map((id) => postById.get(id)).filter(Boolean);
+          return (
+            <section class="learning-stage" id={stage.id}>
+              <header class="learning-stage-header">
+                <span class="stage-number">{stage.number}</span>
+                <div>
+                  <div class="stage-heading-line">
+                    <h3>{stage.title}</h3>
+                    <span class="level-label">{stage.level}</span>
+                  </div>
+                  <p>{stage.description}</p>
+                </div>
+              </header>
+              <ol class="lesson-list compact">
+                {stagePosts.map((post, index) => post && (
+                  <li>
+                    <span class="lesson-index">{String(index + 1).padStart(2, '0')}</span>
+                    <div>
+                      <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                      <p>{post.data.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </section>
+          );
+        })}
+      </div>
     </section>
 
     <section class="page-section roadmap-section">
       <div class="section-heading">
         <div>
-          <h2>接下来 20 篇</h2>
-          <p>后续会从优化器、Dataset、GPU 训练一路写到 Transformer，每篇都尽量保留“概念 + 代码 + 使用场景”。</p>
+          <h2>长期内容板块</h2>
+          <p>学习路线负责先后顺序，内容板块负责长期归档和查找。</p>
+        </div>
+        <a class="button secondary" href="/posts/">按板块看文章</a>
+      </div>
+
+      <div class="section-directory">
+        {contentSections.map((section, index) => (
+          <article>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <h3>{section.title}</h3>
+            <p>{section.description}</p>
+            <strong>{section.level}</strong>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="page-section roadmap-section">
+      <div class="section-heading">
+        <div>
+          <h2>接下来更新什么</h2>
+          <p>先补齐训练闭环和 PyTorch 实践，再进入图像项目、Transformer 与大模型应用。</p>
         </div>
       </div>
 
