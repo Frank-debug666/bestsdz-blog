@@ -9,6 +9,14 @@ tags: [机器学习, 零基础, 数据集, 特征工程]
 
 要读懂一份训练代码，先要分清样本、特征和标签。
 
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/features-labels-datasets-video.jpg" aria-label="第 5 课：特征、标签和数据集是什么">
+    <source src="/videos/lesson-05-features-labels-datasets.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 5 课视频 · 特征、标签和数据集（约 1 分 17 秒）</figcaption>
+</figure>
+
 ## 样本：一条完整的观察记录
 
 假设我们要预测房价，每一套房子就是一个样本：
@@ -62,4 +70,3 @@ tags: [机器学习, 零基础, 数据集, 特征工程]
 样本是一条记录，特征是输入信息，标签是要预测的答案。模型学习的是特征与标签之间的规律。
 
 下一课会把一个完整数据集拆成 **训练集、验证集和测试集**。
-

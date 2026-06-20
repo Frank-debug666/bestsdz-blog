@@ -9,6 +9,14 @@ tags: [机器学习, 零基础, 监督学习, 无监督学习]
 
 这个问题把常见任务分成了监督学习和无监督学习。
 
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/supervised-vs-unsupervised-learning-video.jpg" aria-label="第 3 课：监督学习与无监督学习是什么">
+    <source src="/videos/lesson-03-supervised-vs-unsupervised-learning.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 3 课视频 · 监督学习与无监督学习（约 1 分 20 秒）</figcaption>
+</figure>
+
 ## 监督学习：拿着答案练习
 
 监督学习使用带标签的数据训练模型。
@@ -61,4 +69,3 @@ tags: [机器学习, 零基础, 监督学习, 无监督学习]
 - 没有标签、需要发现数据内部结构：无监督学习。
 
 下一课继续拆分监督学习：**分类和回归到底有什么不同**。
-

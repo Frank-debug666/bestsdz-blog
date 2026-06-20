@@ -9,6 +9,14 @@ tags: [机器学习, 零基础, 数据集划分, 模型评估]
 
 机器学习也一样。为了知道模型能否处理没见过的数据，需要把数据分开使用。
 
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/train-validation-test-sets-video.jpg" aria-label="第 6 课：训练集、验证集和测试集分别做什么">
+    <source src="/videos/lesson-06-train-validation-test-sets.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 6 课视频 · 训练集、验证集和测试集（约 1 分 19 秒）</figcaption>
+</figure>
+
 ## 训练集：让模型学习
 
 训练集参与参数更新。
@@ -59,4 +67,3 @@ tags: [机器学习, 零基础, 数据集划分, 模型评估]
 - 测试集进行最终评估。
 
 下一课会回答：模型做完分类后，除了准确率，我们还应该看哪些指标？
-

@@ -9,6 +9,14 @@ tags: [机器学习, 零基础, 过拟合, 数据泄漏]
 
 这对应三个必须分清的问题：欠拟合、过拟合和数据泄漏。
 
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/overfitting-underfitting-data-leakage-video.jpg" aria-label="第 8 课：过拟合、欠拟合和数据泄漏是什么">
+    <source src="/videos/lesson-08-overfitting-underfitting-data-leakage.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 8 课视频 · 过拟合、欠拟合和数据泄漏（约 1 分 31 秒）</figcaption>
+</figure>
+
 ## 欠拟合：连训练数据都没学好
 
 欠拟合时，模型在训练集和验证集上的表现都比较差。
@@ -58,4 +66,3 @@ tags: [机器学习, 零基础, 过拟合, 数据泄漏]
 ## 到这里，我们已经有了机器学习地基
 
 现在你已经知道 AI 的范围、任务类型、数据角色、数据集划分和评价方法。下一阶段可以进入 [神经网络到底是什么](/posts/what-is-neural-network/)，开始理解模型内部怎样从数据中学习。
-

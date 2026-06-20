@@ -7,6 +7,14 @@ tags: [AI基础, 零基础, 机器学习, 深度学习]
 
 AI、机器学习、深度学习和生成式 AI 经常一起出现。它们不是四个互不相关的名词，而是处在同一张地图上的不同范围。
 
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/ai-ml-dl-generative-ai-video.jpg" aria-label="第 2 课：AI、机器学习、深度学习和生成式 AI 有什么区别">
+    <source src="/videos/lesson-02-ai-ml-dl-generative-ai.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 2 课视频 · AI、机器学习、深度学习和生成式 AI（约 1 分 41 秒）</figcaption>
+</figure>
+
 ## 先看最重要的关系
 
 可以先这样记：
@@ -75,4 +83,3 @@ ChatGPT 一类产品属于生成式 AI。它们背后通常使用深度学习和
 AI 是最大的领域，机器学习让机器从数据中学习，深度学习主要使用多层神经网络，生成式 AI 关注生成新的内容。
 
 下一课开始进入机器学习的第一组分叉：**监督学习和无监督学习**。
-

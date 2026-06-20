@@ -9,6 +9,14 @@ tags: [机器学习, 零基础, 分类, 回归]
 
 如果答案是一个类别，通常是分类；如果答案是一个连续数值，通常是回归。
 
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/classification-vs-regression-video.jpg" aria-label="第 4 课：分类和回归有什么区别">
+    <source src="/videos/lesson-04-classification-vs-regression.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 4 课视频 · 分类和回归有什么区别（约 1 分 13 秒）</figcaption>
+</figure>
+
 ## 分类：从有限选项中作选择
 
 分类任务的结果属于预先定义好的类别。
@@ -61,4 +69,3 @@ tags: [机器学习, 零基础, 分类, 回归]
 分类预测类别，回归预测连续数值。先确定任务，再选择数据处理、模型、损失函数和评价指标。
 
 下一课我们会认识机器学习数据里的三个基本角色：**特征、标签和样本**。
-
