@@ -49,6 +49,7 @@ export const contentSections: ContentSection[] = [
       'activation-function',
       'loss-function',
       'gradient-descent',
+      'forward-and-backpropagation',
       'cross-entropy-loss',
     ],
   },
@@ -111,6 +112,7 @@ export const learningStages: LearningStage[] = [
       'activation-function',
       'loss-function',
       'gradient-descent',
+      'forward-and-backpropagation',
       'cross-entropy-loss',
     ],
   },
@@ -133,7 +135,6 @@ export const learningStages: LearningStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-06-21', '前向传播与反向传播到底在做什么', '深度学习原理'],
   ['2026-06-23', '自动微分与计算图：loss.backward() 为什么能算梯度', 'PyTorch 入门'],
   ['2026-06-25', 'Shape 为什么是深度学习最重要的数据契约', 'PyTorch 入门'],
   ['2026-06-28', 'Dataset 是什么？如何封装自己的训练数据', 'PyTorch 入门'],
@@ -166,4 +167,3 @@ export function getPostPlacement(postId: string) {
     lessonNumber: stage && lessonIndex >= 0 ? lessonIndex + 1 : undefined,
   };
 }
-
