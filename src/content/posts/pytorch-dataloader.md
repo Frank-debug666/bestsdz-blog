@@ -13,6 +13,15 @@ tags: [PyTorch, DataLoader, 数据加载]
 
 在 PyTorch 里，负责这件事的就是 `DataLoader`。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/pytorch-dataloader-video.jpg" aria-label="第 17 课：DataLoader 详解">
+    <source src="/videos/lesson-17-pytorch-dataloader.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 17 课视频 · DataLoader 详解（约 1 分 37 秒）</figcaption>
+</figure>
+
 ## DataLoader 是什么
 
 `DataLoader` 可以理解成数据搬运工。

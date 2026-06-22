@@ -22,6 +22,15 @@ optimizer.step()
 预测 → 算错 → 追责 → 更新
 ```
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/forward-and-backpropagation-video.jpg" aria-label="第 13 课：前向传播与反向传播">
+    <source src="/videos/lesson-13-forward-and-backpropagation.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 13 课视频 · 前向传播与反向传播（约 1 分 39 秒）</figcaption>
+</figure>
+
 ## 前向传播：用当前参数作一次预测
 
 前向传播是数据从输入端流向输出端的过程。

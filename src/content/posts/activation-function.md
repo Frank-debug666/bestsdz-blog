@@ -15,6 +15,15 @@ tags: [AI基础, 深度学习, 激活函数]
 
 激活函数就是为了解决这个问题出现的。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/activation-function-video.jpg" aria-label="第 10 课：激活函数是什么？">
+    <source src="/videos/lesson-10-activation-function.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 10 课视频 · 激活函数是什么？（约 1 分 39 秒）</figcaption>
+</figure>
+
 ## 先看没有激活函数会怎样
 
 一个最简单的神经元大概会做这样的计算：

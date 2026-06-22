@@ -1,4 +1,4 @@
-﻿---
+---
 title: 我怎样把一个中文文本分类项目，从训练脚本一路做到了 API 和前端
 description: 从 jieba 分词、TF-IDF 和随机森林开始，到 Flask 接口和 Streamlit 页面，这是一条更完整的中文文本分类落地链路。
 
@@ -11,6 +11,15 @@ tags: [技术, 项目复盘, NLP]
 最近我又整理了一份中文文本分类项目笔记。和前一篇偏 RNN 的项目复盘不同，这次我更关注的是一条完整的落地路径：不仅训练模型，还把它接到了 API 和前端页面上。
 
 如果说前一个项目让我理解了“模型怎么训练”，那这个项目更像是在回答另一个问题：一个文本分类模型，怎样才能从脚本跑到一个可以被别人直接使用的小系统。
+
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/rf-text-classification-system-video.jpg" aria-label="第 20 课：文本分类：从训练到 API 和前端">
+    <source src="/videos/lesson-20-rf-text-classification-system.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 20 课视频 · 文本分类：从训练到 API 和前端（约 1 分 45 秒）</figcaption>
+</figure>
 
 ## 这个项目做了什么
 

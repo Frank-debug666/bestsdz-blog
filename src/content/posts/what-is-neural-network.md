@@ -15,6 +15,15 @@ tags: [AI基础, 深度学习, 神经网络]
 
 它不是天生知道答案，而是通过大量例子，一点点调整自己内部的参数，最后学会把输入变成我们想要的输出。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/what-is-neural-network-video.jpg" aria-label="第 9 课：神经网络到底是什么？">
+    <source src="/videos/lesson-09-what-is-neural-network.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 9 课视频 · 神经网络到底是什么？（约 1 分 36 秒）</figcaption>
+</figure>
+
 ## 先把问题说简单
 
 假设我们想做一个最简单的分类任务：判断一张图片里是不是猫。

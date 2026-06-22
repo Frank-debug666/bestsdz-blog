@@ -13,6 +13,15 @@ tags: [AI基础, 深度学习, 梯度下降]
 
 这个过程就叫梯度下降。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/gradient-descent-video.jpg" aria-label="第 12 课：梯度下降算法是什么？">
+    <source src="/videos/lesson-12-gradient-descent.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 12 课视频 · 梯度下降算法是什么？（约 1 分 35 秒）</figcaption>
+</figure>
+
 ## 从下山开始理解
 
 想象你站在一座山上，目标是走到山谷最低处。

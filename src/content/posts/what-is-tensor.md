@@ -13,6 +13,15 @@ tags: [PyTorch, Tensor, AI基础]
 
 它可以是一组数字，也可以是一张表，还可以是一批图片。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/what-is-tensor-video.jpg" aria-label="第 15 课：Tensor 是什么？">
+    <source src="/videos/lesson-15-what-is-tensor.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 15 课视频 · Tensor 是什么？（约 1 分 34 秒）</figcaption>
+</figure>
+
 ## 从数字到 Tensor
 
 一个普通数字可以看成 0 维 Tensor：

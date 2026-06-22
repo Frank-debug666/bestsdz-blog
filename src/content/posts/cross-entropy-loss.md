@@ -15,6 +15,15 @@ tags: [AI基础, 深度学习, CrossEntropyLoss]
 
 因为分类任务里，我们关心的不只是“猜没猜对”，还关心模型对正确答案有多自信。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/cross-entropy-loss-video.jpg" aria-label="第 14 课：CrossEntropyLoss 详解">
+    <source src="/videos/lesson-14-cross-entropy-loss.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 14 课视频 · CrossEntropyLoss 详解（约 1 分 37 秒）</figcaption>
+</figure>
+
 ## 分类模型输出的是什么
 
 假设我们有一个三分类任务：猫、狗、鸟。

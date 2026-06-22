@@ -1,4 +1,4 @@
-﻿---
+---
 title: 从垃圾短信识别项目里，我复盘了一个中文文本分类系统
 description: 一次从短信分类项目出发的复盘：从需求、流程到问题定位，再到后续可以继续优化的方向。
 
@@ -13,6 +13,15 @@ tags: [技术, 项目复盘, NLP]
 一开始做这个项目，目标其实很直接：不靠固定关键词规则，而是让模型自己去学习短信文本里的语义特征，自动判断一条短信是正常消息，还是营销、诈骗一类的垃圾短信。
 
 现在回头看，这个项目最有价值的地方，不只是“做出了一个模型”，而是让我第一次比较完整地走完了中文文本分类项目从数据处理、模型训练到问题定位的全流程。
+
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/spam-sms-project-retrospective-video.jpg" aria-label="第 19 课：垃圾短信识别项目复盘">
+    <source src="/videos/lesson-19-spam-sms-project-retrospective.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 19 课视频 · 垃圾短信识别项目复盘（约 1 分 46 秒）</figcaption>
+</figure>
 
 ## 项目想解决什么问题
 

@@ -15,6 +15,15 @@ tags: [AI基础, 深度学习, 损失函数]
 
 它会告诉我们：这次预测和真实答案之间差了多少。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/loss-function-video.jpg" aria-label="第 11 课：损失函数是什么？">
+    <source src="/videos/lesson-11-loss-function.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 11 课视频 · 损失函数是什么？（约 1 分 34 秒）</figcaption>
+</figure>
+
 ## 为什么模型需要损失函数
 
 模型刚开始训练时，参数通常是随机的，所以预测结果也很随机。

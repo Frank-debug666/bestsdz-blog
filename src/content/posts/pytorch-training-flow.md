@@ -11,6 +11,15 @@ tags: [PyTorch, 模型训练, 项目实战]
 
 这篇文章先不追求复杂模型，只把一条最基础的训练主线串起来。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/pytorch-training-flow-video.jpg" aria-label="第 18 课：PyTorch 模型训练完整流程">
+    <source src="/videos/lesson-18-pytorch-training-flow.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 18 课视频 · PyTorch 模型训练完整流程（约 1 分 42 秒）</figcaption>
+</figure>
+
 ## 第一步：准备数据
 
 训练模型前，先要把数据整理成模型能吃的形式。

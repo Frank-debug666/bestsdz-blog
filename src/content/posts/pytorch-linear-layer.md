@@ -13,6 +13,15 @@ tags: [PyTorch, Linear, 神经网络]
 
 如果你能理解 Linear 层，很多神经网络结构都会变得更容易读。
 
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/pytorch-linear-layer-video.jpg" aria-label="第 16 课：PyTorch 的 Linear 层">
+    <source src="/videos/lesson-16-pytorch-linear-layer.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 16 课视频 · PyTorch 的 Linear 层（约 1 分 38 秒）</figcaption>
+</figure>
+
 ## Linear 层做了什么
 
 Linear 层本质上做的是一次线性变换：
