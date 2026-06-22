@@ -17,6 +17,14 @@ export interface LearningStage {
   postIds: string[];
 }
 
+export interface FutureStage {
+  number: string;
+  range: string;
+  title: string;
+  description: string;
+  topics: string[];
+}
+
 export const contentSections: ContentSection[] = [
   {
     id: 'ai-zero',
@@ -134,26 +142,86 @@ export const learningStages: LearningStage[] = [
   },
 ];
 
+export const futureStages: FutureStage[] = [
+  {
+    number: '01',
+    range: '21-34',
+    title: '传统机器学习基础',
+    description: '补齐数据处理、经典算法、模型评估和模型选择，为后面的项目建立可靠基础。',
+    topics: ['数据清洗', '特征工程', '回归与分类', '决策树与集成学习'],
+  },
+  {
+    number: '02',
+    range: '35-42',
+    title: '文本分类项目',
+    description: '重新拆解中文文本分类链路，从文本清洗一直做到模型推理和演示页面。',
+    topics: ['中文分词', '词袋与 TF-IDF', '模型评估', 'Streamlit'],
+  },
+  {
+    number: '03',
+    range: '43-58',
+    title: 'PyTorch 深度学习基础',
+    description: '深入 Tensor、自动微分、Dataset、优化器和训练诊断，逐步具备独立训练能力。',
+    topics: ['自动微分', 'Shape', 'Dataset', '优化器与 GPU'],
+  },
+  {
+    number: '04',
+    range: '59-68',
+    title: '深度学习项目',
+    description: '通过回归、表格分类和图像分类项目，把训练、验证、推理与复盘串起来。',
+    topics: ['回归项目', '二维分类', 'CNN', '项目模板'],
+  },
+  {
+    number: '05',
+    range: '69-78',
+    title: 'NLP 与序列模型',
+    description: '从文本编号和 Embedding 出发，进入 FastText、RNN、LSTM 与文本生成。',
+    topics: ['Token 与词表', 'Embedding', 'RNN', 'LSTM'],
+  },
+  {
+    number: '06',
+    range: '79-90',
+    title: 'Transformer 与 BERT',
+    description: '放慢 Attention 的推导节奏，再逐层理解 Transformer 和 BERT 文本分类。',
+    topics: ['QKV', 'Self-Attention', 'Transformer', 'BERT'],
+  },
+  {
+    number: '07',
+    range: '91-100',
+    title: '大模型开发',
+    description: '从安全调用 API 开始，掌握流式输出、Prompt、结构化输出与工具调用。',
+    topics: ['模型 API', '多轮对话', '结构化输出', 'Tool Calling'],
+  },
+  {
+    number: '08',
+    range: '101-110',
+    title: 'RAG 与知识库',
+    description: '完成文档加载、切分、检索、重排、生成和评估的完整知识库链路。',
+    topics: ['Chunk', 'Embedding', '混合检索', 'RAG 评估'],
+  },
+  {
+    number: '09',
+    range: '111-116',
+    title: 'Dify 与 RAGFlow',
+    description: '围绕真实应用理解工作流、变量、知识检索、安全与可观测性。',
+    topics: ['工作流', '变量流', '知识检索', '权限与日志'],
+  },
+  {
+    number: '10',
+    range: '117-125+',
+    title: '部署与模型优化',
+    description: '把应用正式部署，再理解量化、剪枝、蒸馏，并持续追加综合项目。',
+    topics: ['Flask 与 Docker', '服务化', '模型压缩', '综合项目'],
+  },
+];
+
 export const upcomingLessons = [
-  ['2026-06-23', '自动微分与计算图：loss.backward() 为什么能算梯度', 'PyTorch 入门'],
-  ['2026-06-25', 'Shape 为什么是深度学习最重要的数据契约', 'PyTorch 入门'],
-  ['2026-06-28', 'Dataset 是什么？如何封装自己的训练数据', 'PyTorch 入门'],
-  ['2026-06-30', 'SGD 优化器：最基础的参数更新方法', '深度学习原理'],
-  ['2026-07-02', 'Adam 和 AdamW 为什么常用', '深度学习原理'],
-  ['2026-07-05', '学习率决定了什么？太大和太小会怎样', '深度学习原理'],
-  ['2026-07-07', '正则化、Dropout 与 Early Stopping', '深度学习原理'],
-  ['2026-07-09', '训练、验证、测试和推理的区别', 'PyTorch 入门'],
-  ['2026-07-12', '模型保存与加载：state_dict 详解', 'PyTorch 入门'],
-  ['2026-07-14', 'PyTorch GPU/CUDA 训练完整流程', 'PyTorch 入门'],
-  ['2026-07-16', '怎样监控 loss、accuracy 和学习率', 'PyTorch 入门'],
-  ['2026-07-19', '从零搭建一个简单神经网络分类器', '项目实战'],
-  ['2026-07-21', '手机价格分类项目：从 CSV 到预测结果', '项目实战'],
-  ['2026-07-23', 'CIFAR-10 图像分类：第一个 CNN 项目', '项目实战'],
-  ['2026-07-26', 'RNN 怎样处理有顺序的数据', '大模型与应用'],
-  ['2026-07-28', 'Attention 机制：模型怎样找到重点', '大模型与应用'],
-  ['2026-07-30', 'Transformer 从输入到输出的完整结构', '大模型与应用'],
-  ['2026-08-02', '调用大模型 API：普通输出与流式输出', '大模型与应用'],
-  ['2026-08-04', 'RAG 与工具调用：让模型连接自己的知识和能力', '大模型与应用'],
+  ['2026-08-18', '机器学习项目的完整流程：从原始数据到模型预测', '传统机器学习'],
+  ['2026-08-20', '数据清洗第一课：缺失值、重复值和异常值怎么处理', '传统机器学习'],
+  ['2026-08-23', 'Pandas 数据清洗实战：把混乱表格变成可训练数据', '代码实战'],
+  ['2026-08-25', '特征工程是什么？模型为什么不能直接理解原始数据', '传统机器学习'],
+  ['2026-08-27', '类别特征如何处理：Label Encoding 与 One-Hot Encoding', '代码实战'],
+  ['2026-08-30', '数据标准化和归一化有什么区别', '传统机器学习'],
 ] as const;
 
 export function getPostPlacement(postId: string) {

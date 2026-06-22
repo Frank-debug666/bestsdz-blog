@@ -705,6 +705,27 @@ body.inner-page .nav {
   padding-top: 42px;
 }
 
+.future-stage-directory article {
+  align-content: start;
+}
+
+.future-stage-topics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.future-stage-topics li {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
 .learning-stages {
   border-top: 1px solid var(--line);
 }

@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { contentSections, learningStages, upcomingLessons } from '../learning-path';
+import { contentSections, futureStages, learningStages, upcomingLessons } from '../learning-path';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
 const postById = new Map(posts.map((post) => [post.id, post]));
@@ -86,6 +86,29 @@ const publishedLessonCount = learningStages.reduce(
     <section class="page-section roadmap-section">
       <div class="section-heading">
         <div>
+          <h2>第 21 篇之后的长期路线</h2>
+          <p>前 20 篇保持不变。后续按照“先原理、再代码、再项目、最后工程化”推进。</p>
+        </div>
+      </div>
+
+      <div class="section-directory future-stage-directory">
+        {futureStages.map((stage) => (
+          <article>
+            <span>{stage.number}</span>
+            <h3>{stage.title}</h3>
+            <p>{stage.description}</p>
+            <strong>第 {stage.range} 篇</strong>
+            <ul class="future-stage-topics" aria-label={`${stage.title}重点`}>
+              {stage.topics.map((topic) => <li>{topic}</li>)}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="page-section roadmap-section">
+      <div class="section-heading">
+        <div>
           <h2>长期内容板块</h2>
           <p>学习路线负责先后顺序，内容板块负责长期归档和查找。</p>
         </div>
@@ -108,7 +131,7 @@ const publishedLessonCount = learningStages.reduce(
       <div class="section-heading">
         <div>
           <h2>接下来更新什么</h2>
-          <p>先补齐训练闭环和 PyTorch 实践，再进入图像项目、Transformer 与大模型应用。</p>
+          <p>这里只锁定未来两周的选题；保持每周 2 至 3 篇，完成后继续滚动排期。</p>
         </div>
       </div>
 
