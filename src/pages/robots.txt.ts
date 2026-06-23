@@ -6,6 +6,7 @@ export const GET: APIRoute = () =>
 Allow: /
 
 Sitemap: https://bestsdz.xyz/sitemap.xml
+Sitemap: https://bestsdz.xyz/sitemap.txt
 `,
     {
       headers: {
