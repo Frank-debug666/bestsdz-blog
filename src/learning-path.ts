@@ -69,6 +69,13 @@ export const contentSections: ContentSection[] = [
     postIds: ['what-is-tensor', 'pytorch-linear-layer', 'pytorch-dataloader', 'pytorch-training-flow'],
   },
   {
+    id: 'traditional-ml',
+    title: '传统机器学习基础',
+    description: '从项目流程、数据清洗和 Pandas 实战开始，补齐进入算法之前的数据基本功。',
+    level: '初级',
+    postIds: ['machine-learning-project-flow', 'data-cleaning-first-lesson', 'pandas-data-cleaning-practice'],
+  },
+  {
     id: 'projects',
     title: '项目实战',
     description: '用真实项目串起数据、模型、接口和复盘。',
@@ -139,6 +146,14 @@ export const learningStages: LearningStage[] = [
     description: '从文本分类项目开始，理解模型之外的数据、接口、前端和复盘。',
     level: '项目实战',
     postIds: ['spam-sms-project-retrospective', 'rf-text-classification-system'],
+  },
+  {
+    id: 'traditional-ml',
+    number: '05',
+    title: '补齐传统机器学习基础',
+    description: '把数据清洗、特征准备和项目流程打牢，再进入线性回归、逻辑回归和树模型。',
+    level: '初级',
+    postIds: ['machine-learning-project-flow', 'data-cleaning-first-lesson', 'pandas-data-cleaning-practice'],
   },
 ];
 
@@ -216,12 +231,12 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-08-18', '机器学习项目的完整流程：从原始数据到模型预测', '传统机器学习'],
-  ['2026-08-20', '数据清洗第一课：缺失值、重复值和异常值怎么处理', '传统机器学习'],
-  ['2026-08-23', 'Pandas 数据清洗实战：把混乱表格变成可训练数据', '代码实战'],
-  ['2026-08-25', '特征工程是什么？模型为什么不能直接理解原始数据', '传统机器学习'],
-  ['2026-08-27', '类别特征如何处理：Label Encoding 与 One-Hot Encoding', '代码实战'],
-  ['2026-08-30', '数据标准化和归一化有什么区别', '传统机器学习'],
+  ['2026-06-26', '特征工程是什么？模型为什么不能直接理解原始数据', '传统机器学习'],
+  ['2026-06-29', '类别特征如何处理：Label Encoding 与 One-Hot Encoding', '代码实战'],
+  ['2026-07-02', '数据标准化和归一化有什么区别', '传统机器学习'],
+  ['2026-07-05', '线性回归：模型怎样用一条线预测连续数值', '传统机器学习'],
+  ['2026-07-08', '回归模型怎样评估：MAE、MSE、RMSE 和 R²', '模型评估'],
+  ['2026-07-11', '逻辑回归为什么叫回归，却用来做分类', '传统机器学习'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
