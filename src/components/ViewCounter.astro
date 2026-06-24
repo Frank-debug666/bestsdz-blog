@@ -1,0 +1,53 @@
+<div class="view-counter" data-view-counter aria-live="polite">
+  <span data-view-counter-total>访问量统计中</span>
+  <span data-view-counter-page>本页统计中</span>
+</div>
+
+<script is:inline>
+  (() => {
+    const root = document.querySelector('[data-view-counter]');
+    if (!root) return;
+
+    const totalEl = root.querySelector('[data-view-counter-total]');
+    const pageEl = root.querySelector('[data-view-counter-page]');
+    const path = window.location.pathname || '/';
+    const today = new Date().toISOString().slice(0, 10);
+    const storageKey = `bestsdz:viewed:${path}:${today}`;
+
+    const formatCount = (value) => {
+      const number = Number(value || 0);
+      if (!Number.isFinite(number)) return '0';
+      return new Intl.NumberFormat('zh-CN').format(number);
+    };
+
+    const render = (data) => {
+      totalEl.textContent = `总访问 ${formatCount(data.total)} 次`;
+      pageEl.textContent = `本页 ${formatCount(data.page)} 次`;
+      root.dataset.ready = 'true';
+    };
+
+    const load = async () => {
+      const hasViewedToday = window.localStorage?.getItem(storageKey) === '1';
+      const endpoint = `/api/views?path=${encodeURIComponent(path)}`;
+      const response = await fetch(endpoint, {
+        method: hasViewedToday ? 'GET' : 'POST',
+        headers: { Accept: 'application/json' },
+        keepalive: !hasViewedToday,
+      });
+
+      if (!response.ok) throw new Error('View counter request failed');
+
+      const data = await response.json();
+      if (!hasViewedToday) {
+        window.localStorage?.setItem(storageKey, '1');
+      }
+      render(data);
+    };
+
+    load().catch(() => {
+      totalEl.textContent = '访问量暂不可用';
+      pageEl.textContent = '稍后自动恢复';
+      root.dataset.ready = 'false';
+    });
+  })();
+</script>

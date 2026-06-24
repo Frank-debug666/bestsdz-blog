@@ -1,0 +1,7 @@
+name = "bestsdz-blog"
+pages_build_output_dir = "dist"
+compatibility_date = "2026-06-24"
+
+[[kv_namespaces]]
+binding = "BLOG_VIEWS"
+id = "41e8c877070047ff97f05c9a084f5962"

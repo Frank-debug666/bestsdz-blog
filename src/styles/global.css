@@ -1437,6 +1437,32 @@ body.inner-page .nav {
   text-align: right;
 }
 
+.view-counter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 30px;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.view-counter span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(20, 24, 31, 0.08);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.view-counter[data-ready='true'] span {
+  color: var(--accent-deep);
+  background: rgba(184, 132, 77, 0.1);
+}
+
 @media (max-width: 1024px) {
   .hero-scene {
     min-height: 860px;
@@ -1559,6 +1585,10 @@ body.inner-page .nav {
   .footer-meta {
     justify-items: start;
     text-align: left;
+  }
+
+  .view-counter {
+    justify-content: flex-start;
   }
 }
 

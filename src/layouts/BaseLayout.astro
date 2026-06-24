@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import { siteConfig } from '../site.config';
+import ViewCounter from '../components/ViewCounter.astro';
 
 interface Props {
   title: string;
@@ -98,6 +99,7 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
           <p>记录旅途、生活与技术笔记，把值得停留的瞬间慢慢写下来。</p>
         </div>
         <div class="footer-meta">
+          <ViewCounter />
           <span>© {new Date().getFullYear()} {siteTitle}</span>
           <span>Astro · Markdown · RSS · Cloudflare Pages</span>
         </div>
