@@ -71,9 +71,16 @@ export const contentSections: ContentSection[] = [
   {
     id: 'traditional-ml',
     title: '传统机器学习基础',
-    description: '从项目流程、数据清洗和 Pandas 实战开始，补齐进入算法之前的数据基本功。',
+    description: '从项目流程、数据清洗、特征工程和数值缩放开始，补齐进入算法之前的数据基本功。',
     level: '初级',
-    postIds: ['machine-learning-project-flow', 'data-cleaning-first-lesson', 'pandas-data-cleaning-practice'],
+    postIds: [
+      'machine-learning-project-flow',
+      'data-cleaning-first-lesson',
+      'pandas-data-cleaning-practice',
+      'what-is-feature-engineering',
+      'label-encoding-vs-one-hot',
+      'standardization-vs-normalization',
+    ],
   },
   {
     id: 'projects',
@@ -153,7 +160,14 @@ export const learningStages: LearningStage[] = [
     title: '补齐传统机器学习基础',
     description: '把数据清洗、特征准备和项目流程打牢，再进入线性回归、逻辑回归和树模型。',
     level: '初级',
-    postIds: ['machine-learning-project-flow', 'data-cleaning-first-lesson', 'pandas-data-cleaning-practice'],
+    postIds: [
+      'machine-learning-project-flow',
+      'data-cleaning-first-lesson',
+      'pandas-data-cleaning-practice',
+      'what-is-feature-engineering',
+      'label-encoding-vs-one-hot',
+      'standardization-vs-normalization',
+    ],
   },
 ];
 
@@ -231,12 +245,12 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-06-26', '特征工程是什么？模型为什么不能直接理解原始数据', '传统机器学习'],
-  ['2026-06-29', '类别特征如何处理：Label Encoding 与 One-Hot Encoding', '代码实战'],
-  ['2026-07-02', '数据标准化和归一化有什么区别', '传统机器学习'],
-  ['2026-07-05', '线性回归：模型怎样用一条线预测连续数值', '传统机器学习'],
-  ['2026-07-08', '回归模型怎样评估：MAE、MSE、RMSE 和 R²', '模型评估'],
-  ['2026-07-11', '逻辑回归为什么叫回归，却用来做分类', '传统机器学习'],
+  ['2026-06-28', '线性回归：模型怎样用一条线预测连续数值', '传统机器学习'],
+  ['2026-07-01', '回归模型怎样评估：MAE、MSE、RMSE 和 R²', '模型评估'],
+  ['2026-07-04', '逻辑回归为什么叫回归，却用来做分类', '传统机器学习'],
+  ['2026-07-07', '混淆矩阵进阶：分类模型错在哪里', '模型评估'],
+  ['2026-07-10', '决策树是什么？模型怎样一步步做判断', '传统机器学习'],
+  ['2026-07-13', '随机森林为什么比单棵树更稳', '传统机器学习'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
