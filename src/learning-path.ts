@@ -80,6 +80,9 @@ export const contentSections: ContentSection[] = [
       'what-is-feature-engineering',
       'label-encoding-vs-one-hot',
       'standardization-vs-normalization',
+      'linear-regression-basics',
+      'regression-metrics-mae-mse-rmse-r2',
+      'logistic-regression-for-classification',
     ],
   },
   {
@@ -167,6 +170,9 @@ export const learningStages: LearningStage[] = [
       'what-is-feature-engineering',
       'label-encoding-vs-one-hot',
       'standardization-vs-normalization',
+      'linear-regression-basics',
+      'regression-metrics-mae-mse-rmse-r2',
+      'logistic-regression-for-classification',
     ],
   },
 ];
@@ -245,10 +251,7 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-06-28', '线性回归：模型怎样用一条线预测连续数值', '传统机器学习'],
-  ['2026-07-01', '回归模型怎样评估：MAE、MSE、RMSE 和 R²', '模型评估'],
-  ['2026-07-04', '逻辑回归为什么叫回归，却用来做分类', '传统机器学习'],
-  ['2026-07-07', '混淆矩阵进阶：分类模型错在哪里', '模型评估'],
+  ['2026-07-07', 'KNN 分类：让距离最近的样本帮忙投票', '传统机器学习'],
   ['2026-07-10', '决策树是什么？模型怎样一步步做判断', '传统机器学习'],
   ['2026-07-13', '随机森林为什么比单棵树更稳', '传统机器学习'],
 ] as const;
