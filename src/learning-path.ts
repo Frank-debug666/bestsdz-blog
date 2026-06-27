@@ -83,6 +83,9 @@ export const contentSections: ContentSection[] = [
       'linear-regression-basics',
       'regression-metrics-mae-mse-rmse-r2',
       'logistic-regression-for-classification',
+      'knn-classification',
+      'decision-tree-basics',
+      'random-forest-basics',
     ],
   },
   {
@@ -173,6 +176,9 @@ export const learningStages: LearningStage[] = [
       'linear-regression-basics',
       'regression-metrics-mae-mse-rmse-r2',
       'logistic-regression-for-classification',
+      'knn-classification',
+      'decision-tree-basics',
+      'random-forest-basics',
     ],
   },
 ];
@@ -251,9 +257,9 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-07-07', 'KNN 分类：让距离最近的样本帮忙投票', '传统机器学习'],
-  ['2026-07-10', '决策树是什么？模型怎样一步步做判断', '传统机器学习'],
-  ['2026-07-13', '随机森林为什么比单棵树更稳', '传统机器学习'],
+  ['2026-07-16', '模型评估与交叉验证：不要只相信一次划分', '传统机器学习'],
+  ['2026-07-20', 'GridSearchCV 调参：怎样系统寻找更好的参数', '传统机器学习'],
+  ['2026-07-23', 'Pipeline 实战：把预处理和模型封装成一条流水线', '传统机器学习'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
