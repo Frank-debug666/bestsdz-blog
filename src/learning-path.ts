@@ -86,6 +86,9 @@ export const contentSections: ContentSection[] = [
       'knn-classification',
       'decision-tree-basics',
       'random-forest-basics',
+      'model-evaluation-cross-validation',
+      'gridsearchcv-parameter-tuning',
+      'sklearn-pipeline-practice',
     ],
   },
   {
@@ -179,6 +182,9 @@ export const learningStages: LearningStage[] = [
       'knn-classification',
       'decision-tree-basics',
       'random-forest-basics',
+      'model-evaluation-cross-validation',
+      'gridsearchcv-parameter-tuning',
+      'sklearn-pipeline-practice',
     ],
   },
 ];
@@ -257,9 +263,9 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-07-16', '模型评估与交叉验证：不要只相信一次划分', '传统机器学习'],
-  ['2026-07-20', 'GridSearchCV 调参：怎样系统寻找更好的参数', '传统机器学习'],
-  ['2026-07-23', 'Pipeline 实战：把预处理和模型封装成一条流水线', '传统机器学习'],
+  ['2026-07-27', '中文文本分类项目：从任务目标和数据流开始', '文本分类项目'],
+  ['2026-07-31', '中文分词与停用词：让模型先读懂文本边界', '文本分类项目'],
+  ['2026-08-03', 'TF-IDF 是什么？把中文文本变成模型能读的数字', '文本分类项目'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
