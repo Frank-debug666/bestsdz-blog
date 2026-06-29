@@ -96,7 +96,13 @@ export const contentSections: ContentSection[] = [
     title: '项目实战',
     description: '用真实项目串起数据、模型、接口和复盘。',
     level: '项目实战',
-    postIds: ['spam-sms-project-retrospective', 'rf-text-classification-system'],
+    postIds: [
+      'spam-sms-project-retrospective',
+      'rf-text-classification-system',
+      'chinese-text-classification-project-flow',
+      'chinese-tokenization-stopwords',
+      'tfidf-for-chinese-text',
+    ],
   },
   {
     id: 'llm',
@@ -161,7 +167,13 @@ export const learningStages: LearningStage[] = [
     title: '进入真实项目',
     description: '从文本分类项目开始，理解模型之外的数据、接口、前端和复盘。',
     level: '项目实战',
-    postIds: ['spam-sms-project-retrospective', 'rf-text-classification-system'],
+    postIds: [
+      'spam-sms-project-retrospective',
+      'rf-text-classification-system',
+      'chinese-text-classification-project-flow',
+      'chinese-tokenization-stopwords',
+      'tfidf-for-chinese-text',
+    ],
   },
   {
     id: 'traditional-ml',
@@ -199,7 +211,7 @@ export const futureStages: FutureStage[] = [
   },
   {
     number: '02',
-    range: '35-42',
+    range: '36-42',
     title: '文本分类项目',
     description: '重新拆解中文文本分类链路，从文本清洗一直做到模型推理和演示页面。',
     topics: ['中文分词', '词袋与 TF-IDF', '模型评估', 'Streamlit'],
@@ -263,9 +275,9 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-07-27', '中文文本分类项目：从任务目标和数据流开始', '文本分类项目'],
-  ['2026-07-31', '中文分词与停用词：让模型先读懂文本边界', '文本分类项目'],
-  ['2026-08-03', 'TF-IDF 是什么？把中文文本变成模型能读的数字', '文本分类项目'],
+  ['2026-08-10', '词袋模型与 CountVectorizer：文本也可以做特征表', '文本分类项目'],
+  ['2026-08-17', '训练中文文本分类 baseline：TF-IDF + 逻辑回归', '文本分类项目'],
+  ['2026-08-24', '文本分类模型评估：从混淆矩阵找到改进方向', '文本分类项目'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
