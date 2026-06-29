@@ -2,10 +2,11 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PostRow from '../../components/PostRow.astro';
+import { getCanonicalTags } from '../../content-taxonomy';
 
 export async function getStaticPaths() {
   const posts = await getCollection('posts', ({ data }) => !data.draft);
-  const tags = Array.from(new Set(posts.flatMap((post) => post.data.tags)));
+  const tags = Array.from(new Set(posts.flatMap((post) => getCanonicalTags(post.data.tags))));
   return tags.map((tag) => ({
     params: { tag },
     props: { tag },
@@ -13,7 +14,7 @@ export async function getStaticPaths() {
 }
 
 const { tag } = Astro.props;
-const posts = (await getCollection('posts', ({ data }) => !data.draft && data.tags.includes(tag))).sort(
+const posts = (await getCollection('posts', ({ data }) => !data.draft && getCanonicalTags(data.tags).includes(tag))).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 ---

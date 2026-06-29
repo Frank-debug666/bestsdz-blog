@@ -5,6 +5,7 @@ import GiscusComments from '../../components/GiscusComments.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { siteConfig } from '../../site.config';
 import { getPostPlacement } from '../../learning-path';
+import { getCanonicalTags, getRelatedPosts } from '../../content-taxonomy';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
@@ -24,6 +25,8 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 const currentIndex = posts.findIndex((item) => item.id === post.id);
 const newerPost = currentIndex > 0 ? posts[currentIndex - 1] : undefined;
 const olderPost = currentIndex >= 0 ? posts[currentIndex + 1] : undefined;
+const tags = getCanonicalTags(post.data.tags);
+const relatedPosts = getRelatedPosts(post, posts);
 const tocHeadings = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   year: 'numeric',
@@ -79,7 +82,7 @@ const articleSchema = {
       <h1>{post.data.title}</h1>
       <p class="description">{post.data.description}</p>
       <div class="post-tags">
-        {post.data.tags.map((tag) => <a class="tag soft" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
+        {tags.map((tag) => <a class="tag soft" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
       </div>
       {placement.stage && placement.lessonNumber && (
         <a class="article-route-link" href={`/ai-roadmap/#${placement.stage.id}`}>
@@ -117,6 +120,25 @@ const articleSchema = {
         <Content />
       </article>
     </div>
+
+    {relatedPosts.length > 0 && (
+      <section class="related-reading" aria-labelledby="related-reading-title">
+        <div>
+          <span class="eyebrow">Next</span>
+          <h2 id="related-reading-title">继续阅读</h2>
+          <p>根据这篇文章的主题和标签，挑几篇适合顺着读下去的内容。</p>
+        </div>
+        <div class="related-reading-grid">
+          {relatedPosts.map((item) => (
+            <a class="related-reading-card" href={`/posts/${item.id}/`}>
+              <span>{item.data.pubDate.toLocaleDateString('zh-CN')}</span>
+              <strong>{item.data.title}</strong>
+              <p>{item.data.description}</p>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
 
     <AuthorCard />
 

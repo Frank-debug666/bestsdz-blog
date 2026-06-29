@@ -1,0 +1,39 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getTopicPosts, topics } from '../../content-taxonomy';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout title="专题" description="围绕 AI 入门、机器学习、PyTorch、NLP 项目和项目复盘整理的专题阅读入口。">
+  <main class="shell page-shell">
+    <section class="page-hero topic-hero">
+      <span class="eyebrow">Topics</span>
+      <h1>专题阅读</h1>
+      <p>不只按时间看文章，也可以按问题和能力路线阅读。每个专题都把相关内容集中到一起，适合连续学习。</p>
+    </section>
+
+    <section class="topic-grid" aria-label="专题列表">
+      {topics.map((topic, index) => {
+        const topicPosts = getTopicPosts(topic, posts);
+        const latest = topicPosts[0];
+
+        return (
+          <article class="topic-card">
+            <span>{String(index + 1).padStart(2, '0')} · {topic.kicker}</span>
+            <h2><a href={`/topics/${topic.slug}/`}>{topic.title}</a></h2>
+            <p>{topic.description}</p>
+            <div class="topic-card-meta">
+              <strong>{topicPosts.length} 篇文章</strong>
+              {latest && <small>最新：{latest.data.title}</small>}
+            </div>
+            <a class="topic-card-link" href={`/topics/${topic.slug}/`}>进入专题</a>
+          </article>
+        );
+      })}
+    </section>
+  </main>
+</BaseLayout>

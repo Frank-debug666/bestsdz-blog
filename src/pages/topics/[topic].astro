@@ -1,0 +1,45 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostRow from '../../components/PostRow.astro';
+import { getTopicPosts, topics } from '../../content-taxonomy';
+
+export async function getStaticPaths() {
+  return topics.map((topic) => ({
+    params: { topic: topic.slug },
+    props: { topic },
+  }));
+}
+
+const { topic } = Astro.props;
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+const topicPosts = getTopicPosts(topic, posts);
+---
+
+<BaseLayout title={topic.title} description={topic.description}>
+  <main class="shell page-shell">
+    <section class="page-hero topic-detail-hero">
+      <span class="eyebrow">{topic.kicker}</span>
+      <h1>{topic.title}</h1>
+      <p>{topic.description}</p>
+      <div class="post-tags">
+        {topic.tags.map((tag) => <a class="tag soft" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
+      </div>
+    </section>
+
+    <section class="page-section">
+      <div class="section-heading">
+        <div>
+          <h2>专题文章</h2>
+          <p>这个专题下的内容按关联度和更新时间排序，适合从上往下连续阅读。</p>
+        </div>
+        <a class="button secondary" href="/topics/">全部专题</a>
+      </div>
+      <div class="post-list">
+        {topicPosts.map((post) => <PostRow post={post} />)}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

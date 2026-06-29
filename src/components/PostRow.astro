@@ -1,6 +1,7 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { getPostPlacement } from '../learning-path';
+import { getCanonicalTags } from '../content-taxonomy';
 
 interface Props {
   post: CollectionEntry<'posts'>;
@@ -8,6 +9,7 @@ interface Props {
 
 const { post } = Astro.props;
 const placement = getPostPlacement(post.id);
+const tags = getCanonicalTags(post.data.tags);
 const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: '2-digit',
@@ -42,7 +44,7 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
 
   <div class="post-row-side">
     <div class="post-tags" aria-label="标签">
-      {post.data.tags.map((tag) => <a class="tag soft" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
+      {tags.map((tag) => <a class="tag soft" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>)}
     </div>
     <a class="post-row-link" href={`/posts/${post.id}/`}>阅读全文</a>
   </div>
