@@ -102,6 +102,9 @@ export const contentSections: ContentSection[] = [
       'chinese-text-classification-project-flow',
       'chinese-tokenization-stopwords',
       'tfidf-for-chinese-text',
+      'countvectorizer-bag-of-words',
+      'tfidf-logistic-regression-baseline',
+      'text-classification-evaluation-confusion-matrix',
     ],
   },
   {
@@ -173,6 +176,9 @@ export const learningStages: LearningStage[] = [
       'chinese-text-classification-project-flow',
       'chinese-tokenization-stopwords',
       'tfidf-for-chinese-text',
+      'countvectorizer-bag-of-words',
+      'tfidf-logistic-regression-baseline',
+      'text-classification-evaluation-confusion-matrix',
     ],
   },
   {
@@ -275,9 +281,9 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-08-10', '词袋模型与 CountVectorizer：文本也可以做特征表', '文本分类项目'],
-  ['2026-08-17', '训练中文文本分类 baseline：TF-IDF + 逻辑回归', '文本分类项目'],
-  ['2026-08-24', '文本分类模型评估：从混淆矩阵找到改进方向', '文本分类项目'],
+  ['2026-09-01', '用 Pipeline 封装中文文本分类全过程', '文本分类项目'],
+  ['2026-09-08', '保存与加载文本分类模型：让预测可以复用', '文本分类项目'],
+  ['2026-09-15', 'PyTorch 自动微分是什么？理解 requires_grad 和 backward', 'PyTorch 深度学习基础'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
