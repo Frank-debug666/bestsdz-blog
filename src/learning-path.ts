@@ -66,7 +66,13 @@ export const contentSections: ContentSection[] = [
     title: 'PyTorch 入门',
     description: '把概念放进代码，独立写出一条可以运行的训练流程。',
     level: '初级',
-    postIds: ['what-is-tensor', 'pytorch-linear-layer', 'pytorch-dataloader', 'pytorch-training-flow'],
+    postIds: [
+      'what-is-tensor',
+      'pytorch-linear-layer',
+      'pytorch-dataloader',
+      'pytorch-training-flow',
+      'pytorch-autograd-requires-grad-backward',
+    ],
   },
   {
     id: 'traditional-ml',
@@ -105,6 +111,8 @@ export const contentSections: ContentSection[] = [
       'countvectorizer-bag-of-words',
       'tfidf-logistic-regression-baseline',
       'text-classification-evaluation-confusion-matrix',
+      'text-classification-pipeline-full-flow',
+      'save-load-text-classification-model',
     ],
   },
   {
@@ -162,7 +170,13 @@ export const learningStages: LearningStage[] = [
     title: '用 PyTorch 跑通训练',
     description: '认识 Tensor、网络层和数据加载，最后独立读懂完整训练循环。',
     level: '初级',
-    postIds: ['what-is-tensor', 'pytorch-linear-layer', 'pytorch-dataloader', 'pytorch-training-flow'],
+    postIds: [
+      'what-is-tensor',
+      'pytorch-linear-layer',
+      'pytorch-dataloader',
+      'pytorch-training-flow',
+      'pytorch-autograd-requires-grad-backward',
+    ],
   },
   {
     id: 'practice',
@@ -179,6 +193,8 @@ export const learningStages: LearningStage[] = [
       'countvectorizer-bag-of-words',
       'tfidf-logistic-regression-baseline',
       'text-classification-evaluation-confusion-matrix',
+      'text-classification-pipeline-full-flow',
+      'save-load-text-classification-model',
     ],
   },
   {
@@ -217,14 +233,14 @@ export const futureStages: FutureStage[] = [
   },
   {
     number: '02',
-    range: '36-42',
+    range: '36-43',
     title: '文本分类项目',
     description: '重新拆解中文文本分类链路，从文本清洗一直做到模型推理和演示页面。',
     topics: ['中文分词', '词袋与 TF-IDF', '模型评估', 'Streamlit'],
   },
   {
     number: '03',
-    range: '43-58',
+    range: '44-58',
     title: 'PyTorch 深度学习基础',
     description: '深入 Tensor、自动微分、Dataset、优化器和训练诊断，逐步具备独立训练能力。',
     topics: ['自动微分', 'Shape', 'Dataset', '优化器与 GPU'],
@@ -281,9 +297,9 @@ export const futureStages: FutureStage[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-09-01', '用 Pipeline 封装中文文本分类全过程', '文本分类项目'],
-  ['2026-09-08', '保存与加载文本分类模型：让预测可以复用', '文本分类项目'],
-  ['2026-09-15', 'PyTorch 自动微分是什么？理解 requires_grad 和 backward', 'PyTorch 深度学习基础'],
+  ['2026-09-22', 'PyTorch 计算图是什么？为什么 backward 能自动求梯度', 'PyTorch 深度学习基础'],
+  ['2026-09-29', 'Tensor 的 shape 与 view：训练时最容易出错的地方', 'PyTorch 深度学习基础'],
+  ['2026-10-06', 'Dataset 与 DataLoader 进阶：把真实数据喂给模型', 'PyTorch 深度学习基础'],
 ] as const;
 
 export function getPostPlacement(postId: string) {
