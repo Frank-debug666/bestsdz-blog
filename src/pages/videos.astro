@@ -1,0 +1,111 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { getPostPlacement } from '../learning-path';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
+);
+
+const getVideoGroup = (lessonNumber: number) => {
+  if (lessonNumber <= 8) return '零基础入门';
+  if (lessonNumber <= 18 || lessonNumber === 44) return '原理与 PyTorch';
+  if (lessonNumber <= 35) return '传统机器学习';
+  return '中文文本分类项目';
+};
+
+const videoItems = posts
+  .flatMap((post) => {
+    const body = post.body ?? '';
+    const source = body.match(/<source\s+src="\/videos\/([^"]+\.mp4)"/);
+    if (!source) return [];
+
+    const poster = body.match(/poster="([^"]+)"/);
+    const label = body.match(/aria-label="([^"]+)"/);
+    const lesson = source[1].match(/lesson-(\d+)/);
+    const lessonNumber = lesson ? Number(lesson[1]) : 0;
+    const placement = getPostPlacement(post.id);
+
+    return [
+      {
+        post,
+        file: source[1],
+        poster: poster?.[1] ?? post.data.cover ?? '/images/hero-qingdao-harbor.jpg',
+        label: label?.[1] ?? post.data.title,
+        lessonNumber,
+        group: getVideoGroup(lessonNumber),
+        placement,
+      },
+    ];
+  })
+  .sort((a, b) => a.lessonNumber - b.lessonNumber);
+
+const groups = Array.from(new Set(videoItems.map((item) => item.group)));
+const latestVideo = [...videoItems].sort(
+  (a, b) => b.post.data.pubDate.valueOf() - a.post.data.pubDate.valueOf(),
+)[0];
+---
+
+<BaseLayout title="视频中心" description="按学习路线整理的 AI 技术博客配套视频。">
+  <main class="shell page-shell video-page">
+    <section class="video-hero">
+      <div>
+        <span class="eyebrow">Video Library</span>
+        <h1>视频中心</h1>
+        <p>每个视频都对应一篇文章。先用视频抓住主线，再回到正文看代码、例子和复盘。</p>
+        <div class="start-actions">
+          <a class="button primary" href="/start/">从新手入口开始</a>
+          <a class="button secondary" href="/ai-roadmap/">按路线学习</a>
+        </div>
+      </div>
+      {latestVideo && (
+        <a class="featured-video" href={`/posts/${latestVideo.post.id}/`} aria-label={`观看 ${latestVideo.post.data.title}`}>
+          <img src={latestVideo.poster} alt={latestVideo.post.data.title} width="1280" height="720" />
+          <span>最新视频</span>
+          <strong>{latestVideo.post.data.title}</strong>
+        </a>
+      )}
+    </section>
+
+    <nav class="video-filter" aria-label="视频分类">
+      {groups.map((group) => <a href={`#${encodeURIComponent(group)}`}>{group}</a>)}
+    </nav>
+
+    <section class="video-library" aria-label="全部视频">
+      {groups.map((group) => (
+        <section id={encodeURIComponent(group)} class="video-group">
+          <div class="section-heading compact">
+            <div>
+              <h2>{group}</h2>
+              <p>{videoItems.filter((item) => item.group === group).length} 个视频，按课程顺序排列。</p>
+            </div>
+          </div>
+          <div class="video-grid">
+            {videoItems
+              .filter((item) => item.group === group)
+              .map((item) => (
+                <article class="video-card">
+                  <a class="video-thumb" href={`/posts/${item.post.id}/`}>
+                    <img src={item.poster} alt={item.post.data.title} width="1280" height="720" loading="lazy" />
+                    <span aria-hidden="true">播放</span>
+                  </a>
+                  <div class="video-card-body">
+                    <div class="video-meta">
+                      <span>第 {String(item.lessonNumber).padStart(2, '0')} 课</span>
+                      {item.placement.stage && <span>{item.placement.stage.title}</span>}
+                    </div>
+                    <h3><a href={`/posts/${item.post.id}/`}>{item.post.data.title}</a></h3>
+                    <p>{item.post.data.description}</p>
+                    <div class="video-actions">
+                      <a href={`/posts/${item.post.id}/`}>打开文章</a>
+                      <a href={`/videos/${item.file}`}>单独播放</a>
+                    </div>
+                  </div>
+                </article>
+              ))}
+          </div>
+        </section>
+      ))}
+    </section>
+  </main>
+</BaseLayout>

@@ -1,0 +1,147 @@
+---
+import { getCollection } from 'astro:content';
+import type { CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { contentSections, futureStages, learningStages } from '../learning-path';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
+  (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
+);
+const isPost = (post: CollectionEntry<'posts'> | undefined): post is CollectionEntry<'posts'> => post !== undefined;
+const postById = new Map(posts.map((post) => [post.id, post]));
+const videoCount = posts.filter((post) => post.body?.includes('/videos/')).length;
+const publishedLessonCount = contentSections.reduce(
+  (sum, section) => sum + section.postIds.filter((id) => postById.has(id)).length,
+  0,
+);
+
+const tracks = [
+  {
+    label: 'Path 01',
+    title: '零基础从这里开始',
+    description: '适合第一次系统学 AI 的读者，先建立地图，再理解数据、任务和评价指标。',
+    stageIds: ['start'],
+    href: '/posts/what-is-ai/',
+  },
+  {
+    label: 'Path 02',
+    title: '模型原理与 PyTorch',
+    description: '适合已经知道监督学习、分类回归的人，把神经网络、损失函数和训练流程串起来。',
+    stageIds: ['principles', 'pytorch'],
+    href: '/posts/what-is-neural-network/',
+  },
+  {
+    label: 'Path 03',
+    title: '项目实战与工程化',
+    description: '适合想把知识落到项目里的人，从数据清洗、特征工程到中文文本分类项目。',
+    stageIds: ['traditional-ml', 'practice'],
+    href: '/posts/machine-learning-project-flow/',
+  },
+];
+---
+
+<BaseLayout title="新手从这里开始" description="把 AI 技术博客整理成一条可以跟着走的学习路径。">
+  <main class="shell page-shell start-page">
+    <section class="start-hero">
+      <span class="eyebrow">Start Here</span>
+      <h1>新手从这里开始</h1>
+      <p>
+        这个博客不只是文章列表，而是一条从 AI 基础、机器学习、深度学习、PyTorch 到项目实战的学习路线。
+        先选一条路径，再顺着每篇文章里的“下一步”读下去。
+      </p>
+      <div class="start-actions">
+        <a class="button primary" href="/posts/what-is-ai/">读第一课</a>
+        <a class="button secondary" href="/ai-roadmap/">查看完整路线</a>
+        <a class="button secondary" href="/videos/">看视频版</a>
+      </div>
+      <dl class="start-stats" aria-label="站点内容概览">
+        <div>
+          <dt>{publishedLessonCount}</dt>
+          <dd>篇路线文章</dd>
+        </div>
+        <div>
+          <dt>{videoCount}</dt>
+          <dd>节配套视频</dd>
+        </div>
+        <div>
+          <dt>{learningStages.length}</dt>
+          <dd>个已发布阶段</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section class="start-tracks" aria-labelledby="start-tracks-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="start-tracks-title">三条阅读路径</h2>
+          <p>不同基础的人不需要从同一个页面开始。先按目标选路径，后面再补缺口。</p>
+        </div>
+      </div>
+
+      <div class="track-grid">
+        {tracks.map((track) => {
+          const stages = learningStages.filter((stage) => track.stageIds.includes(stage.id));
+          const trackPosts = stages.flatMap((stage) => stage.postIds).map((id) => postById.get(id)).filter(isPost);
+
+          return (
+            <article class="track-card">
+              <span>{track.label}</span>
+              <h3>{track.title}</h3>
+              <p>{track.description}</p>
+              <ol class="mini-lesson-list">
+                {trackPosts.slice(0, 5).map((post) => (
+                  <li>
+                    <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                  </li>
+                ))}
+              </ol>
+              <a class="text-link" href={track.href}>进入这条路径</a>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+
+    <section class="start-system" aria-labelledby="start-system-title">
+      <div>
+        <span class="eyebrow">System</span>
+        <h2 id="start-system-title">怎么用这个站学习</h2>
+      </div>
+      <div class="system-steps">
+        <article>
+          <strong>1</strong>
+          <h3>先读路线，不急着收藏全部文章</h3>
+          <p>路线页负责告诉你知识之间的顺序，避免一上来就被术语淹没。</p>
+        </article>
+        <article>
+          <strong>2</strong>
+          <h3>每篇文章先看视频，再读正文</h3>
+          <p>视频帮你建立第一印象，正文负责补细节、代码和容易混淆的点。</p>
+        </article>
+        <article>
+          <strong>3</strong>
+          <h3>遇到陌生词就用搜索页回查</h3>
+          <p>搜索页按标题、摘要和标签索引内容，适合快速找概念、工具和项目记录。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="start-upcoming" aria-labelledby="start-upcoming-title">
+      <div class="section-heading">
+        <div>
+          <h2 id="start-upcoming-title">后续会更新什么</h2>
+          <p>已经发布的内容负责打基础，后面会逐步进入大模型、RAG 和部署优化。</p>
+        </div>
+      </div>
+      <div class="future-grid compact">
+        {futureStages.slice(2, 6).map((stage) => (
+          <article>
+            <span>{stage.range}</span>
+            <h3>{stage.title}</h3>
+            <p>{stage.description}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>

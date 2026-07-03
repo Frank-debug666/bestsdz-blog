@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="搜索" description="搜索 AI 技术博客里的文章、概念、项目和学习笔记。">
+  <main class="shell page-shell search-page">
+    <section class="search-hero">
+      <span class="eyebrow">Search</span>
+      <h1>搜索文章和概念</h1>
+      <p>输入 “PyTorch”“损失函数”“文本分类”“特征工程” 这类关键词，快速找到对应文章。</p>
+    </section>
+
+    <section class="global-search-panel" role="search">
+      <label for="global-search-input">搜索关键词</label>
+      <div class="global-search-box">
+        <input id="global-search-input" type="search" placeholder="搜索概念、标签、项目..." autocomplete="off" />
+        <span id="global-search-count" aria-live="polite">正在加载索引</span>
+      </div>
+      <div class="quick-searches" aria-label="常用搜索">
+        {['AI 入门', 'PyTorch', '损失函数', '数据清洗', '文本分类', 'RAG'].map((keyword) => (
+          <button type="button" data-keyword={keyword}>{keyword}</button>
+        ))}
+      </div>
+    </section>
+
+    <section class="search-results-section" aria-labelledby="search-results-title">
+      <h2 id="search-results-title">搜索结果</h2>
+      <div id="global-search-results" class="global-search-results"></div>
+      <p id="global-search-empty" class="empty-search" hidden>没有找到匹配内容，换个关键词试试。</p>
+    </section>
+  </main>
+
+  <script is:inline>
+    const input = document.querySelector('#global-search-input');
+    const count = document.querySelector('#global-search-count');
+    const results = document.querySelector('#global-search-results');
+    const empty = document.querySelector('#global-search-empty');
+    const quickButtons = Array.from(document.querySelectorAll('[data-keyword]'));
+    let posts = [];
+
+    const formatDate = (date) =>
+      new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(date));
+
+    const render = () => {
+      if (!input || !count || !results || !empty) return;
+
+      const query = input.value.trim().toLowerCase();
+      const matched = query
+        ? posts.filter((post) => post.searchText.includes(query))
+        : posts.slice(0, 12);
+
+      count.textContent = query ? `${matched.length} 条结果` : `${posts.length} 篇文章`;
+      empty.hidden = matched.length > 0;
+      results.innerHTML = matched
+        .slice(0, 36)
+        .map(
+          (post) => `
+            <article class="global-search-result">
+              <time datetime="${post.date}">${formatDate(post.date)}</time>
+              <h3><a href="${post.url}">${post.title}</a></h3>
+              <p>${post.description}</p>
+              <div>${post.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
+            </article>
+          `,
+        )
+        .join('');
+    };
+
+    fetch('/search.json')
+      .then((response) => response.json())
+      .then((data) => {
+        posts = data.posts ?? [];
+        render();
+      })
+      .catch(() => {
+        if (count) count.textContent = '索引加载失败';
+      });
+
+    input?.addEventListener('input', render);
+    quickButtons.forEach((button) => {
+      button.addEventListener('click', () => {
+        if (!input) return;
+        input.value = button.dataset.keyword || '';
+        input.focus();
+        render();
+      });
+    });
+  </script>
+</BaseLayout>

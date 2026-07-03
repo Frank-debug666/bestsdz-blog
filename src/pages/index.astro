@@ -2,17 +2,41 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostRow from '../components/PostRow.astro';
+import { contentSections, learningStages } from '../learning-path';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
 
 const [featured, ...recent] = posts;
+const videoCount = posts.filter((post) => post.body?.includes('/videos/')).length;
+const publishedLessonCount = contentSections.reduce((sum, section) => sum + section.postIds.length, 0);
 const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: '2-digit',
   day: '2-digit',
 });
+
+const productPaths = [
+  {
+    number: '01',
+    title: '零基础入门',
+    description: '从什么是 AI、机器学习任务、数据集和评价指标开始。',
+    href: '/start/',
+  },
+  {
+    number: '02',
+    title: '模型原理',
+    description: '理解神经网络、激活函数、损失函数和梯度下降。',
+    href: '/ai-roadmap/#principles',
+  },
+  {
+    number: '03',
+    title: '项目实战',
+    description: '进入数据清洗、传统机器学习和中文文本分类项目。',
+    href: '/ai-roadmap/#traditional-ml',
+  },
+];
 ---
 
 <BaseLayout title="去你想去的地方">
@@ -31,8 +55,8 @@ const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
           <h1><span>去你想去</span><span>的地方</span></h1>
           <p>记录所思所想、旅行见闻、生活点滴与技术笔记。</p>
           <div class="hero-actions">
-            <a class="button light" href="/posts/">阅读文章</a>
-            <a class="button ghost" href="/about/">关于这个站</a>
+            <a class="button light" href="/start/">新手从这里开始</a>
+            <a class="button ghost" href="/videos/">视频中心</a>
           </div>
         </div>
 
@@ -60,6 +84,46 @@ const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
             </div>
           </article>
         )}
+      </div>
+    </section>
+
+    <section class="shell product-overview" aria-labelledby="product-overview-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Learning System</span>
+          <h2 id="product-overview-title">把 AI 学习做成一条路线</h2>
+          <p>文章、视频、路线和搜索放在同一套系统里，适合从零基础一路补到项目实战。</p>
+        </div>
+        <a class="button secondary" href="/search/">搜索内容</a>
+      </div>
+
+      <dl class="metric-strip" aria-label="内容规模">
+        <div>
+          <dt>{posts.length}</dt>
+          <dd>篇公开文章</dd>
+        </div>
+        <div>
+          <dt>{videoCount}</dt>
+          <dd>节配套视频</dd>
+        </div>
+        <div>
+          <dt>{learningStages.length}</dt>
+          <dd>个学习阶段</dd>
+        </div>
+        <div>
+          <dt>{publishedLessonCount}</dt>
+          <dd>篇路线内容</dd>
+        </div>
+      </dl>
+
+      <div class="product-path-grid">
+        {productPaths.map((path) => (
+          <a class="product-path-card" href={path.href}>
+            <span>{path.number}</span>
+            <h3>{path.title}</h3>
+            <p>{path.description}</p>
+          </a>
+        ))}
       </div>
     </section>
 
