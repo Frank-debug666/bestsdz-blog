@@ -7,7 +7,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     <section class="search-hero">
       <span class="eyebrow">Search</span>
       <h1>搜索文章和概念</h1>
-      <p>输入 “PyTorch”“损失函数”“文本分类”“特征工程” 这类关键词，快速找到对应文章。</p>
+      <p>输入 “PyTorch”“损失函数”“文本分类”“特征工程” 这类关键词，快速找到对应文章和概念解释。</p>
     </section>
 
     <section class="global-search-panel" role="search">
@@ -17,7 +17,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
         <span id="global-search-count" aria-live="polite">正在加载索引</span>
       </div>
       <div class="quick-searches" aria-label="常用搜索">
-        {['AI 入门', 'PyTorch', '损失函数', '数据清洗', '文本分类', 'RAG'].map((keyword) => (
+        {['AI 入门', 'PyTorch', '损失函数', '数据清洗', '文本分类', 'Tensor'].map((keyword) => (
           <button type="button" data-keyword={keyword}>{keyword}</button>
         ))}
       </div>
@@ -36,7 +36,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     const results = document.querySelector('#global-search-results');
     const empty = document.querySelector('#global-search-empty');
     const quickButtons = Array.from(document.querySelectorAll('[data-keyword]'));
-    let posts = [];
+    let items = [];
 
     const formatDate = (date) =>
       new Intl.DateTimeFormat('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(date));
@@ -45,21 +45,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
       if (!input || !count || !results || !empty) return;
 
       const query = input.value.trim().toLowerCase();
-      const matched = query
-        ? posts.filter((post) => post.searchText.includes(query))
-        : posts.slice(0, 12);
+      const matched = query ? items.filter((item) => item.searchText.includes(query)) : items.slice(0, 12);
 
-      count.textContent = query ? `${matched.length} 条结果` : `${posts.length} 篇文章`;
+      count.textContent = query ? `${matched.length} 条结果` : `${items.length} 条内容`;
       empty.hidden = matched.length > 0;
       results.innerHTML = matched
         .slice(0, 36)
         .map(
-          (post) => `
+          (item) => `
             <article class="global-search-result">
-              <time datetime="${post.date}">${formatDate(post.date)}</time>
-              <h3><a href="${post.url}">${post.title}</a></h3>
-              <p>${post.description}</p>
-              <div>${post.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
+              <time ${item.date ? `datetime="${item.date}"` : ''}>${item.type || '文章'}${item.date ? ` · ${formatDate(item.date)}` : ''}</time>
+              <h3><a href="${item.url}">${item.title}</a></h3>
+              <p>${item.description}</p>
+              <div>${item.tags.map((tag) => `<span>${tag}</span>`).join('')}</div>
             </article>
           `,
         )
@@ -69,7 +67,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     fetch('/search.json')
       .then((response) => response.json())
       .then((data) => {
-        posts = data.posts ?? [];
+        items = data.items ?? data.posts ?? [];
         render();
       })
       .catch(() => {

@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import { getCanonicalTags, topics } from '../content-taxonomy';
+import { concepts } from '../concepts';
 
 const site = 'https://bestsdz.xyz';
 
@@ -17,10 +18,15 @@ export const GET: APIRoute = async () => {
   const urls = [
     absoluteUrl('/'),
     absoluteUrl('/ai-roadmap/'),
+    absoluteUrl('/start/'),
+    absoluteUrl('/videos/'),
+    absoluteUrl('/search/'),
+    absoluteUrl('/glossary/'),
     absoluteUrl('/topics/'),
     absoluteUrl('/posts/'),
     absoluteUrl('/about/'),
     ...topics.map((topic) => absoluteUrl(`/topics/${topic.slug}/`)),
+    ...concepts.map((concept) => absoluteUrl(`/glossary/${concept.slug}/`)),
     ...posts
       .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
       .map((post) => absoluteUrl(`/posts/${post.id}/`)),

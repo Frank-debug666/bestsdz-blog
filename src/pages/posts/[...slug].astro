@@ -7,6 +7,8 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import { siteConfig } from '../../site.config';
 import { getPostPlacement } from '../../learning-path';
 import { getCanonicalTags, getRelatedPosts } from '../../content-taxonomy';
+import { buildCourseGuide } from '../../course-guide';
+import { getConceptsForPost } from '../../concepts';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
@@ -42,6 +44,17 @@ const stagePosts = placement.stage ? placement.stage.postIds.map((id) => postByI
 const stageIndex = stagePosts.findIndex((item) => item.id === post.id);
 const previousLesson = stageIndex > 0 ? stagePosts[stageIndex - 1] : undefined;
 const nextLesson = stageIndex >= 0 ? stagePosts[stageIndex + 1] : undefined;
+const postConcepts = getConceptsForPost(post.id, tags, post.data.title, 5);
+const courseGuide = buildCourseGuide({
+  title: post.data.title,
+  description: post.data.description,
+  tags,
+  stageTitle: placement.stage?.title,
+  sectionTitle: placement.section?.title,
+  previousTitle: previousLesson?.data.title,
+  nextTitle: nextLesson?.data.title,
+  concepts: postConcepts,
+});
 const siteUrl = Astro.site ?? new URL(siteConfig.url);
 const articleUrl = new URL(`/posts/${post.id}/`, siteUrl).toString();
 const articleImage = post.data.cover ?? '/images/hero-qingdao-harbor.jpg';
@@ -68,6 +81,15 @@ const articleSchema = {
     },
   },
   mainEntityOfPage: articleUrl,
+  learningResourceType: 'Lesson',
+  educationalLevel: placement.stage?.level ?? placement.section?.level,
+  teaches: courseGuide.outcomes,
+  about: postConcepts.map((concept) => ({
+    '@type': 'DefinedTerm',
+    name: concept.title,
+    description: concept.summary,
+    url: new URL(`/glossary/${concept.slug}/`, siteUrl).toString(),
+  })),
 };
 ---
 
@@ -141,6 +163,56 @@ const articleSchema = {
         </div>
       </section>
     )}
+
+    <section class="course-guide" aria-labelledby="course-guide-title">
+      <div class="course-guide-heading">
+        <span class="eyebrow">Lesson Guide</span>
+        <h2 id="course-guide-title">这一课怎么学</h2>
+        <p>先看目标，再带着问题读正文。读完后用练习确认自己真的理解了。</p>
+      </div>
+      <div class="course-guide-grid">
+        <article class="course-guide-card">
+          <h3>本节你会学到</h3>
+          <ul>
+            {courseGuide.outcomes.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+        <article class="course-guide-card">
+          <h3>前置知识</h3>
+          <ul>
+            {courseGuide.prerequisites.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+        <article class="course-guide-card wide">
+          <h3>核心概念</h3>
+          {courseGuide.concepts.length > 0 ? (
+            <div class="concept-chip-list">
+              {courseGuide.concepts.map((concept) => (
+                <a href={`/glossary/${concept.slug}/`}>
+                  <strong>{concept.title}</strong>
+                  <span>{concept.summary}</span>
+                </a>
+              ))}
+            </div>
+          ) : (
+            <p>这篇文章偏记录型内容，可以重点关注正文里的方法和复盘。</p>
+          )}
+        </article>
+        <article class="course-guide-card">
+          <h3>常见误区</h3>
+          <ul>
+            {courseGuide.pitfalls.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+        <article class="course-guide-card">
+          <h3>课后练习</h3>
+          <ul>
+            {courseGuide.exercises.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+      </div>
+      <p class="course-next-note">{courseGuide.nextSuggestion}</p>
+    </section>
 
     <div class="article-layout">
       {tocHeadings.length > 0 && (

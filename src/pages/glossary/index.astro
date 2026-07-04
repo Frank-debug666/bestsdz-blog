@@ -1,0 +1,61 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { concepts } from '../../concepts';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+const postById = new Map(posts.map((post) => [post.id, post]));
+const categories = Array.from(new Set(concepts.map((concept) => concept.category)));
+---
+
+<BaseLayout title="AI 概念库" description="用简短、可搜索、可继续阅读的方式解释 AI、机器学习、深度学习和 PyTorch 核心概念。">
+  <main class="shell page-shell glossary-page">
+    <section class="glossary-hero">
+      <span class="eyebrow">Glossary</span>
+      <h1>AI 概念库</h1>
+      <p>把文章里反复出现的关键词拆出来，用更短的解释先说清楚，再给出对应文章继续读。</p>
+      <div class="start-actions">
+        <a class="button primary" href="/search/">搜索概念</a>
+        <a class="button secondary" href="/start/">新手入口</a>
+      </div>
+    </section>
+
+    <nav class="video-filter" aria-label="概念分类">
+      {categories.map((category) => <a href={`#${encodeURIComponent(category)}`}>{category}</a>)}
+    </nav>
+
+    <section class="glossary-groups" aria-label="概念列表">
+      {categories.map((category) => (
+        <section id={encodeURIComponent(category)} class="glossary-group">
+          <div class="section-heading compact">
+            <div>
+              <h2>{category}</h2>
+              <p>{concepts.filter((concept) => concept.category === category).length} 个概念。</p>
+            </div>
+          </div>
+          <div class="glossary-grid">
+            {concepts
+              .filter((concept) => concept.category === category)
+              .map((concept) => {
+                const firstPost = concept.relatedPostIds.map((id) => postById.get(id)).find(Boolean);
+                return (
+                  <article class="glossary-card">
+                    <div class="glossary-card-meta">
+                      <span>{concept.level}</span>
+                      <span>{concept.category}</span>
+                    </div>
+                    <h3><a href={`/glossary/${concept.slug}/`}>{concept.title}</a></h3>
+                    <p>{concept.summary}</p>
+                    <div class="glossary-card-actions">
+                      <a href={`/glossary/${concept.slug}/`}>看解释</a>
+                      {firstPost && <a href={`/posts/${firstPost.id}/`}>读文章</a>}
+                    </div>
+                  </article>
+                );
+              })}
+          </div>
+        </section>
+      ))}
+    </section>
+  </main>
+</BaseLayout>
