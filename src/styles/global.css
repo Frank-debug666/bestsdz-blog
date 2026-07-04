@@ -1554,8 +1554,8 @@ body.inner-page .nav {
 
 .video-hero {
   max-width: none;
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 470px);
-  align-items: end;
+  grid-template-columns: minmax(280px, 0.8fr) minmax(560px, 1.2fr);
+  align-items: center;
 }
 
 .start-hero h1,
@@ -1681,7 +1681,6 @@ body.inner-page .nav {
   position: relative;
   display: grid;
   gap: 8px;
-  overflow: hidden;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1689,15 +1688,31 @@ body.inner-page .nav {
   box-shadow: 0 18px 52px rgba(17, 22, 29, 0.1);
 }
 
+.featured-video-media,
+.video-thumb {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  border-radius: 6px;
+  background: #17191d;
+}
+
 .featured-video img,
 .video-thumb img {
   width: 100%;
-  aspect-ratio: 16 / 9;
+  height: 100%;
   object-fit: cover;
-  border-radius: 6px;
+  object-position: center;
+  transition: transform 220ms ease;
 }
 
-.featured-video span {
+.featured-video:hover img,
+.video-card:hover .video-thumb img {
+  transform: scale(1.025);
+}
+
+.featured-video-label {
   color: var(--accent-deep);
   font-size: 0.8rem;
   font-weight: 900;
@@ -1750,21 +1765,19 @@ body.inner-page .nav {
 
 .video-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  grid-template-columns: 1fr;
+  gap: 14px;
 }
 
 .video-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 340px) minmax(0, 1fr);
+  align-items: stretch;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 250, 244, 0.78);
   box-shadow: 0 14px 40px rgba(17, 22, 29, 0.06);
-}
-
-.video-thumb {
-  position: relative;
-  display: block;
 }
 
 .video-thumb span {
@@ -1783,6 +1796,7 @@ body.inner-page .nav {
 .video-card-body {
   display: grid;
   gap: 10px;
+  align-content: center;
   padding: 16px;
 }
 
@@ -1795,7 +1809,7 @@ body.inner-page .nav {
 }
 
 .video-card h3 {
-  font-size: 1.1rem;
+  font-size: clamp(1.12rem, 2vw, 1.45rem);
   line-height: 1.25;
 }
 
@@ -2363,9 +2377,12 @@ body.inner-page .nav {
   .track-grid,
   .system-steps,
   .future-grid.compact,
-  .video-grid,
   .glossary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .video-grid {
+    grid-template-columns: 1fr;
   }
 
   .article-toc {
@@ -2454,6 +2471,10 @@ body.inner-page .nav {
 
   .course-guide-card.wide {
     grid-column: auto;
+  }
+
+  .video-card {
+    grid-template-columns: 1fr;
   }
 
   .global-search-box {

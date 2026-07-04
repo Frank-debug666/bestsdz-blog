@@ -60,8 +60,10 @@ const latestVideo = [...videoItems].sort(
       </div>
       {latestVideo && (
         <a class="featured-video" href={`/posts/${latestVideo.post.id}/`} aria-label={`观看 ${latestVideo.post.data.title}`}>
-          <img src={latestVideo.poster} alt={latestVideo.post.data.title} width="1280" height="720" />
-          <span>最新视频</span>
+          <span class="featured-video-media">
+            <img src={latestVideo.poster} alt={latestVideo.post.data.title} width="1280" height="720" />
+          </span>
+          <span class="featured-video-label">最新视频</span>
           <strong>{latestVideo.post.data.title}</strong>
         </a>
       )}
