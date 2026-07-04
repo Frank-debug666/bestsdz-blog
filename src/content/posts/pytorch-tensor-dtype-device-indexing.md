@@ -1,6 +1,8 @@
 ---
 title: Tensor 进阶：dtype、device、索引和切片
 description: 补齐 PyTorch 实际训练中最常用的 Tensor 操作：数据类型、设备迁移、索引、切片和布尔筛选。
+cover: /images/covers/pytorch-tensor-dtype-device-indexing-video.jpg
+coverAlt: PyTorch Tensor 进阶课程视频封面，展示 dtype、device、索引、切片和布尔筛选。
 pubDate: 2026-07-04T11:00:00+08:00
 tags: [PyTorch, Tensor, dtype, device, 深度学习]
 ---
@@ -16,6 +18,14 @@ tags: [PyTorch, Tensor, dtype, device, 深度学习]
 - 为什么分类标签要是 `long` 类型。
 
 这一课补齐 Tensor 的几个高频操作。
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/pytorch-tensor-dtype-device-indexing-video.jpg" aria-label="第 43 课：Tensor 进阶操作">
+    <source src="/videos/lesson-43a-pytorch-tensor-dtype-device-indexing.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 43 课视频 - Tensor 进阶：dtype、device、索引和切片</figcaption>
+</figure>
 
 ## dtype 是什么
 

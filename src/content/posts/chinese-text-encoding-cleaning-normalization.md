@@ -1,6 +1,8 @@
 ---
 title: 计算机怎样读取中文文本：编码、清洗与标准化
 description: 进入中文文本分类前，先理解文本文件编码、乱码、空白符、标点、大小写和基础清洗规则。
+cover: /images/covers/chinese-text-encoding-cleaning-normalization-video.jpg
+coverAlt: 中文文本读取与清洗课程视频封面，展示编码、清洗、标准化到分词特征的处理顺序。
 pubDate: 2026-07-04T10:20:00+08:00
 tags: [NLP, 文本分类, 中文文本, 数据清洗, 编码]
 ---
@@ -10,6 +12,14 @@ tags: [NLP, 文本分类, 中文文本, 数据清洗, 编码]
 如果一开始就乱码、混入奇怪符号、空白不统一，后面的分词、TF-IDF 和模型训练都会受到影响。
 
 这一课先解决一个基础问题：**中文文本进入模型之前，应该怎样读取、清洗和标准化**。
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/chinese-text-encoding-cleaning-normalization-video.jpg" aria-label="第 35 课：中文文本读取与清洗">
+    <source src="/videos/lesson-35a-chinese-text-encoding-cleaning-normalization.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 35 课视频 - 计算机怎样读取中文文本：编码、清洗与标准化</figcaption>
+</figure>
 
 ## 文本在计算机里是什么
 

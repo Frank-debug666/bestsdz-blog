@@ -1,6 +1,8 @@
 ---
 title: 用 Streamlit 给文本分类模型做一个演示页面
 description: 把已经训练好的文本分类 Pipeline 接到 Streamlit 页面里，完成输入文本、预测类别和查看置信度的交互演示。
+cover: /images/covers/streamlit-text-classification-demo-video.jpg
+coverAlt: Streamlit 文本分类演示页面课程视频封面，展示模型加载、文本输入和预测结果展示流程。
 pubDate: 2026-07-04T10:40:00+08:00
 tags: [机器学习, NLP, Streamlit, 文本分类, 模型部署]
 ---
@@ -10,6 +12,14 @@ tags: [机器学习, NLP, Streamlit, 文本分类, 模型部署]
 这一课不做正式部署，只做一个本地交互页面：输入一段中文文本，点击按钮，页面显示模型预测结果。
 
 我们用 Streamlit，是因为它适合快速把 Python 脚本变成演示页面。
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/streamlit-text-classification-demo-video.jpg" aria-label="第 42 课：Streamlit 文本分类演示页面">
+    <source src="/videos/lesson-42a-streamlit-text-classification-demo.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 42 课视频 - 用 Streamlit 给文本分类模型做一个演示页面</figcaption>
+</figure>
 
 ## 本课目标
 

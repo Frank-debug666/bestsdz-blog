@@ -1,6 +1,8 @@
 ---
 title: 集成学习入门：Bagging、Boosting 到底在组合什么
 description: 从多个模型共同决策的直觉出发，理解 Bagging、Boosting、随机森林和梯度提升模型的基本区别。
+cover: /images/covers/ensemble-learning-bagging-boosting-video.jpg
+coverAlt: 集成学习课程视频封面，展示多个模型共同投票和接力修正的两种组合思路。
 pubDate: 2026-07-04T10:00:00+08:00
 tags: [机器学习, 集成学习, Bagging, Boosting, scikit-learn]
 ---
@@ -10,6 +12,14 @@ tags: [机器学习, 集成学习, Bagging, Boosting, scikit-learn]
 这背后有一个更大的概念：**集成学习**。
 
 一句话理解集成学习：**不只依赖一个模型，而是把多个模型的判断组合起来，让整体结果更稳或更强**。
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/ensemble-learning-bagging-boosting-video.jpg" aria-label="第 33 课：集成学习入门">
+    <source src="/videos/lesson-33a-ensemble-learning-bagging-boosting.mp4" type="video/mp4" />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 33 课视频 - 集成学习入门：Bagging、Boosting 到底在组合什么</figcaption>
+</figure>
 
 ## 为什么要组合多个模型
 
