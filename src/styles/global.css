@@ -825,6 +825,26 @@ body.inner-page .nav {
   font-size: 0.78rem;
 }
 
+.future-stage-outcome {
+  grid-column: 2 / -1;
+  margin-top: 8px;
+}
+
+.future-stage-directory article > em,
+.stage-status-line span {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(184, 132, 77, 0.12);
+  color: var(--accent-deep);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
 .learning-stages {
   border-top: 1px solid var(--line);
 }
@@ -872,6 +892,35 @@ body.inner-page .nav {
   color: var(--ink-soft);
 }
 
+.stage-contract {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(74, 128, 146, 0.18);
+  border-radius: 8px;
+  background: rgba(239, 246, 244, 0.58);
+}
+
+.stage-contract p {
+  max-width: 860px;
+  margin: 0;
+}
+
+.stage-contract strong,
+.learning-outcome strong,
+.learning-mode strong,
+.future-stage-outcome b {
+  color: var(--ink);
+}
+
+.stage-status-line {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
 .lesson-list.compact {
   margin-left: 90px;
 }
@@ -915,6 +964,102 @@ body.inner-page .nav {
   grid-column: 2 / -1;
   margin-top: 5px;
   color: var(--ink-soft);
+}
+
+.graduation-grid,
+.route-preview-grid,
+.summary-system {
+  display: grid;
+  gap: 14px;
+}
+
+.graduation-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.route-preview-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.graduation-grid article,
+.route-preview-panel,
+.summary-stage-card {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 244, 0.76);
+  box-shadow: 0 14px 40px rgba(17, 22, 29, 0.06);
+}
+
+.route-preview-panel {
+  align-content: start;
+}
+
+.route-preview-panel a {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+
+.route-preview-panel a:first-of-type {
+  border-top: 0;
+}
+
+.route-preview-panel a em {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.graduation-grid article > span,
+.route-preview-panel a span,
+.summary-stage-card > div > span {
+  color: var(--accent-deep);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.graduation-grid article h3,
+.route-preview-panel h3,
+.summary-stage-card h2 {
+  font-size: 1.18rem;
+  line-height: 1.25;
+}
+
+.graduation-grid article p,
+.route-preview-panel p,
+.summary-stage-card p,
+.summary-stage-card li {
+  color: var(--ink-soft);
+}
+
+.summary-stage-card {
+  grid-template-columns: minmax(220px, 0.72fr) minmax(0, 1fr);
+  gap: 22px;
+}
+
+.summary-stage-body {
+  display: grid;
+  gap: 10px;
+}
+
+.summary-stage-body h3 {
+  font-size: 1.02rem;
+}
+
+.summary-stage-body ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.roadmap-review-note {
+  margin-top: 30px;
 }
 
 .section-jump-nav {
@@ -1818,6 +1963,17 @@ body.inner-page .nav {
   font-size: 0.92rem;
 }
 
+.video-stage-note {
+  padding: 10px 12px;
+  border: 1px solid rgba(74, 128, 146, 0.16);
+  border-radius: 8px;
+  background: rgba(239, 246, 244, 0.54);
+}
+
+.video-stage-note strong {
+  color: var(--ink);
+}
+
 .video-actions a {
   color: var(--accent-deep);
   font-size: 0.9rem;
@@ -2000,6 +2156,13 @@ body.inner-page .nav {
   color: var(--ink-soft);
 }
 
+.glossary-hero-note {
+  padding: 14px 16px;
+  border: 1px solid rgba(74, 128, 146, 0.18);
+  border-radius: 8px;
+  background: rgba(239, 246, 244, 0.58);
+}
+
 .course-guide-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2029,6 +2192,29 @@ body.inner-page .nav {
   gap: 8px;
   margin: 0;
   padding-left: 20px;
+  color: var(--ink-soft);
+}
+
+.self-check-list {
+  display: grid;
+  gap: 10px;
+}
+
+.self-check-list details {
+  padding: 12px 14px;
+  border: 1px solid rgba(74, 128, 146, 0.18);
+  border-radius: 8px;
+  background: rgba(239, 246, 244, 0.56);
+}
+
+.self-check-list summary {
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.self-check-list p {
+  margin-top: 10px;
   color: var(--ink-soft);
 }
 
@@ -2374,6 +2560,8 @@ body.inner-page .nav {
   }
 
   .product-path-grid,
+  .route-preview-grid,
+  .graduation-grid,
   .track-grid,
   .system-steps,
   .future-grid.compact,
@@ -2462,6 +2650,9 @@ body.inner-page .nav {
   .video-grid,
   .course-guide-grid,
   .concept-chip-list,
+  .route-preview-grid,
+  .graduation-grid,
+  .summary-stage-card,
   .glossary-grid,
   .learning-context-links,
   .post-nav,

@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostRow from '../components/PostRow.astro';
-import { contentSections, learningStages } from '../learning-path';
+import { contentSections, futureStages, graduationProjects, learningStages } from '../learning-path';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -20,23 +20,26 @@ const featuredDate = featured?.data.pubDate.toLocaleDateString('zh-CN', {
 const productPaths = [
   {
     number: '01',
-    title: '零基础入门',
-    description: '从什么是 AI、机器学习任务、数据集和评价指标开始。',
+    title: '我是零基础',
+    description: '从什么是 AI、机器学习任务、数据集和评价指标开始，不先硬啃公式。',
     href: '/start/',
   },
   {
     number: '02',
-    title: '模型原理',
-    description: '理解神经网络、激活函数、损失函数和梯度下降。',
+    title: '我想学原理',
+    description: '理解神经网络、损失函数、梯度下降、PyTorch 训练循环和模型评估。',
     href: '/ai-roadmap/#principles',
   },
   {
     number: '03',
-    title: '项目实战',
-    description: '进入数据清洗、传统机器学习和中文文本分类项目。',
+    title: '我想做项目',
+    description: '进入数据清洗、传统机器学习、中文文本分类和后续 RAG / Dify 项目。',
     href: '/ai-roadmap/#traditional-ml',
   },
 ];
+
+const activeStages = learningStages.filter((stage) => stage.status !== '规划中');
+const nextFutureStages = futureStages.slice(0, 4);
 ---
 
 <BaseLayout title="去你想去的地方">
@@ -91,8 +94,8 @@ const productPaths = [
       <div class="section-heading">
         <div>
           <span class="eyebrow">Learning System</span>
-          <h2 id="product-overview-title">把 AI 学习做成一条路线</h2>
-          <p>文章、视频、路线和搜索放在同一套系统里，适合从零基础一路补到项目实战。</p>
+          <h2 id="product-overview-title">先选入口，再沿路线往前走</h2>
+          <p>这个站不是单纯文章列表，而是一套从零基础、原理、代码、项目到部署的 AI 学习系统。</p>
         </div>
         <a class="button secondary" href="/search/">搜索内容</a>
       </div>
@@ -124,6 +127,45 @@ const productPaths = [
             <p>{path.description}</p>
           </a>
         ))}
+      </div>
+    </section>
+
+    <section class="shell learning-system-preview" aria-labelledby="learning-system-preview-title">
+      <div class="section-heading">
+        <div>
+          <span class="eyebrow">Course Map</span>
+          <h2 id="learning-system-preview-title">这条路线会走到哪里</h2>
+          <p>当前内容已经覆盖基础、原理、PyTorch 和项目拆解，后续会进入更完整的工程化路线。</p>
+        </div>
+        <a class="button secondary" href="/ai-roadmap/">完整路线</a>
+      </div>
+
+      <div class="route-preview-grid">
+        <div class="route-preview-panel">
+          <h3>当前主线</h3>
+          {activeStages.slice(-4).map((stage) => (
+            <a href={`/ai-roadmap/#${stage.id}`}>
+              <span>{stage.number}</span>
+              <strong>{stage.title}</strong>
+              <em>{stage.status}</em>
+            </a>
+          ))}
+        </div>
+        <div class="route-preview-panel">
+          <h3>后续进阶</h3>
+          {nextFutureStages.map((stage) => (
+            <a href="/ai-roadmap/#future-route">
+              <span>{stage.number}</span>
+              <strong>{stage.title}</strong>
+              <em>{stage.range}</em>
+            </a>
+          ))}
+        </div>
+        <div class="route-preview-panel graduation">
+          <h3>毕业目标</h3>
+          <p>从 {graduationProjects.length} 个综合项目里任选完成 3 个，形成能展示的 AI 项目作品集。</p>
+          <a class="text-link" href="/ai-roadmap/#graduation-projects">查看毕业项目</a>
+        </div>
       </div>
     </section>
 

@@ -20,6 +20,9 @@ if (!concept) {
 const posts = await getCollection('posts', ({ data }) => !data.draft);
 const isPost = (post: CollectionEntry<'posts'> | undefined): post is CollectionEntry<'posts'> => post !== undefined;
 const relatedPosts = concept.relatedPostIds.map((id) => posts.find((post) => post.id === id)).filter(isPost);
+const categoryConcepts = concepts.filter((item) => item.category === concept.category && item.slug !== concept.slug);
+const relatedConcepts = categoryConcepts.slice(0, 4);
+const masteryCheck = `如果你能不用背定义，说明「${concept.title}」解决什么问题、输入输出是什么、它和相关文章的关系，就算初步掌握。`;
 ---
 
 <BaseLayout title={`${concept.title} 是什么`} description={concept.summary}>
@@ -37,11 +40,30 @@ const relatedPosts = concept.relatedPostIds.map((id) => posts.find((post) => pos
         <p>{concept.plain}</p>
       </section>
 
+      <section class="concept-explain concept-mastery">
+        <h2>掌握判断</h2>
+        <p>{masteryCheck}</p>
+      </section>
+
       {concept.aliases.length > 0 && (
         <section class="concept-aliases" aria-labelledby="concept-aliases-title">
           <h2 id="concept-aliases-title">也常被叫做</h2>
           <div class="post-tags">
             {concept.aliases.map((alias) => <span class="tag soft">{alias}</span>)}
+          </div>
+        </section>
+      )}
+
+      {relatedConcepts.length > 0 && (
+        <section class="concept-reading" aria-labelledby="concept-related-title">
+          <h2 id="concept-related-title">相关概念</h2>
+          <div class="concept-chip-list">
+            {relatedConcepts.map((item) => (
+              <a href={`/glossary/${item.slug}/`}>
+                <strong>{item.title}</strong>
+                <span>{item.summary}</span>
+              </a>
+            ))}
           </div>
         </section>
       )}

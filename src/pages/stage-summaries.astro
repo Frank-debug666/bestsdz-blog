@@ -1,0 +1,44 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { learningStages } from '../learning-path';
+---
+
+<BaseLayout title="阶段总结与知识图谱" description="按 AI 学习路线整理每个阶段的复盘、易错点和综合练习。">
+  <main class="shell page-shell">
+    <section class="page-hero roadmap-hero">
+      <span class="eyebrow">Review System</span>
+      <h1>阶段总结与知识图谱</h1>
+      <p>
+        学习路线不是一直往前冲。每完成一个阶段，都需要用总结、概念地图和综合练习把知识重新压实。
+      </p>
+      <div class="roadmap-start-actions">
+        <a class="button primary" href="/ai-roadmap/">回到学习路线</a>
+        <a class="button secondary" href="/glossary/">查概念库</a>
+      </div>
+    </section>
+
+    <section class="summary-system" aria-label="阶段总结列表">
+      {learningStages.map((stage) => (
+        <article class="summary-stage-card" id={stage.id}>
+          <div>
+            <span>{stage.number}</span>
+            <h2>{stage.title}</h2>
+            <p>{stage.positioning}</p>
+          </div>
+          <div class="summary-stage-body">
+            <h3>本阶段出口</h3>
+            <p>{stage.outcome}</p>
+            <h3>复盘任务</h3>
+            <ul>
+              <li>用 5 句话写出本阶段解决的大问题。</li>
+              <li>列出 5 个最容易混淆的概念，并回到概念库核对。</li>
+              <li>选一篇最难的文章，重新完成自检题。</li>
+              <li>把本阶段和下一阶段之间的关系写成一张小图。</li>
+            </ul>
+            <a class="text-link" href={`/ai-roadmap/#${stage.id}`}>查看本阶段课程</a>
+          </div>
+        </article>
+      ))}
+    </section>
+  </main>
+</BaseLayout>

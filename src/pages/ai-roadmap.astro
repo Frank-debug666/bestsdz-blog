@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { contentSections, futureStages, learningStages, upcomingLessons } from '../learning-path';
+import { contentSections, futureStages, graduationProjects, learningStages, upcomingLessons } from '../learning-path';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
 const postById = new Map(posts.map((post) => [post.id, post]));
@@ -47,7 +47,7 @@ const publishedLessonCount = learningStages.reduce(
       <div class="section-heading">
         <div>
           <h2>按阶段学习</h2>
-          <p>每一阶段都建立在上一阶段之上。初次学习建议按顺序阅读。</p>
+          <p>每一阶段都要回答三个问题：为什么现在学、学完能做什么、下一步走向哪里。</p>
         </div>
       </div>
 
@@ -64,12 +64,21 @@ const publishedLessonCount = learningStages.reduce(
                     <span class="level-label">{stage.level}</span>
                   </div>
                   <p>{stage.description}</p>
+                  <div class="stage-contract">
+                    <p><strong>阶段定位：</strong>{stage.positioning}</p>
+                    <p><strong>学完本阶段你能做到：</strong>{stage.outcome}</p>
+                    <p><strong>推荐读法：</strong>{stage.readingMode}</p>
+                  </div>
+                  <div class="stage-status-line">
+                    <span>{stage.status}</span>
+                    <span>第 {stage.startLesson}-{stage.startLesson + stage.postIds.length - 1} 课</span>
+                  </div>
                 </div>
               </header>
               <ol class="lesson-list compact">
                 {stagePosts.map((post, index) => post && (
                   <li>
-                    <span class="lesson-index">{String(index + 1).padStart(2, '0')}</span>
+                    <span class="lesson-index">{stage.startLesson + index}</span>
                     <div>
                       <a href={`/posts/${post.id}/`}>{post.data.title}</a>
                       <p>{post.data.description}</p>
@@ -83,11 +92,19 @@ const publishedLessonCount = learningStages.reduce(
       </div>
     </section>
 
-    <section class="page-section roadmap-section">
+    <section class="journey-note roadmap-review-note">
+      <div class="journey-note-inner">
+        <span class="journey-note-label">复盘</span>
+        <p>每完成一个阶段，都用阶段总结、概念地图和自检练习做一次回收，避免一路学一路忘。</p>
+        <a class="journey-note-link" href="/stage-summaries/">查看阶段总结</a>
+      </div>
+    </section>
+
+    <section class="page-section roadmap-section" id="future-route">
       <div class="section-heading">
         <div>
-          <h2>第 21 篇之后的长期路线</h2>
-          <p>前 20 篇保持不变。后续按照“先原理、再代码、再项目、最后工程化”推进。</p>
+          <h2>后续终局路线</h2>
+          <p>当前更新主线之后，继续进入项目、NLP、Transformer、大模型、RAG、工作流、部署和毕业项目。</p>
         </div>
       </div>
 
@@ -98,9 +115,31 @@ const publishedLessonCount = learningStages.reduce(
             <h3>{stage.title}</h3>
             <p>{stage.description}</p>
             <strong>第 {stage.range} 篇</strong>
+            <p class="future-stage-outcome"><b>学完能做到：</b>{stage.outcome}</p>
+            <em>{stage.status}</em>
             <ul class="future-stage-topics" aria-label={`${stage.title}重点`}>
               {stage.topics.map((topic) => <li>{topic}</li>)}
             </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="page-section roadmap-section" id="graduation-projects">
+      <div class="section-heading">
+        <div>
+          <h2>综合毕业项目</h2>
+          <p>路线不是无限追更。下面 6 个方向任选完成 3 个，即视为整条 AI 学习路线毕业。</p>
+        </div>
+      </div>
+
+      <div class="graduation-grid">
+        {graduationProjects.map((project, index) => (
+          <article>
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <h3>{project.title}</h3>
+            <strong>{project.articleCount}</strong>
+            <p>{project.standard}</p>
           </article>
         ))}
       </div>

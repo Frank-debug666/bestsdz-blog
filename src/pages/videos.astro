@@ -7,7 +7,8 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
 );
 
-const getVideoGroup = (lessonNumber: number) => {
+const getVideoGroup = (stageTitle: string | undefined, lessonNumber: number) => {
+  if (stageTitle) return stageTitle;
   if (lessonNumber <= 8) return '零基础入门';
   if (lessonNumber <= 18 || lessonNumber === 44) return '原理与 PyTorch';
   if (lessonNumber <= 35) return '传统机器学习';
@@ -33,12 +34,12 @@ const videoItems = posts
         poster: poster?.[1] ?? post.data.cover ?? '/images/hero-qingdao-harbor.jpg',
         label: label?.[1] ?? post.data.title,
         lessonNumber,
-        group: getVideoGroup(lessonNumber),
+        group: getVideoGroup(placement.stage?.title, lessonNumber),
         placement,
       },
     ];
   })
-  .sort((a, b) => a.lessonNumber - b.lessonNumber);
+  .sort((a, b) => (a.placement.globalLessonNumber ?? a.lessonNumber) - (b.placement.globalLessonNumber ?? b.lessonNumber));
 
 const groups = Array.from(new Set(videoItems.map((item) => item.group)));
 const latestVideo = [...videoItems].sort(
@@ -52,7 +53,7 @@ const latestVideo = [...videoItems].sort(
       <div>
         <span class="eyebrow">Video Library</span>
         <h1>视频中心</h1>
-        <p>每个视频都对应一篇文章。先用视频抓住主线，再回到正文看代码、例子和复盘。</p>
+        <p>每个视频都绑定一篇文章和一节课程。先用视频抓住主线，再回到正文看代码、自检题和参考答案。</p>
         <div class="start-actions">
           <a class="button primary" href="/start/">从新手入口开始</a>
           <a class="button secondary" href="/ai-roadmap/">按路线学习</a>
@@ -79,7 +80,7 @@ const latestVideo = [...videoItems].sort(
           <div class="section-heading compact">
             <div>
               <h2>{group}</h2>
-              <p>{videoItems.filter((item) => item.group === group).length} 个视频，按课程顺序排列。</p>
+              <p>{videoItems.filter((item) => item.group === group).length} 个视频，按学习路线顺序排列。</p>
             </div>
           </div>
           <div class="video-grid">
@@ -93,11 +94,16 @@ const latestVideo = [...videoItems].sort(
                   </a>
                   <div class="video-card-body">
                     <div class="video-meta">
-                      <span>第 {String(item.lessonNumber).padStart(2, '0')} 课</span>
-                      {item.placement.stage && <span>{item.placement.stage.title}</span>}
+                      <span>第 {String(item.placement.globalLessonNumber ?? item.lessonNumber).padStart(2, '0')} 课</span>
+                      {item.placement.stage && <span>{item.placement.stage.status}</span>}
                     </div>
                     <h3><a href={`/posts/${item.post.id}/`}>{item.post.data.title}</a></h3>
                     <p>{item.post.data.description}</p>
+                    {item.placement.stage && (
+                      <p class="video-stage-note">
+                        <strong>{item.placement.stage.title}</strong>：{item.placement.stage.outcome}
+                      </p>
+                    )}
                     <div class="video-actions">
                       <a href={`/posts/${item.post.id}/`}>打开文章</a>
                       <a href={`/videos/${item.file}`}>单独播放</a>

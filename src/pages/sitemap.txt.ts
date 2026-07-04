@@ -19,6 +19,7 @@ export const GET: APIRoute = async () => {
     absoluteUrl('/'),
     absoluteUrl('/ai-roadmap/'),
     absoluteUrl('/start/'),
+    absoluteUrl('/stage-summaries/'),
     absoluteUrl('/videos/'),
     absoluteUrl('/search/'),
     absoluteUrl('/glossary/'),

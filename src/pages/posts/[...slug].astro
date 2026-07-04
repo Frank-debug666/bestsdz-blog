@@ -38,6 +38,11 @@ const date = post.data.pubDate.toLocaleDateString('zh-CN', {
   month: 'long',
   day: 'numeric',
 });
+const updatedDate = (post.data.updatedDate ?? post.data.pubDate).toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
 const readingMinutes = Math.max(1, Math.ceil((post.body ?? '').length / 500));
 const placement = getPostPlacement(post.id);
 const stagePosts = placement.stage ? placement.stage.postIds.map((id) => postById.get(id)).filter(isPost) : [];
@@ -105,6 +110,7 @@ const articleSchema = {
       <div class="article-meta-line">
         <time class="post-meta" datetime={post.data.pubDate.toISOString()}>{date}</time>
         <span>{readingMinutes} 分钟读完</span>
+        <span>最后更新：{updatedDate}</span>
         {placement.section && <span>{placement.section.title}</span>}
         {placement.stage && <span>{placement.stage.level}</span>}
       </div>
@@ -115,7 +121,7 @@ const articleSchema = {
       </div>
       {placement.stage && placement.lessonNumber && (
         <a class="article-route-link" href={`/ai-roadmap/#${placement.stage.id}`}>
-          学习路线：{placement.stage.title} · 第 {placement.lessonNumber} 课
+          学习路线：{placement.stage.title} · 第 {placement.globalLessonNumber ?? placement.lessonNumber} 课
         </a>
       )}
     </header>
@@ -139,6 +145,8 @@ const articleSchema = {
           <span class="eyebrow">Learning Path</span>
           <h2 id="learning-context-title">{placement.stage.title}</h2>
           <p>{placement.stage.description}</p>
+          <p class="learning-outcome"><strong>学完本阶段你能做到：</strong>{placement.stage.outcome}</p>
+          <p class="learning-mode"><strong>推荐读法：</strong>{placement.stage.readingMode}</p>
           <a class="text-link" href={`/ai-roadmap/#${placement.stage.id}`}>
             查看完整阶段 · {stagePosts.length} 篇
           </a>
@@ -184,6 +192,12 @@ const articleSchema = {
           </ul>
         </article>
         <article class="course-guide-card wide">
+          <h3>概念回顾</h3>
+          <ul>
+            {courseGuide.conceptReview.map((item) => <li>{item}</li>)}
+          </ul>
+        </article>
+        <article class="course-guide-card wide">
           <h3>核心概念</h3>
           {courseGuide.concepts.length > 0 ? (
             <div class="concept-chip-list">
@@ -209,6 +223,17 @@ const articleSchema = {
           <ul>
             {courseGuide.exercises.map((item) => <li>{item}</li>)}
           </ul>
+        </article>
+        <article class="course-guide-card wide">
+          <h3>自检练习与参考答案</h3>
+          <div class="self-check-list">
+            {courseGuide.selfCheck.map((item, index) => (
+              <details>
+                <summary>{index + 1}. {item.question}</summary>
+                <p>{item.answer}</p>
+              </details>
+            ))}
+          </div>
         </article>
       </div>
       <p class="course-next-note">{courseGuide.nextSuggestion}</p>

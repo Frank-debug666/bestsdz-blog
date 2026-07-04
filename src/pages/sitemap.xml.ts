@@ -25,6 +25,7 @@ export const GET: APIRoute = async () => {
     urlEntry('/', undefined, '1.0'),
     urlEntry('/ai-roadmap/', undefined, '0.9'),
     urlEntry('/start/', undefined, '0.9'),
+    urlEntry('/stage-summaries/', undefined, '0.8'),
     urlEntry('/videos/', undefined, '0.8'),
     urlEntry('/search/', undefined, '0.7'),
     urlEntry('/glossary/', undefined, '0.9'),
