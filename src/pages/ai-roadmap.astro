@@ -1,7 +1,16 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { contentSections, futureStages, graduationProjects, learningStages, upcomingLessons } from '../learning-path';
+import {
+  contentSections,
+  futureStages,
+  getPostPlacement,
+  getStageLessonRange,
+  graduationProjects,
+  learningStages,
+  supplementalLessons,
+  upcomingLessons,
+} from '../learning-path';
 
 const posts = await getCollection('posts', ({ data }) => !data.draft);
 const postById = new Map(posts.map((post) => [post.id, post]));
@@ -71,14 +80,14 @@ const publishedLessonCount = learningStages.reduce(
                   </div>
                   <div class="stage-status-line">
                     <span>{stage.status}</span>
-                    <span>第 {stage.startLesson}-{stage.startLesson + stage.postIds.length - 1} 课</span>
+                    <span>第 {getStageLessonRange(stage)} 课</span>
                   </div>
                 </div>
               </header>
               <ol class="lesson-list compact">
-                {stagePosts.map((post, index) => post && (
+                {stagePosts.map((post) => post && (
                   <li>
-                    <span class="lesson-index">{stage.startLesson + index}</span>
+                    <span class="lesson-index">{getPostPlacement(post.id).lessonLabel}</span>
                     <div>
                       <a href={`/posts/${post.id}/`}>{post.data.title}</a>
                       <p>{post.data.description}</p>
@@ -88,6 +97,29 @@ const publishedLessonCount = learningStages.reduce(
               </ol>
             </section>
           );
+        })}
+      </div>
+    </section>
+
+    <section class="page-section roadmap-section" id="supplemental-lessons">
+      <div class="section-heading">
+        <div>
+          <h2>补充内容</h2>
+          <p>这些文章服务于主线中的某个环节，但不单独占用正式课时编号。适合读完对应主线后按需加餐。</p>
+        </div>
+      </div>
+
+      <div class="section-directory">
+        {supplementalLessons.map((lesson) => {
+          const post = postById.get(lesson.id);
+          return post ? (
+            <article class="supplement-card">
+              <span>{lesson.label}</span>
+              <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
+              <p>{lesson.description}</p>
+              <strong class="supplement-related">对应主线：第 {lesson.relatedLesson} 课</strong>
+            </article>
+          ) : null;
         })}
       </div>
     </section>

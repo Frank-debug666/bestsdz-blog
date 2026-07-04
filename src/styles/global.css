@@ -1004,6 +1004,33 @@ body.inner-page .nav {
   color: var(--ink-soft);
 }
 
+.section-directory .supplement-card {
+  border-bottom-color: rgba(184, 132, 77, 0.28);
+  background:
+    linear-gradient(90deg, rgba(184, 132, 77, 0.08), transparent 42%),
+    rgba(255, 250, 244, 0.5);
+}
+
+.section-directory .supplement-card > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 32px;
+  border: 1px solid rgba(184, 132, 77, 0.26);
+  border-radius: 999px;
+  background: rgba(184, 132, 77, 0.12);
+}
+
+.section-directory .supplement-related {
+  align-self: center;
+  padding: 6px 10px;
+  border: 1px solid rgba(184, 132, 77, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 250, 244, 0.76);
+  white-space: nowrap;
+}
+
 .graduation-grid,
 .route-preview-grid,
 .summary-system {
@@ -1373,10 +1400,38 @@ body.inner-page .nav {
 }
 
 .article-cover-frame {
+  position: relative;
   overflow: hidden;
   aspect-ratio: 16 / 9;
   border-radius: 28px;
   box-shadow: 0 22px 60px rgba(17, 22, 29, 0.12);
+}
+
+.article-cover-lesson-badge,
+.video-lesson-badge {
+  position: absolute;
+  z-index: 2;
+  left: 14px;
+  top: 14px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 250, 244, 0.34);
+  border-radius: 999px;
+  background: rgba(21, 25, 31, 0.78);
+  color: #fffaf4;
+  box-shadow: 0 12px 30px rgba(17, 22, 29, 0.2);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  backdrop-filter: blur(10px);
+}
+
+.article-cover-lesson-badge.is-supplemental,
+.is-supplemental .video-lesson-badge {
+  border-color: rgba(184, 132, 77, 0.42);
+  background: rgba(102, 70, 35, 0.84);
 }
 
 .article-cover img {
@@ -1767,8 +1822,8 @@ body.inner-page .nav {
   animation: action-pop 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.video-thumb:hover span,
-.video-thumb:focus-visible span,
+.video-thumb:hover .video-play-pill,
+.video-thumb:focus-visible .video-play-pill,
 .featured-video:hover .featured-video-label,
 .featured-video:focus-visible .featured-video-label {
   animation: play-pulse 520ms ease-in-out;
@@ -1836,8 +1891,8 @@ body.inner-page .nav {
   .quick-searches button:focus-visible,
   .copy-code-button:hover,
   .copy-code-button:focus-visible,
-  .video-thumb:hover span,
-  .video-thumb:focus-visible span {
+  .video-thumb:hover .video-play-pill,
+  .video-thumb:focus-visible .video-play-pill {
     animation: none !important;
     transform: none !important;
   }
@@ -2121,7 +2176,14 @@ body.inner-page .nav {
   box-shadow: 0 14px 40px rgba(17, 22, 29, 0.06);
 }
 
-.video-thumb span {
+.video-card.is-supplemental {
+  border-color: rgba(184, 132, 77, 0.26);
+  background:
+    linear-gradient(90deg, rgba(184, 132, 77, 0.08), transparent 38%),
+    rgba(255, 250, 244, 0.78);
+}
+
+.video-play-pill {
   position: absolute;
   right: 12px;
   bottom: 12px;

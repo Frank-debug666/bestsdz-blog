@@ -2,7 +2,7 @@
 import { getCollection } from 'astro:content';
 import type { CollectionEntry } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { contentSections, futureStages, learningStages } from '../learning-path';
+import { futureStages, learningStages } from '../learning-path';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
@@ -10,8 +10,8 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 const isPost = (post: CollectionEntry<'posts'> | undefined): post is CollectionEntry<'posts'> => post !== undefined;
 const postById = new Map(posts.map((post) => [post.id, post]));
 const videoCount = posts.filter((post) => post.body?.includes('/videos/')).length;
-const publishedLessonCount = contentSections.reduce(
-  (sum, section) => sum + section.postIds.filter((id) => postById.has(id)).length,
+const publishedLessonCount = learningStages.reduce(
+  (sum, stage) => sum + stage.postIds.filter((id) => postById.has(id)).length,
   0,
 );
 

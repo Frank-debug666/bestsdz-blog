@@ -1,7 +1,7 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { getPostPlacement } from '../learning-path';
+import { getLessonSortKey, getPostPlacement } from '../learning-path';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => a.data.pubDate.valueOf() - b.data.pubDate.valueOf(),
@@ -23,8 +23,8 @@ const videoItems = posts
 
     const poster = body.match(/poster="([^"]+)"/);
     const label = body.match(/aria-label="([^"]+)"/);
-    const lesson = source[1].match(/lesson-(\d+)/);
-    const lessonNumber = lesson ? Number(lesson[1]) : 0;
+    const lesson = source[1].match(/lesson-(\d+[a-z]?)/i);
+    const lessonNumber = lesson ? getLessonSortKey(lesson[1]) : 0;
     const placement = getPostPlacement(post.id);
 
     return [
@@ -34,12 +34,12 @@ const videoItems = posts
         poster: poster?.[1] ?? post.data.cover ?? '/images/hero-qingdao-harbor.jpg',
         label: label?.[1] ?? post.data.title,
         lessonNumber,
-        group: getVideoGroup(placement.stage?.title, lessonNumber),
+        group: placement.supplementalLesson ? '补充内容' : getVideoGroup(placement.stage?.title, lessonNumber),
         placement,
       },
     ];
   })
-  .sort((a, b) => (a.placement.globalLessonNumber ?? a.lessonNumber) - (b.placement.globalLessonNumber ?? b.lessonNumber));
+  .sort((a, b) => (a.placement.lessonSortKey ?? a.lessonNumber) - (b.placement.lessonSortKey ?? b.lessonNumber));
 
 const groups = Array.from(new Set(videoItems.map((item) => item.group)));
 const latestVideo = [...videoItems].sort(
@@ -60,9 +60,16 @@ const latestVideo = [...videoItems].sort(
         </div>
       </div>
       {latestVideo && (
-        <a class="featured-video" href={`/posts/${latestVideo.post.id}/`} aria-label={`观看 ${latestVideo.post.data.title}`}>
+        <a
+          class:list={['featured-video', { 'is-supplemental': latestVideo.placement.supplementalLesson }]}
+          href={`/posts/${latestVideo.post.id}/`}
+          aria-label={`观看 ${latestVideo.post.data.title}`}
+        >
           <span class="featured-video-media">
             <img src={latestVideo.poster} alt={latestVideo.post.data.title} width="1280" height="720" />
+            <span class="video-lesson-badge">
+              {latestVideo.placement.supplementalLesson ? '补充' : '第'} {latestVideo.placement.lessonLabel ?? latestVideo.lessonNumber} 课
+            </span>
           </span>
           <span class="featured-video-label">最新视频</span>
           <strong>{latestVideo.post.data.title}</strong>
@@ -87,14 +94,19 @@ const latestVideo = [...videoItems].sort(
             {videoItems
               .filter((item) => item.group === group)
               .map((item) => (
-                <article class="video-card">
+                <article class:list={['video-card', { 'is-supplemental': item.placement.supplementalLesson }]}>
                   <a class="video-thumb" href={`/posts/${item.post.id}/`}>
                     <img src={item.poster} alt={item.post.data.title} width="1280" height="720" loading="lazy" />
-                    <span aria-hidden="true">播放</span>
+                    <span class="video-lesson-badge">
+                      {item.placement.supplementalLesson ? '补充' : '第'} {item.placement.lessonLabel ?? item.lessonNumber} 课
+                    </span>
+                    <span class="video-play-pill" aria-hidden="true">播放</span>
                   </a>
                   <div class="video-card-body">
                     <div class="video-meta">
-                      <span>第 {String(item.placement.globalLessonNumber ?? item.lessonNumber).padStart(2, '0')} 课</span>
+                      <span>
+                        {item.placement.supplementalLesson ? '补充' : '第'} {item.placement.lessonLabel ?? item.lessonNumber} 课
+                      </span>
                       {item.placement.stage && <span>{item.placement.stage.status}</span>}
                     </div>
                     <h3><a href={`/posts/${item.post.id}/`}>{item.post.data.title}</a></h3>
