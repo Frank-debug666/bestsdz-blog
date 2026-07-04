@@ -494,6 +494,7 @@ body.inner-page .nav {
   transform: translateY(-5px);
   border-color: rgba(184, 132, 77, 0.42);
   box-shadow: 0 24px 58px rgba(17, 22, 29, 0.13);
+  animation: card-wiggle 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .interactive-card:focus-visible {
@@ -624,7 +625,7 @@ body.inner-page .nav {
 .post-row:focus-within {
   background: rgba(255, 250, 244, 0.72);
   box-shadow: 0 18px 46px rgba(17, 22, 29, 0.08);
-  animation: article-hop 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: card-wiggle 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .post-row-main {
@@ -1673,12 +1674,132 @@ body.inner-page .nav {
   }
 }
 
+@keyframes card-wiggle {
+  0% {
+    transform: translateY(0) rotate(0deg);
+  }
+  34% {
+    transform: translateY(-5px) rotate(-0.35deg);
+  }
+  68% {
+    transform: translateY(-3px) rotate(0.28deg);
+  }
+  100% {
+    transform: translateY(-4px) rotate(0deg);
+  }
+}
+
+@keyframes action-pop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  45% {
+    transform: translateY(-2px) scale(1.045);
+  }
+  100% {
+    transform: translateY(-1px) scale(1.02);
+  }
+}
+
+@keyframes play-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+.post-nav-card:hover,
+.post-nav-card:focus-within,
+.related-reading-card:hover,
+.related-reading-card:focus-within,
+.video-card:hover,
+.video-card:focus-within,
+.featured-video:hover,
+.featured-video:focus-visible {
+  animation: card-wiggle 360ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.nav-links a,
+.button,
+.tag,
+.text-link,
+.post-row-link,
+.topic-card-link,
+.article-route-link,
+.video-filter a,
+.video-actions a,
+.quick-searches button,
+.copy-code-button {
+  transform-origin: center;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.nav-links a:hover,
+.nav-links a:focus-visible,
+.button:hover,
+.button:focus-visible,
+.tag:hover,
+.tag:focus-visible,
+.text-link:hover,
+.text-link:focus-visible,
+.post-row-link:hover,
+.post-row-link:focus-visible,
+.topic-card-link:hover,
+.topic-card-link:focus-visible,
+.article-route-link:hover,
+.article-route-link:focus-visible,
+.video-filter a:hover,
+.video-filter a:focus-visible,
+.video-actions a:hover,
+.video-actions a:focus-visible,
+.quick-searches button:hover,
+.quick-searches button:focus-visible,
+.copy-code-button:hover,
+.copy-code-button:focus-visible {
+  animation: action-pop 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.video-thumb:hover span,
+.video-thumb:focus-visible span,
+.featured-video:hover .featured-video-label,
+.featured-video:focus-visible .featured-video-label {
+  animation: play-pulse 520ms ease-in-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+
   .post-row,
   .post-nav-card,
   .related-reading-card,
-  .post-row-thumb {
-    transition: none;
+  .video-card,
+  .featured-video,
+  .interactive-card,
+  .post-row-thumb,
+  .nav-links a,
+  .button,
+  .tag,
+  .text-link,
+  .post-row-link,
+  .topic-card-link,
+  .article-route-link,
+  .video-filter a,
+  .video-actions a,
+  .quick-searches button,
+  .copy-code-button {
+    transition: none !important;
   }
 
   .post-row:hover,
@@ -1686,9 +1807,39 @@ body.inner-page .nav {
   .post-nav-card:hover,
   .post-nav-card:focus-within,
   .related-reading-card:hover,
-  .related-reading-card:focus-within {
-    animation: none;
-    transform: none;
+  .related-reading-card:focus-within,
+  .video-card:hover,
+  .video-card:focus-within,
+  .featured-video:hover,
+  .featured-video:focus-visible,
+  .interactive-card:hover,
+  .interactive-card:focus-visible,
+  .nav-links a:hover,
+  .nav-links a:focus-visible,
+  .button:hover,
+  .button:focus-visible,
+  .tag:hover,
+  .tag:focus-visible,
+  .text-link:hover,
+  .text-link:focus-visible,
+  .post-row-link:hover,
+  .post-row-link:focus-visible,
+  .topic-card-link:hover,
+  .topic-card-link:focus-visible,
+  .article-route-link:hover,
+  .article-route-link:focus-visible,
+  .video-filter a:hover,
+  .video-filter a:focus-visible,
+  .video-actions a:hover,
+  .video-actions a:focus-visible,
+  .quick-searches button:hover,
+  .quick-searches button:focus-visible,
+  .copy-code-button:hover,
+  .copy-code-button:focus-visible,
+  .video-thumb:hover span,
+  .video-thumb:focus-visible span {
+    animation: none !important;
+    transform: none !important;
   }
 }
 
