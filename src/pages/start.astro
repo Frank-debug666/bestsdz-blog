@@ -84,19 +84,19 @@ const tracks = [
           const trackPosts = stages.flatMap((stage) => stage.postIds).map((id) => postById.get(id)).filter(isPost);
 
           return (
-            <article class="track-card">
+            <a class="track-card interactive-card" href={track.href}>
               <span>{track.label}</span>
               <h3>{track.title}</h3>
               <p>{track.description}</p>
               <ol class="mini-lesson-list">
                 {trackPosts.slice(0, 5).map((post) => (
                   <li>
-                    <a href={`/posts/${post.id}/`}>{post.data.title}</a>
+                    <span>{post.data.title}</span>
                   </li>
                 ))}
               </ol>
-              <a class="text-link" href={track.href}>进入这条路径</a>
-            </article>
+              <span class="card-cta">进入这条路径</span>
+            </a>
           );
         })}
       </div>

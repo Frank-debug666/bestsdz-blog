@@ -22,16 +22,16 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
         const latest = topicPosts[0];
 
         return (
-          <article class="topic-card">
+          <a class="topic-card interactive-card" href={`/topics/${topic.slug}/`}>
             <span>{String(index + 1).padStart(2, '0')} · {topic.kicker}</span>
-            <h2><a href={`/topics/${topic.slug}/`}>{topic.title}</a></h2>
+            <h2>{topic.title}</h2>
             <p>{topic.description}</p>
             <div class="topic-card-meta">
               <strong>{topicPosts.length} 篇文章</strong>
               {latest && <small>最新：{latest.data.title}</small>}
             </div>
-            <a class="topic-card-link" href={`/topics/${topic.slug}/`}>进入专题</a>
-          </article>
+            <span class="topic-card-link">进入专题</span>
+          </a>
         );
       })}
     </section>

@@ -478,6 +478,44 @@ body.inner-page .nav {
   box-shadow: 0 16px 42px rgba(17, 22, 29, 0.07);
 }
 
+.interactive-card {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease;
+}
+
+.interactive-card:hover,
+.interactive-card:focus-visible {
+  transform: translateY(-5px);
+  border-color: rgba(184, 132, 77, 0.42);
+  box-shadow: 0 24px 58px rgba(17, 22, 29, 0.13);
+}
+
+.interactive-card:focus-visible {
+  outline: 3px solid rgba(74, 128, 146, 0.34);
+  outline-offset: 4px;
+}
+
+.card-cta {
+  align-self: end;
+  color: var(--ink);
+  font-weight: 900;
+}
+
+.interactive-card:hover .card-cta,
+.interactive-card:focus-visible .card-cta,
+.interactive-card:hover h2,
+.interactive-card:focus-visible h2,
+.interactive-card:hover h3,
+.interactive-card:focus-visible h3 {
+  color: var(--accent-deep);
+}
+
 .product-path-card span,
 .track-card > span,
 .video-meta span {
@@ -500,7 +538,6 @@ body.inner-page .nav {
 }
 
 .product-path-card:hover h3,
-.track-card a:hover,
 .text-link:hover {
   color: var(--accent-deep);
 }
@@ -1255,6 +1292,11 @@ body.inner-page .nav {
   color: var(--accent-deep);
 }
 
+.topic-card:hover .topic-card-link,
+.topic-card:focus-visible .topic-card-link {
+  color: var(--accent-deep);
+}
+
 .topic-card p,
 .topic-card-meta small,
 .related-reading > div > p,
@@ -1736,7 +1778,8 @@ body.inner-page .nav {
   color: var(--ink-soft);
 }
 
-.mini-lesson-list a {
+.mini-lesson-list a,
+.mini-lesson-list span {
   font-weight: 700;
 }
 
