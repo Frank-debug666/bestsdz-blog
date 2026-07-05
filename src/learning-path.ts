@@ -4,7 +4,7 @@ export interface ContentSection {
   id: string;
   title: string;
   description: string;
-  level: LearningLevel | '补充' | '持续更新';
+  level: LearningLevel | '持续更新';
   postIds: string[];
 }
 
@@ -36,15 +36,6 @@ export interface GraduationProject {
   title: string;
   articleCount: string;
   standard: string;
-}
-
-export interface SupplementalLesson {
-  id: string;
-  label: string;
-  title: string;
-  description: string;
-  relatedLesson: string;
-  stageId: string;
 }
 
 export const contentSections: ContentSection[] = [
@@ -135,18 +126,6 @@ export const contentSections: ContentSection[] = [
       'text-classification-evaluation-confusion-matrix',
       'save-load-text-classification-model',
       'streamlit-text-classification-demo',
-    ],
-  },
-  {
-    id: 'supplemental',
-    title: '补充内容',
-    description: '不占用主线编号，但用于展开某个环节的细节、总览或实战补充。',
-    level: '补充',
-    postIds: [
-      'gridsearchcv-parameter-tuning',
-      'sklearn-pipeline-practice',
-      'chinese-text-classification-project-flow',
-      'text-classification-pipeline-full-flow',
     ],
   },
   {
@@ -433,43 +412,6 @@ export const upcomingLessons = [
   ['2026-10-06', 'reshape、view、transpose 和广播机制怎么选', 'PyTorch 深度学习基础'],
 ] as const;
 
-export const supplementalLessons: SupplementalLesson[] = [
-  {
-    id: 'gridsearchcv-parameter-tuning',
-    label: '34a',
-    title: 'GridSearchCV 调参补充',
-    description: '把第 34 课里的调参部分单独展开，适合已经理解交叉验证后继续练习。',
-    relatedLesson: '34',
-    stageId: 'traditional-ml',
-  },
-  {
-    id: 'sklearn-pipeline-practice',
-    label: '34b',
-    title: 'sklearn Pipeline 补充',
-    description: '把第 34 课里的 Pipeline 思路单独落到代码，避免预处理和模型训练割裂。',
-    relatedLesson: '34',
-    stageId: 'traditional-ml',
-  },
-  {
-    id: 'chinese-text-classification-project-flow',
-    label: '35a',
-    title: '中文文本分类项目总览补充',
-    description: '作为第 35-42 课的项目导览，帮助先看清数据流，再进入逐环节学习。',
-    relatedLesson: '35-42',
-    stageId: 'text-classification',
-  },
-  {
-    id: 'text-classification-pipeline-full-flow',
-    label: '41a',
-    title: '文本分类 Pipeline 全流程补充',
-    description: '承接第 41 课的模型保存与复用，把预处理、模型和预测封装成一条流水线。',
-    relatedLesson: '41',
-    stageId: 'text-classification',
-  },
-];
-
-const supplementalLessonById = new Map(supplementalLessons.map((lesson) => [lesson.id, lesson]));
-
 export function getLessonSortKey(label: string | number | undefined) {
   if (label === undefined) return Number.POSITIVE_INFINITY;
 
@@ -489,10 +431,9 @@ export function getStageLessonRange(stage: LearningStage) {
 export function getPostPlacement(postId: string) {
   const section = contentSections.find((item) => item.postIds.includes(postId));
   const stage = learningStages.find((item) => item.postIds.includes(postId));
-  const supplementalLesson = supplementalLessonById.get(postId);
   const lessonIndex = stage?.postIds.indexOf(postId) ?? -1;
   const globalLessonNumber = stage && lessonIndex >= 0 ? stage.startLesson + lessonIndex : undefined;
-  const lessonLabel = supplementalLesson?.label ?? (globalLessonNumber !== undefined ? String(globalLessonNumber) : undefined);
+  const lessonLabel = globalLessonNumber !== undefined ? String(globalLessonNumber) : undefined;
   const lessonSortKey = getLessonSortKey(lessonLabel ?? globalLessonNumber);
 
   return {
@@ -502,6 +443,5 @@ export function getPostPlacement(postId: string) {
     globalLessonNumber,
     lessonLabel,
     lessonSortKey,
-    supplementalLesson,
   };
 }

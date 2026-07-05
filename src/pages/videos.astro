@@ -34,7 +34,7 @@ const videoItems = posts
         poster: poster?.[1] ?? post.data.cover ?? '/images/hero-qingdao-harbor.jpg',
         label: label?.[1] ?? post.data.title,
         lessonNumber,
-        group: placement.supplementalLesson ? '补充内容' : getVideoGroup(placement.stage?.title, lessonNumber),
+        group: getVideoGroup(placement.stage?.title, lessonNumber),
         placement,
       },
     ];
@@ -61,14 +61,14 @@ const latestVideo = [...videoItems].sort(
       </div>
       {latestVideo && (
         <a
-          class:list={['featured-video', { 'is-supplemental': latestVideo.placement.supplementalLesson }]}
+          class="featured-video"
           href={`/posts/${latestVideo.post.id}/`}
           aria-label={`观看 ${latestVideo.post.data.title}`}
         >
           <span class="featured-video-media">
             <img src={latestVideo.poster} alt={latestVideo.post.data.title} width="1280" height="720" />
             <span class="video-lesson-badge">
-              {latestVideo.placement.supplementalLesson ? '补充' : '第'} {latestVideo.placement.lessonLabel ?? latestVideo.lessonNumber} 课
+              第 {latestVideo.placement.lessonLabel ?? latestVideo.lessonNumber} 课
             </span>
           </span>
           <span class="featured-video-label">最新视频</span>
@@ -94,18 +94,18 @@ const latestVideo = [...videoItems].sort(
             {videoItems
               .filter((item) => item.group === group)
               .map((item) => (
-                <article class:list={['video-card', { 'is-supplemental': item.placement.supplementalLesson }]}>
+                <article class="video-card">
                   <a class="video-thumb" href={`/posts/${item.post.id}/`}>
                     <img src={item.poster} alt={item.post.data.title} width="1280" height="720" loading="lazy" />
                     <span class="video-lesson-badge">
-                      {item.placement.supplementalLesson ? '补充' : '第'} {item.placement.lessonLabel ?? item.lessonNumber} 课
+                      第 {item.placement.lessonLabel ?? item.lessonNumber} 课
                     </span>
                     <span class="video-play-pill" aria-hidden="true">播放</span>
                   </a>
                   <div class="video-card-body">
                     <div class="video-meta">
                       <span>
-                        {item.placement.supplementalLesson ? '补充' : '第'} {item.placement.lessonLabel ?? item.lessonNumber} 课
+                        第 {item.placement.lessonLabel ?? item.lessonNumber} 课
                       </span>
                       {item.placement.stage && <span>{item.placement.stage.status}</span>}
                     </div>

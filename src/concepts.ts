@@ -207,7 +207,7 @@ export const concepts: ConceptEntry[] = [
     category: '工程实践',
     level: '初级',
     tags: ['Pipeline', '项目实战'],
-    relatedPostIds: ['sklearn-pipeline-practice', 'text-classification-pipeline-full-flow'],
+    relatedPostIds: ['save-load-text-classification-model', 'streamlit-text-classification-demo'],
   },
   {
     slug: 'tfidf',
@@ -240,7 +240,7 @@ export const concepts: ConceptEntry[] = [
     category: '机器学习',
     level: '初级',
     tags: ['调参', '模型评估'],
-    relatedPostIds: ['gridsearchcv-parameter-tuning', 'sklearn-pipeline-practice'],
+    relatedPostIds: ['model-evaluation-cross-validation'],
   },
 ];
 

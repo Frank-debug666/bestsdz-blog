@@ -8,7 +8,6 @@ import {
   getStageLessonRange,
   graduationProjects,
   learningStages,
-  supplementalLessons,
   upcomingLessons,
 } from '../learning-path';
 
@@ -97,29 +96,6 @@ const publishedLessonCount = learningStages.reduce(
               </ol>
             </section>
           );
-        })}
-      </div>
-    </section>
-
-    <section class="page-section roadmap-section" id="supplemental-lessons">
-      <div class="section-heading">
-        <div>
-          <h2>补充内容</h2>
-          <p>这些文章服务于主线中的某个环节，但不单独占用正式课时编号。适合读完对应主线后按需加餐。</p>
-        </div>
-      </div>
-
-      <div class="section-directory">
-        {supplementalLessons.map((lesson) => {
-          const post = postById.get(lesson.id);
-          return post ? (
-            <article class="supplement-card">
-              <span>{lesson.label}</span>
-              <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
-              <p>{lesson.description}</p>
-              <strong class="supplement-related">对应主线：第 {lesson.relatedLesson} 课</strong>
-            </article>
-          ) : null;
         })}
       </div>
     </section>
