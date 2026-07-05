@@ -24,11 +24,11 @@ machine learning is useful
 模型不能直接理解“这一整串字”里哪些部分是词。分词的作用就是先把句子切成更有意义的单位。
 
 <figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/chinese-tokenization-stopwords-video.jpg" aria-label="第 37 课：中文分词与停用词">
-    <source src="/videos/lesson-37-chinese-tokenization-stopwords.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" poster="/images/covers/chinese-tokenization-stopwords-video.jpg" aria-label="第 36 课：中文分词与停用词">
+    <source src="/videos/lesson-36-chinese-tokenization-stopwords.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
-  <figcaption>第 37 课视频 · 中文分词与停用词：让模型先读懂文本边界</figcaption>
+  <figcaption>第 36 课视频 · 中文分词与停用词：让模型先读懂文本边界</figcaption>
 </figure>
 
 ## 什么是分词

@@ -1,8 +1,6 @@
 ---
 title: GridSearchCV 调参：怎样系统寻找更好的参数
 description: 理解参数、超参数、参数网格、交叉验证搜索、best_params_ 和 best_estimator_ 的使用方式。
-cover: /images/covers/gridsearchcv-parameter-tuning-video.jpg
-coverAlt: 多组参数组合进入交叉验证流程，最后选出验证分数最好的模型配置。
 pubDate: 2026-06-28T09:20:00+08:00
 tags: [机器学习, 调参, GridSearchCV, scikit-learn]
 ---
@@ -12,14 +10,6 @@ tags: [机器学习, 调参, GridSearchCV, scikit-learn]
 很多初学者会靠感觉改参数：KNN 的 K 改一下，随机森林的树数量改一下，决策树深度改一下。这样能试，但容易乱。
 
 GridSearchCV 的作用是：**把你想尝试的参数组合列出来，然后用交叉验证逐组比较**。
-
-<figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/gridsearchcv-parameter-tuning-video.jpg" aria-label="第 34 课：GridSearchCV 调参">
-    <source src="/videos/lesson-34-gridsearchcv-parameter-tuning.mp4" type="video/mp4" />
-    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
-  </video>
-  <figcaption>第 34 课视频 · GridSearchCV 调参：怎样系统寻找更好的参数</figcaption>
-</figure>
 
 ## 参数和超参数有什么区别
 

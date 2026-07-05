@@ -21,7 +21,7 @@ tags: [PyTorch, Tensor, dtype, device, 深度学习]
 
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/pytorch-tensor-dtype-device-indexing-video.jpg" aria-label="第 43 课：Tensor 进阶操作">
-    <source src="/videos/lesson-43a-pytorch-tensor-dtype-device-indexing.mp4" type="video/mp4" />
+    <source src="/videos/lesson-43-pytorch-tensor-dtype-device-indexing.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 43 课视频 - Tensor 进阶：dtype、device、索引和切片</figcaption>

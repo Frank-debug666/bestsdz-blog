@@ -15,7 +15,7 @@ tags: [机器学习, 集成学习, Bagging, Boosting, scikit-learn]
 
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/ensemble-learning-bagging-boosting-video.jpg" aria-label="第 33 课：集成学习入门">
-    <source src="/videos/lesson-33a-ensemble-learning-bagging-boosting.mp4" type="video/mp4" />
+    <source src="/videos/lesson-33-ensemble-learning-bagging-boosting.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 33 课视频 - 集成学习入门：Bagging、Boosting 到底在组合什么</figcaption>

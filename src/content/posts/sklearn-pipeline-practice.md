@@ -1,8 +1,6 @@
 ---
 title: Pipeline 实战：把预处理和模型封装成一条流水线
 description: 理解 sklearn Pipeline 如何串联标准化、TF-IDF、模型训练、交叉验证和调参，避免数据泄漏。
-cover: /images/covers/sklearn-pipeline-practice-video.jpg
-coverAlt: 数据依次经过预处理、特征转换、模型训练三个步骤，被 Pipeline 封装成统一流程。
 pubDate: 2026-06-28T09:40:00+08:00
 tags: [机器学习, Pipeline, 数据泄漏, scikit-learn]
 ---
@@ -10,14 +8,6 @@ tags: [机器学习, Pipeline, 数据泄漏, scikit-learn]
 到目前为止，我们已经写过不少机器学习代码：划分数据、做标准化、训练模型、评估分数、交叉验证、调参。代码一多，就很容易出现流程不一致。
 
 Pipeline 的作用是：**把预处理和模型封装成同一条可复用的流水线**。
-
-<figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/sklearn-pipeline-practice-video.jpg" aria-label="第 35 课：Pipeline 实战">
-    <source src="/videos/lesson-35-sklearn-pipeline-practice.mp4" type="video/mp4" />
-    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
-  </video>
-  <figcaption>第 35 课视频 · Pipeline 实战：把预处理和模型封装成一条流水线</figcaption>
-</figure>
 
 ## 为什么需要 Pipeline
 

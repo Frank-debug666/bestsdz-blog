@@ -12,11 +12,11 @@ tags: [机器学习, NLP, 模型评估, 混淆矩阵, 文本分类]
 如果只看一个准确率，我们很容易被表面分数骗到。文本分类尤其如此，因为类别不平衡、标签模糊、文本表达复杂，都会让单个指标变得不可靠。
 
 <figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/text-classification-evaluation-confusion-matrix-video.jpg" aria-label="第 41 课：文本分类模型评估">
-    <source src="/videos/lesson-41-text-classification-evaluation-confusion-matrix.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" poster="/images/covers/text-classification-evaluation-confusion-matrix-video.jpg" aria-label="第 40 课：文本分类模型评估">
+    <source src="/videos/lesson-40-text-classification-evaluation-confusion-matrix.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
-  <figcaption>第 41 课视频 · 文本分类模型评估：从混淆矩阵找到改进方向</figcaption>
+  <figcaption>第 40 课视频 · 文本分类模型评估：从混淆矩阵找到改进方向</figcaption>
 </figure>
 
 ## 先看 classification_report

@@ -12,11 +12,11 @@ tags: [机器学习, NLP, 词袋模型, CountVectorizer, 文本分类]
 词袋模型听起来有点抽象，其实它的想法很朴素：不管词在句子里的顺序，先统计每个词出现了多少次。
 
 <figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/countvectorizer-bag-of-words-video.jpg" aria-label="第 39 课：词袋模型与 CountVectorizer">
-    <source src="/videos/lesson-39-countvectorizer-bag-of-words.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" poster="/images/covers/countvectorizer-bag-of-words-video.jpg" aria-label="第 37 课：词袋模型与 CountVectorizer">
+    <source src="/videos/lesson-37-countvectorizer-bag-of-words.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
-  <figcaption>第 39 课视频 · 词袋模型与 CountVectorizer：文本也可以做特征表</figcaption>
+  <figcaption>第 37 课视频 · 词袋模型与 CountVectorizer：文本也可以做特征表</figcaption>
 </figure>
 
 ## 什么是词袋模型

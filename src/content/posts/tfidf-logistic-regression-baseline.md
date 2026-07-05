@@ -12,11 +12,11 @@ tags: [机器学习, NLP, TF-IDF, 逻辑回归, 文本分类]
 这里的 baseline 指的是“第一版可运行基线”。它不一定是最终最强模型，但必须简单、清楚、可复现，后面的优化都可以拿它做对照。
 
 <figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/tfidf-logistic-regression-baseline-video.jpg" aria-label="第 40 课：TF-IDF + 逻辑回归 baseline">
-    <source src="/videos/lesson-40-tfidf-logistic-regression-baseline.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" poster="/images/covers/tfidf-logistic-regression-baseline-video.jpg" aria-label="第 39 课：TF-IDF + 逻辑回归 baseline">
+    <source src="/videos/lesson-39-tfidf-logistic-regression-baseline.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
-  <figcaption>第 40 课视频 · 训练中文文本分类 baseline：TF-IDF + 逻辑回归</figcaption>
+  <figcaption>第 39 课视频 · 训练中文文本分类 baseline：TF-IDF + 逻辑回归</figcaption>
 </figure>
 
 ## 为什么选 TF-IDF + 逻辑回归

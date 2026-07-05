@@ -15,7 +15,7 @@ tags: [NLP, 文本分类, 中文文本, 数据清洗, 编码]
 
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/chinese-text-encoding-cleaning-normalization-video.jpg" aria-label="第 35 课：中文文本读取与清洗">
-    <source src="/videos/lesson-35a-chinese-text-encoding-cleaning-normalization.mp4" type="video/mp4" />
+    <source src="/videos/lesson-35-chinese-text-encoding-cleaning-normalization.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 35 课视频 - 计算机怎样读取中文文本：编码、清洗与标准化</figcaption>

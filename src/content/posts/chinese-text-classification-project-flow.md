@@ -1,8 +1,6 @@
 ---
 title: 中文文本分类项目：从任务目标和数据流开始
 description: 从零拆解一个中文文本分类项目，先把业务目标、标签、数据字段、训练流程和上线形态讲清楚。
-cover: /images/covers/chinese-text-classification-project-flow-video.jpg
-coverAlt: 中文文本从原始句子进入清洗、分词、特征提取、模型训练和预测输出的项目数据流。
 pubDate: 2026-06-29T09:00:00+08:00
 tags: [机器学习, NLP, 文本分类, 项目实战]
 ---
@@ -10,14 +8,6 @@ tags: [机器学习, NLP, 文本分类, 项目实战]
 前面我们已经补齐了不少传统机器学习基础：数据清洗、特征工程、模型评估、交叉验证、调参和 Pipeline。接下来可以进入一个更像真实应用的方向：**中文文本分类项目**。
 
 这类项目很常见，比如垃圾短信识别、评论情感分类、工单类型识别、新闻主题分类、用户反馈归类。它们看起来是在“处理文字”，但本质仍然是一个机器学习项目：输入、标签、特征、模型、评估和推理。
-
-<figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/chinese-text-classification-project-flow-video.jpg" aria-label="第 36 课：中文文本分类项目">
-    <source src="/videos/lesson-36-chinese-text-classification-project-flow.mp4" type="video/mp4" />
-    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
-  </video>
-  <figcaption>第 36 课视频 · 中文文本分类项目：从任务目标和数据流开始</figcaption>
-</figure>
 
 ## 先别急着写模型
 

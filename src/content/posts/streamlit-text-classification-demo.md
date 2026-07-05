@@ -15,7 +15,7 @@ tags: [机器学习, NLP, Streamlit, 文本分类, 模型部署]
 
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/streamlit-text-classification-demo-video.jpg" aria-label="第 42 课：Streamlit 文本分类演示页面">
-    <source src="/videos/lesson-42a-streamlit-text-classification-demo.mp4" type="video/mp4" />
+    <source src="/videos/lesson-42-streamlit-text-classification-demo.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 42 课视频 - 用 Streamlit 给文本分类模型做一个演示页面</figcaption>

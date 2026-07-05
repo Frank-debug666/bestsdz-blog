@@ -12,11 +12,11 @@ tags: [机器学习, NLP, 模型保存, joblib, 文本分类]
 真实项目更常见的流程是：训练一次，保存下来；下次启动程序时加载模型，直接对新文本做预测。
 
 <figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/save-load-text-classification-model-video.jpg" aria-label="第 43 课：保存与加载文本分类模型">
-    <source src="/videos/lesson-43-save-load-text-classification-model.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" poster="/images/covers/save-load-text-classification-model-video.jpg" aria-label="第 41 课：保存与加载文本分类模型">
+    <source src="/videos/lesson-41-save-load-text-classification-model.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
-  <figcaption>第 43 课视频 · 保存与加载文本分类模型：让预测可以复用</figcaption>
+  <figcaption>第 41 课视频 · 保存与加载文本分类模型：让预测可以复用</figcaption>
 </figure>
 
 ## 要保存什么

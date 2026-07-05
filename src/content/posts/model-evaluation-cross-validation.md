@@ -12,11 +12,11 @@ tags: [机器学习, 模型评估, 交叉验证, scikit-learn]
 答案是：**不能只相信一次划分、一次训练、一个分数**。
 
 <figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/model-evaluation-cross-validation-video.jpg" aria-label="第 33 课：模型评估与交叉验证">
-    <source src="/videos/lesson-33-model-evaluation-cross-validation.mp4" type="video/mp4" />
+  <video controls playsinline preload="metadata" poster="/images/covers/model-evaluation-cross-validation-video.jpg" aria-label="第 34 课：模型评估与交叉验证">
+    <source src="/videos/lesson-34-model-evaluation-cross-validation.mp4" type="video/mp4" />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
-  <figcaption>第 33 课视频 · 模型评估与交叉验证：不要只相信一次划分</figcaption>
+  <figcaption>第 34 课视频 · 模型评估与交叉验证：不要只相信一次划分</figcaption>
 </figure>
 
 ## 为什么一次测试分数不够

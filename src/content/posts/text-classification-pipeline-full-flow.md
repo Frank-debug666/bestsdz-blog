@@ -1,8 +1,6 @@
 ---
 title: 用 Pipeline 封装中文文本分类全过程
 description: 把分词、TF-IDF、模型训练、预测和评估封装成一条可复用 Pipeline，减少数据泄漏和流程不一致。
-cover: /images/covers/text-classification-pipeline-full-flow-video.jpg
-coverAlt: 中文文本从分词进入 TF-IDF，再进入分类模型，被 Pipeline 串成一条稳定流程。
 pubDate: 2026-07-01T09:00:00+08:00
 tags: [机器学习, NLP, Pipeline, 文本分类, scikit-learn]
 ---
@@ -10,14 +8,6 @@ tags: [机器学习, NLP, Pipeline, 文本分类, scikit-learn]
 前面几课我们已经把中文文本分类的关键零件拆开看过：中文分词、停用词、词袋、TF-IDF、逻辑回归 baseline、模型评估和混淆矩阵。
 
 这一课要做的是把这些零件重新装回去，封装成一条可以训练、可以预测、可以复用的 Pipeline。
-
-<figure class="lesson-video">
-  <video controls playsinline preload="metadata" poster="/images/covers/text-classification-pipeline-full-flow-video.jpg" aria-label="第 42 课：用 Pipeline 封装中文文本分类全过程">
-    <source src="/videos/lesson-42-text-classification-pipeline-full-flow.mp4" type="video/mp4" />
-    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
-  </video>
-  <figcaption>第 42 课视频 · 用 Pipeline 封装中文文本分类全过程</figcaption>
-</figure>
 
 ## 为什么文本分类更需要 Pipeline
 
