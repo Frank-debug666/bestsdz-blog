@@ -3,7 +3,7 @@ export const siteConfig = {
   url: 'https://bestsdz.xyz',
   description: '记录沿途的见闻、AI 学习笔记、项目复盘和那些值得停留的瞬间。',
   author: {
-    name: '史迪仔',
+    name: '会飞的蒲公英',
     avatar: '/logo-clean.png',
     github: 'https://github.com/Frank-debug666',
     role: 'AI 学习路上的记录者',
