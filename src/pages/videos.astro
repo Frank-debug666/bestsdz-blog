@@ -9,7 +9,7 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 
 const getVideoGroup = (stageTitle: string | undefined, lessonNumber: number) => {
   if (stageTitle) return stageTitle;
-  if (lessonNumber <= 20) return '已锁定的前 20 篇';
+  if (lessonNumber <= 20) return 'AI 入门与 PyTorch 基础（1～20）';
   if (lessonNumber <= 34) return '传统机器学习基础（21～34）';
   if (lessonNumber <= 42) return '文本分类项目（35～42）';
   if (lessonNumber <= 58) return 'PyTorch 深度学习基础（43～58）';

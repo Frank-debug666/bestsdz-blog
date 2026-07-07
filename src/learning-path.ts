@@ -150,10 +150,10 @@ export const contentSections: ContentSection[] = [
 export const learningStages: LearningStage[] = [
   {
     id: 'locked-first-20',
-    number: '第一部分',
-    title: '已锁定的前 20 篇',
+    number: '阶段一',
+    title: 'AI 入门与 PyTorch 基础（1～20）',
     description: '从 AI 基本概念、机器学习任务、深度学习直觉、PyTorch 入门到中文文本分类项目全貌。',
-    positioning: '这是整条路线的入门底座，标题、编号、日期和顺序以当前发布清单为准。前 18 篇负责概念和 PyTorch 入门，第 19-20 篇负责端到端项目体验。',
+    positioning: '这是整条路线的入门底座。前 18 篇负责建立 AI、机器学习、深度学习和 PyTorch 训练流程的基本认知，第 19-20 篇负责让读者先看见一个中文文本分类项目怎样端到端跑起来。',
     outcome: '能说清 AI、机器学习、深度学习、PyTorch 训练流程和一个中文文本分类项目的大致链路。',
     readingMode: '零基础建议顺序阅读；已有基础的读者可以把它当作路线地图和查漏补缺清单。',
     status: '已完成',
