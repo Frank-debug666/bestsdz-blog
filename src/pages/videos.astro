@@ -9,10 +9,18 @@ const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
 
 const getVideoGroup = (stageTitle: string | undefined, lessonNumber: number) => {
   if (stageTitle) return stageTitle;
-  if (lessonNumber <= 8) return '零基础入门';
-  if (lessonNumber <= 18 || lessonNumber === 44) return '原理与 PyTorch';
-  if (lessonNumber <= 35) return '传统机器学习';
-  return '中文文本分类项目';
+  if (lessonNumber <= 20) return '已锁定的前 20 篇';
+  if (lessonNumber <= 34) return '传统机器学习基础（21～34）';
+  if (lessonNumber <= 42) return '文本分类项目（35～42）';
+  if (lessonNumber <= 58) return 'PyTorch 深度学习基础（43～58）';
+  if (lessonNumber <= 68) return '深度学习项目（59～68）';
+  if (lessonNumber <= 78) return 'NLP 与序列模型（69～78）';
+  if (lessonNumber <= 90) return 'Transformer 与 BERT（79～90）';
+  if (lessonNumber <= 100) return '大模型开发（91～100）';
+  if (lessonNumber <= 110) return 'RAG 与知识库（101～110）';
+  if (lessonNumber <= 116) return 'Dify / RAGFlow（111～116）';
+  if (lessonNumber <= 125) return '部署与优化（117～125）';
+  return '综合毕业项目（126+）';
 };
 
 const videoItems = posts

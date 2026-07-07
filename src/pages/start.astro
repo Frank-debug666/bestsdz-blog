@@ -20,22 +20,22 @@ const tracks = [
     label: 'Path 01',
     title: '零基础从这里开始',
     description: '适合第一次系统学 AI 的读者，先建立地图，再理解数据、任务和评价指标。',
-    stageIds: ['start'],
+    stageIds: ['locked-first-20'],
     href: '/posts/what-is-ai/',
   },
   {
     label: 'Path 02',
-    title: '模型原理与 PyTorch',
-    description: '适合已经知道监督学习、分类回归的人，把神经网络、损失函数和训练流程串起来。',
-    stageIds: ['principles', 'pytorch'],
-    href: '/posts/what-is-neural-network/',
+    title: '传统机器学习补基础',
+    description: '适合想把数据、特征工程、建模、评估和模型选择这条链路系统补齐的人。',
+    stageIds: ['traditional-ml'],
+    href: '/posts/machine-learning-project-flow/',
   },
   {
     label: 'Path 03',
-    title: '项目实战与工程化',
-    description: '适合想把知识落到项目里的人，从数据清洗、特征工程到中文文本分类项目。',
-    stageIds: ['first-projects', 'traditional-ml', 'text-classification'],
-    href: '/posts/machine-learning-project-flow/',
+    title: '项目与 PyTorch 深化',
+    description: '适合想把知识落到中文文本分类项目，并继续进入 PyTorch 训练脚本能力的人。',
+    stageIds: ['text-classification', 'pytorch-deepening'],
+    href: '/posts/chinese-text-encoding-cleaning-normalization/',
   },
 ];
 ---
@@ -46,7 +46,7 @@ const tracks = [
       <span class="eyebrow">Start Here</span>
       <h1>新手从这里开始</h1>
       <p>
-        这个博客不只是文章列表，而是一条从 AI 基础、机器学习、深度学习、PyTorch 到项目实战的学习路线。
+        这个博客不只是文章列表，而是一条从 AI 基础、传统机器学习、中文文本分类、PyTorch 深化到后续工程化的学习路线。
         先选一条路径，再顺着每篇文章里的“下一步”读下去。
       </p>
       <div class="start-actions">
@@ -130,11 +130,11 @@ const tracks = [
       <div class="section-heading">
         <div>
           <h2 id="start-upcoming-title">后续会更新什么</h2>
-          <p>已经发布的内容负责打基础，后面会逐步进入大模型、RAG 和部署优化。</p>
+          <p>已经发布的内容负责打基础，后面会继续进入深度学习项目、NLP、Transformer、大模型、RAG 和部署优化。</p>
         </div>
       </div>
       <div class="future-grid compact">
-        {futureStages.slice(2, 6).map((stage) => (
+        {futureStages.slice(0, 4).map((stage) => (
           <article>
             <span>{stage.range}</span>
             <h3>{stage.title}</h3>

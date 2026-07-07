@@ -26,15 +26,15 @@ const productPaths = [
   },
   {
     number: '02',
-    title: '我想学原理',
-    description: '理解神经网络、损失函数、梯度下降、PyTorch 训练循环和模型评估。',
-    href: '/ai-roadmap/#principles',
+    title: '我想补机器学习',
+    description: '从第 21 篇开始，用传统机器学习把数据、训练、评估和模型选择走通。',
+    href: '/ai-roadmap/#traditional-ml',
   },
   {
     number: '03',
     title: '我想做项目',
-    description: '进入数据清洗、传统机器学习、中文文本分类和后续 RAG / Dify 项目。',
-    href: '/ai-roadmap/#traditional-ml',
+    description: '进入中文文本分类、PyTorch 深度学习项目和后续 RAG / Dify / 部署路线。',
+    href: '/ai-roadmap/#text-classification',
   },
 ];
 
@@ -135,7 +135,7 @@ const nextFutureStages = futureStages.slice(0, 4);
         <div>
           <span class="eyebrow">Course Map</span>
           <h2 id="learning-system-preview-title">这条路线会走到哪里</h2>
-          <p>当前内容已经覆盖基础、原理、PyTorch 和项目拆解，后续会进入更完整的工程化路线。</p>
+          <p>路线按发布日历统一为：前 20 篇锁定，随后进入传统机器学习、文本分类、PyTorch 深化和后续工程化路线。</p>
         </div>
         <a class="button secondary" href="/ai-roadmap/">完整路线</a>
       </div>
@@ -143,7 +143,7 @@ const nextFutureStages = futureStages.slice(0, 4);
       <div class="route-preview-grid">
         <div class="route-preview-panel">
           <h3>当前主线</h3>
-          {activeStages.slice(-4).map((stage) => (
+          {activeStages.map((stage) => (
             <a href={`/ai-roadmap/#${stage.id}`}>
               <span>{stage.number}</span>
               <strong>{stage.title}</strong>
