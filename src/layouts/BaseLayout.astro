@@ -1,5 +1,4 @@
 ---
-import '../styles/global.css';
 import { siteConfig } from '../site.config';
 import ViewCounter from '../components/ViewCounter.astro';
 
@@ -42,6 +41,7 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
     <meta name="author" content={siteConfig.author.name} />
     <meta name="generator" content="Astro" />
     <link rel="canonical" href={canonicalUrl} />
+    <link rel="stylesheet" href="/global.css?v=20260713-style-hotfix" />
     <link rel="icon" type="image/svg+xml" href="/logo-route-star.svg?v=20260713-route-star" />
     <link rel="icon" type="image/png" href="/logo-route-star-512.png?v=20260713-route-star" />
     <link rel="apple-touch-icon" href="/logo-route-star-512.png?v=20260713-route-star" />
