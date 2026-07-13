@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title description">
+  <title id="title">去你想去的地方</title>
+  <desc id="description">一条通向星光的弯曲道路</desc>
+  <circle cx="256" cy="256" r="204" fill="none" stroke="#1d78a8" stroke-width="24" />
+  <path
+    d="M166 408c35-66 166-58 170-112 3-35-83-35-79-78 2-25 41-40 77-65"
+    fill="none"
+    stroke="#0d3155"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="43"
+  />
+  <path
+    d="m353 101 13 27 30 4-22 21 6 30-27-15-27 15 6-30-22-21 30-4z"
+    fill="#c99536"
+  />
+</svg>

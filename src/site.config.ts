@@ -4,7 +4,7 @@ export const siteConfig = {
   description: '记录沿途的见闻、AI 学习笔记、项目复盘和那些值得停留的瞬间。',
   author: {
     name: '会飞的蒲公英',
-    avatar: '/logo-clean.png?v=20260706-dandelion',
+    avatar: '/logo-route-star.svg?v=20260713-route-star',
     github: 'https://github.com/Frank-debug666',
     role: 'AI 学习路上的记录者',
     location: '在路上，也在训练循环里',

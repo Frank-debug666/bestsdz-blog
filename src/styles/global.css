@@ -155,7 +155,8 @@ body.inner-page .nav {
   width: 40px;
   height: 40px;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 5px;
   background: rgba(255, 255, 255, 0.85);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
 }
@@ -2936,9 +2937,61 @@ body.inner-page .nav {
 }
 
 @media (max-width: 560px) {
+  body.home-page .site-header {
+    position: relative;
+    padding-top: env(safe-area-inset-top, 0px);
+    background: var(--bg-strong);
+  }
+
+  body.home-page .header-frame {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+
   .nav {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+    padding: 14px 16px 12px;
+    border-radius: 22px;
+  }
+
+  .brand {
+    width: 100%;
+  }
+
+  .brand-logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+
+  .nav-links {
+    width: 100%;
+    max-width: 100%;
+    padding: 0 0 4px;
+    gap: 18px;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a {
+    flex: 0 0 auto;
+  }
+
+  .nav-links a[aria-current='page']::after {
+    bottom: -4px;
+  }
+
+  body.home-page .hero-scene {
+    padding-top: 38px;
   }
 
   .brand-text {
