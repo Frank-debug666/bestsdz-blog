@@ -1237,11 +1237,22 @@ body.inner-page .nav {
   background: rgba(255, 250, 244, 0.68);
 }
 
-.calendar-list time,
-.calendar-list span {
+.calendar-list .update-status {
+  display: inline-flex;
+  width: fit-content;
+  padding: 4px 10px;
+  border: 1px solid rgba(137, 90, 48, 0.22);
+  border-radius: 999px;
+  background: rgba(246, 241, 234, 0.74);
   color: var(--accent-deep);
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.calendar-list span:not(.update-status) {
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+  font-weight: 700;
 }
 
 .calendar-list h3 {

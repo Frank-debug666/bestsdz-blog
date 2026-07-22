@@ -371,9 +371,9 @@ export const graduationProjects: GraduationProject[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-07-24', '正则化、Dropout 与 Early Stopping：防止过拟合的方法地图', '阶段四：PyTorch 深度学习基础'],
-  ['2026-07-27', '怎样根据 loss、accuracy 和梯度诊断训练问题', '阶段四：PyTorch 深度学习基础'],
-  ['2026-07-30', 'PyTorch 线性回归项目：从数据到训练闭环', '阶段五：深度学习项目'],
+  ['下一篇', '正则化、Dropout 与 Early Stopping：防止过拟合的方法地图', '阶段四：PyTorch 深度学习基础'],
+  ['后续', '怎样根据 loss、accuracy 和梯度诊断训练问题', '阶段四：PyTorch 深度学习基础'],
+  ['规划中', 'PyTorch 线性回归项目：从数据到训练闭环', '阶段五：深度学习项目'],
 ] as const;
 
 export function getLessonSortKey(label: string | number | undefined) {

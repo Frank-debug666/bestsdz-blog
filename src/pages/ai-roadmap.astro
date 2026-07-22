@@ -178,14 +178,14 @@ const publishedLessonCount = learningStages.reduce(
       <div class="section-heading">
         <div>
           <h2>接下来更新什么</h2>
-          <p>这里只锁定未来两周的选题；保持每周 2 至 3 篇，完成后继续滚动排期。</p>
+          <p>这里只展示近期准备写的选题队列，不承诺固定日期；完成一篇后继续滚动调整。</p>
         </div>
       </div>
 
       <div class="calendar-list">
-        {upcomingLessons.map(([date, title, track]) => (
+        {upcomingLessons.map(([status, title, track]) => (
           <article>
-            <time datetime={date}>{date}</time>
+            <span class="update-status">{status}</span>
             <h3>{title}</h3>
             <span>{track}</span>
           </article>
