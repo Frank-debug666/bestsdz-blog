@@ -249,6 +249,15 @@ export const learningStages: LearningStage[] = [
       'computation-graph-gradient-accumulation',
       'shape-data-contract',
       'reshape-view-transpose-broadcast',
+      'custom-dataset',
+      'dataloader-advanced',
+      'nn-module-explained',
+      'weight-initialization',
+      'sgd-momentum',
+      'adagrad-rmsprop',
+      'adam-adamw',
+      'learning-rate-schedule',
+      'pytorch-gpu-training',
     ],
   },
 ];
@@ -362,9 +371,9 @@ export const graduationProjects: GraduationProject[] = [
 ];
 
 export const upcomingLessons = [
-  ['2026-07-09', '自定义 Dataset：怎样封装自己的训练数据', '阶段四：PyTorch 深度学习基础'],
-  ['2026-07-12', 'DataLoader 进阶：batch、shuffle 与并行加载', '阶段四：PyTorch 深度学习基础'],
-  ['2026-07-14', 'nn.Module 详解：模型为什么要继承这个类', '阶段四：PyTorch 深度学习基础'],
+  ['2026-07-24', '正则化、Dropout 与 Early Stopping：防止过拟合的方法地图', '阶段四：PyTorch 深度学习基础'],
+  ['2026-07-27', '怎样根据 loss、accuracy 和梯度诊断训练问题', '阶段四：PyTorch 深度学习基础'],
+  ['2026-07-30', 'PyTorch 线性回归项目：从数据到训练闭环', '阶段五：深度学习项目'],
 ] as const;
 
 export function getLessonSortKey(label: string | number | undefined) {
