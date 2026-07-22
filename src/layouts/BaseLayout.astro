@@ -41,7 +41,20 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
     <meta name="author" content={siteConfig.author.name} />
     <meta name="generator" content="Astro" />
     <link rel="canonical" href={canonicalUrl} />
-    <link rel="stylesheet" href="/global.css?v=20260713-style-hotfix" />
+    {currentPath === '/' && (
+      <script is:inline>
+        (() => {
+          try {
+            const savedVersion = window.localStorage?.getItem('homeVisualVersion');
+            document.documentElement.dataset.homeVersion =
+              savedVersion === 'legacy' ? 'legacy' : 'academy';
+          } catch {
+            document.documentElement.dataset.homeVersion = 'academy';
+          }
+        })();
+      </script>
+    )}
+    <link rel="stylesheet" href="/global.css?v=20260722-academy-home" />
     <link rel="icon" type="image/svg+xml" href="/logo-route-star.svg?v=20260713-route-star" />
     <link rel="icon" type="image/png" href="/logo-route-star-512.png?v=20260713-route-star" />
     <link rel="apple-touch-icon" href="/logo-route-star-512.png?v=20260713-route-star" />
@@ -110,5 +123,37 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
         </div>
       </div>
     </footer>
+    {currentPath === '/' && (
+      <script is:inline>
+        (() => {
+          const storageKey = 'homeVisualVersion';
+          const getVersion = () =>
+            document.documentElement.dataset.homeVersion === 'legacy' ? 'legacy' : 'academy';
+          const setVersion = (version) => {
+            document.documentElement.dataset.homeVersion = version;
+            try {
+              window.localStorage?.setItem(storageKey, version);
+            } catch {
+              // Ignore storage failures and still switch the visible page version.
+            }
+            document.querySelectorAll('[data-home-version-toggle]').forEach((button) => {
+              button.textContent = version === 'legacy' ? '切换新版' : '回到旧版';
+              button.setAttribute('aria-pressed', version === 'legacy' ? 'true' : 'false');
+              button.setAttribute(
+                'aria-label',
+                version === 'legacy' ? '切换到新版首页' : '回到旧版首页',
+              );
+            });
+          };
+
+          setVersion(getVersion());
+          document.querySelectorAll('[data-home-version-toggle]').forEach((button) => {
+            button.addEventListener('click', () => {
+              setVersion(getVersion() === 'legacy' ? 'academy' : 'legacy');
+            });
+          });
+        })();
+      </script>
+    )}
   </body>
 </html>

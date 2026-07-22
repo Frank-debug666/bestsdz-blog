@@ -2,7 +2,13 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostRow from '../components/PostRow.astro';
-import { contentSections, futureStages, graduationProjects, learningStages } from '../learning-path';
+import {
+  contentSections,
+  futureStages,
+  getPostPlacement,
+  graduationProjects,
+  learningStages,
+} from '../learning-path';
 
 const posts = (await getCollection('posts', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
@@ -40,10 +46,157 @@ const productPaths = [
 
 const activeStages = learningStages.filter((stage) => stage.status !== '规划中');
 const nextFutureStages = futureStages.slice(0, 4);
+const currentStage = activeStages[activeStages.length - 1];
+const featuredPlacement = featured ? getPostPlacement(featured.id) : undefined;
+const roadmapCards = contentSections.slice(0, 4);
+const videoHighlights = posts
+  .filter((post) => post.body?.includes('/videos/'))
+  .slice(0, 3)
+  .map((post) => ({
+    post,
+    placement: getPostPlacement(post.id),
+  }));
 ---
 
 <BaseLayout title="去你想去的地方">
-  <main class="home-main">
+  <main class="home-main home-version home-version-new academy-home">
+    <section class="academy-hero">
+      <img
+        class="academy-backdrop"
+        src="/images/hero-qingdao-harbor.jpg"
+        alt="晴朗天空下的海滨城市、港湾、楼宇和远处岛屿。"
+        width="2560"
+        height="1436"
+      />
+
+      <div class="shell academy-hero-grid">
+        <div class="academy-copy">
+          <span class="academy-label">AI Learning Roadmap</span>
+          <h1><span>从 0 开始，</span><span>把 AI 学成</span><span>一条清楚的路线</span></h1>
+          <p>
+            每一课都回答一个具体问题：先理解概念，再看代码，最后用视频把思路串起来。这里不是堆文章，而是一张会持续生长的 AI 学习地图。
+          </p>
+          <div class="academy-actions">
+            <a class="button light" href="/start/">从第一课开始</a>
+            <a class="button ghost" href="/ai-roadmap/">查看学习路线</a>
+            <button class="button ghost home-version-toggle" type="button" data-home-version-toggle>
+              回到旧版
+            </button>
+          </div>
+        </div>
+
+        {featured && (
+          <article class="academy-current-card">
+            <span class="academy-card-kicker">
+              当前更新
+              {featuredPlacement?.lessonLabel && ` · 第 ${featuredPlacement.lessonLabel} 课`}
+            </span>
+            <h2><a href={`/posts/${featured.id}/`}>{featured.data.title}</a></h2>
+            <p>{featured.data.description}</p>
+            <div class="academy-pill-row">
+              {featured.data.tags.slice(0, 3).map((tag) => (
+                <a class="academy-pill" href={`/tags/${encodeURIComponent(tag)}/`}>{tag}</a>
+              ))}
+            </div>
+          </article>
+        )}
+      </div>
+    </section>
+
+    <section class="shell academy-overview" aria-labelledby="academy-overview-title">
+      <div class="academy-section-heading">
+        <div>
+          <span class="academy-label dark">Learning Roadmap</span>
+          <h2 id="academy-overview-title">先把地图看清楚，再一课一课往前走</h2>
+        </div>
+        <a class="button secondary" href="/ai-roadmap/">完整路线</a>
+      </div>
+
+      <div class="academy-stage-grid">
+        {roadmapCards.map((section, index) => (
+          <a class="academy-stage-card" href="/ai-roadmap/">
+            <span>{String(index + 1).padStart(2, '0')}</span>
+            <h3>{section.title}</h3>
+            <p>{section.description}</p>
+            <strong>{section.postIds.length} 篇内容 · {section.level}</strong>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="shell academy-board" aria-labelledby="academy-board-title">
+      <div class="academy-route-panel">
+        <div class="academy-section-heading compact">
+          <div>
+            <span class="academy-label dark">Course Map</span>
+            <h2 id="academy-board-title">当前学习进度</h2>
+          </div>
+        </div>
+
+        <dl class="academy-stats" aria-label="内容规模">
+          <div>
+            <dt>{posts.length}</dt>
+            <dd>篇公开文章</dd>
+          </div>
+          <div>
+            <dt>{videoCount}</dt>
+            <dd>节配套视频</dd>
+          </div>
+          <div>
+            <dt>{learningStages.length}</dt>
+            <dd>个学习阶段</dd>
+          </div>
+        </dl>
+
+        <div class="academy-route-list">
+          {activeStages.map((stage) => (
+            <a href={`/ai-roadmap/#${stage.id}`}>
+              <span>{stage.number}</span>
+              <strong>{stage.title}</strong>
+              <em>{stage.status}</em>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <div class="academy-video-panel">
+        <div class="academy-section-heading compact">
+          <div>
+            <span class="academy-label dark">Video Lessons</span>
+            <h2>配套视频</h2>
+          </div>
+          <a class="button secondary" href="/videos/">全部视频</a>
+        </div>
+
+        <div class="academy-video-list">
+          {videoHighlights.map(({ post, placement }) => (
+            <a class="academy-video-item" href={`/posts/${post.id}/`}>
+              <span class="academy-video-number">{placement.lessonLabel ?? 'NEW'}</span>
+              <span>
+                <strong>{post.data.title}</strong>
+                <em>{placement.stage?.title ?? currentStage?.title ?? 'AI 学习路线'}</em>
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="shell section article-section academy-latest">
+      <div class="section-heading">
+        <div>
+          <h2>最新文章</h2>
+          <p>继续沿着学习路线更新，文章和视频会尽量保持一一对应。</p>
+        </div>
+        <a class="button secondary" href="/posts/">全部文章</a>
+      </div>
+      <div class="post-list">
+        {recent.slice(0, 5).map((post) => <PostRow post={post} />)}
+      </div>
+    </section>
+  </main>
+
+  <main class="home-main home-version home-version-legacy">
     <section class="hero-scene">
       <img
         class="hero-backdrop"
@@ -60,6 +213,9 @@ const nextFutureStages = futureStages.slice(0, 4);
           <div class="hero-actions">
             <a class="button light" href="/start/">新手从这里开始</a>
             <a class="button ghost" href="/videos/">视频中心</a>
+            <button class="button ghost home-version-toggle" type="button" data-home-version-toggle>
+              切换新版
+            </button>
           </div>
         </div>
 
