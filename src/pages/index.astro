@@ -2,6 +2,7 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import PostRow from '../components/PostRow.astro';
+import ProjectSpotlight from '../components/ProjectSpotlight.astro';
 import {
   contentSections,
   futureStages,
@@ -182,6 +183,8 @@ const videoHighlights = posts
       </div>
     </section>
 
+    <ProjectSpotlight variant="academy" headingId="echo-project-academy-title" />
+
     <section class="shell section article-section academy-latest">
       <div class="section-heading">
         <div>
@@ -332,6 +335,8 @@ const videoHighlights = posts
         <a class="journey-note-link" href="/ai-roadmap/">查看 AI 路线</a>
       </div>
     </section>
+
+    <ProjectSpotlight variant="legacy" headingId="echo-project-legacy-title" />
 
     <section class="shell section article-section">
       <div class="section-heading">

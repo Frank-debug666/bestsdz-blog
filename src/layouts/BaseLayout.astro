@@ -100,9 +100,9 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
             <a href="/videos/" aria-current={currentPath === '/videos/' ? 'page' : undefined}>视频</a>
             <a href="/glossary/" aria-current={currentPath.startsWith('/glossary') ? 'page' : undefined}>词典</a>
             <a href="/posts/" aria-current={currentPath.startsWith('/posts') ? 'page' : undefined}>文章</a>
+            <a href="/projects/echo-memory/" aria-current={currentPath.startsWith('/projects') ? 'page' : undefined}>作品</a>
             <a href="/search/" aria-current={currentPath === '/search/' ? 'page' : undefined}>搜索</a>
             <a href="/about/" aria-current={currentPath === '/about/' ? 'page' : undefined}>关于</a>
-            <a href="/rss.xml">订阅</a>
           </div>
         </nav>
       </div>
@@ -119,6 +119,7 @@ const cloudflareBeacon = siteConfig.cloudflareAnalyticsToken
         <div class="footer-meta">
           <ViewCounter />
           <span>© {new Date().getFullYear()} {siteTitle}</span>
+          <a href="/rss.xml">RSS 订阅</a>
           <span>Astro · Markdown · RSS · Cloudflare Pages</span>
         </div>
       </div>

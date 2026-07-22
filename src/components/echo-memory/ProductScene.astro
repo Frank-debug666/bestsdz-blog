@@ -1,0 +1,43 @@
+---
+interface Props {
+  index: string;
+  title: string;
+  body: string;
+  image: string;
+  alt: string;
+  direction?: 'media-first' | 'copy-first';
+  compact?: boolean;
+}
+
+const {
+  index,
+  title,
+  body,
+  image,
+  alt,
+  direction = 'media-first',
+  compact = false,
+} = Astro.props;
+---
+
+<article
+  class:list={[
+    'echo-scene',
+    direction === 'copy-first' && 'echo-scene--copy-first',
+    compact && 'echo-scene--compact',
+  ]}
+  data-reveal
+>
+  <div class="echo-scene-media">
+    <div class="echo-window-bar" aria-hidden="true">
+      <span></span><span></span><span></span>
+      <small>EchoMemory · 本地演示环境</small>
+    </div>
+    <img src={image} alt={alt} loading="lazy" decoding="async" />
+  </div>
+  <div class="echo-scene-copy">
+    <span class="echo-scene-index">{index}</span>
+    <h3>{title}</h3>
+    <p>{body}</p>
+  </div>
+</article>

@@ -1,0 +1,223 @@
+---
+interface Props {
+  variant?: 'academy' | 'legacy';
+  headingId?: string;
+}
+
+const { variant = 'legacy', headingId = 'echo-project-title' } = Astro.props;
+---
+
+<section
+  class:list={['project-spotlight', variant === 'academy' && 'project-spotlight--academy']}
+  aria-labelledby={headingId}
+>
+  <div class="shell project-spotlight-inner">
+    <div class="project-spotlight-copy">
+      <div class="project-brand">
+        <img src="/echo-memory/brand/app-icon.svg" alt="" width="38" height="38" aria-hidden="true" />
+        <span>{variant === 'academy' ? '独立产品 · 回响 EchoMemory' : '正在构建 · 回响 EchoMemory'}</span>
+      </div>
+      <h2 id={headingId}>让过去的自己，回答现在的问题。</h2>
+      <p>把散落的对话、资料和行动，连接成可确认、可追溯、可以再次找到的个人记忆。</p>
+      <a class="project-link" href="/projects/echo-memory/">
+        认识 EchoMemory
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M5 12h13M13 6l6 6-6 6"></path>
+        </svg>
+      </a>
+    </div>
+    <a class="project-spotlight-media" href="/projects/echo-memory/" aria-label="打开 EchoMemory 产品介绍">
+      <img
+        src="/echo-memory/home-feature.png"
+        alt="回响 EchoMemory 宣传画面：不是另一个收藏夹"
+        width="1920"
+        height="1080"
+        loading="lazy"
+        decoding="async"
+      />
+    </a>
+  </div>
+</section>
+
+<style>
+  .project-spotlight {
+    padding: 42px 0 22px;
+    background: #f6f1ea;
+  }
+
+  .project-spotlight-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 0.82fr) minmax(420px, 1.18fr);
+    align-items: center;
+    gap: clamp(36px, 6vw, 86px);
+    padding: clamp(34px, 5vw, 64px);
+    border: 1px solid rgba(21, 95, 87, 0.16);
+    border-radius: 32px;
+    background: #fbf8f3;
+    box-shadow: 0 28px 70px rgba(36, 49, 47, 0.09);
+  }
+
+  .project-spotlight-copy {
+    display: grid;
+    gap: 22px;
+  }
+
+  .project-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #155f57;
+    font-size: 0.88rem;
+    font-weight: 750;
+    letter-spacing: 0.04em;
+  }
+
+  .project-brand img {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+
+  .project-spotlight h2 {
+    max-width: 540px;
+    font-size: clamp(2.2rem, 4.5vw, 4.4rem);
+    line-height: 1.04;
+  }
+
+  .project-spotlight p {
+    max-width: 560px;
+    color: #59625f;
+    font-size: 1.05rem;
+  }
+
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    width: max-content;
+    min-height: 48px;
+    padding: 0 20px;
+    border-radius: 999px;
+    background: #155f57;
+    color: #fff;
+    font-weight: 700;
+    transition: transform 180ms ease, background 180ms ease;
+  }
+
+  .project-link:hover {
+    transform: translateY(-2px);
+    background: #104c46;
+  }
+
+  .project-link svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 1.8;
+  }
+
+  .project-spotlight-media {
+    overflow: hidden;
+    border: 1px solid rgba(21, 95, 87, 0.14);
+    border-radius: 24px;
+    background: #f2ecdf;
+    box-shadow: 0 22px 48px rgba(27, 50, 47, 0.13);
+    transition: transform 220ms ease, box-shadow 220ms ease;
+  }
+
+  .project-spotlight-media:hover {
+    transform: translateY(-4px) rotate(0.2deg);
+    box-shadow: 0 30px 64px rgba(27, 50, 47, 0.17);
+  }
+
+  .project-spotlight-media img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+  }
+
+  .project-spotlight--academy {
+    padding: 50px 0 24px;
+    background: #fff9ef;
+  }
+
+  .project-spotlight--academy .project-spotlight-inner {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: #17202b;
+    box-shadow: 0 24px 64px rgba(23, 29, 38, 0.16);
+  }
+
+  .project-spotlight--academy .project-brand {
+    color: #bde9db;
+  }
+
+  .project-spotlight--academy h2 {
+    color: #ffffff;
+  }
+
+  .project-spotlight--academy p {
+    color: rgba(255, 255, 255, 0.76);
+  }
+
+  .project-spotlight--academy .project-link {
+    border-radius: 8px;
+    background: #19a77f;
+  }
+
+  .project-spotlight--academy .project-link:hover {
+    background: #138567;
+  }
+
+  .project-spotlight--academy .project-spotlight-media {
+    border-color: rgba(255, 255, 255, 0.16);
+    border-radius: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .project-spotlight-inner {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .project-spotlight {
+      padding-top: 24px;
+    }
+
+    .project-spotlight-inner {
+      gap: 30px;
+      padding: 26px 20px 20px;
+      border-radius: 24px;
+    }
+
+    .project-spotlight--academy .project-spotlight-inner,
+    .project-spotlight--academy .project-spotlight-media {
+      border-radius: 8px;
+    }
+
+    .project-spotlight h2 {
+      font-size: clamp(2.2rem, 11vw, 3.15rem);
+    }
+
+    .project-link {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .project-spotlight-media {
+      border-radius: 18px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .project-link,
+    .project-spotlight-media {
+      transition: none;
+    }
+  }
+</style>

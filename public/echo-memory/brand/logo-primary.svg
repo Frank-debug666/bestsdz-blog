@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="memory" x1="152" y1="238" x2="870" y2="790" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#312E81"/>
+      <stop offset="0.5" stop-color="#4F46E5"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <path d="M166 512
+           C166 310 360 238 512 405
+           C664 238 858 310 858 512
+           C858 714 664 786 512 619
+           C360 786 166 714 166 512Z"
+        fill="none" stroke="url(#memory)" stroke-width="116" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="786" cy="392" r="42" fill="#22D3EE"/>
+  <circle cx="786" cy="392" r="65" fill="none" stroke="#A5F3FC" stroke-width="17"/>
+</svg>

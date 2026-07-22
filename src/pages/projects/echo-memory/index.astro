@@ -1,0 +1,304 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ProductScene from '../../../components/echo-memory/ProductScene.astro';
+import ThoughtClue from '../../../components/echo-memory/ThoughtClue.astro';
+import '../../../styles/echo-memory.css';
+
+const siteUrl = Astro.site ?? new URL('https://bestsdz.xyz');
+const productUrl = new URL('/projects/echo-memory/', siteUrl).toString();
+const videoUrl = new URL('/echo-memory/video/echo-memory-promo-16x9.mp4', siteUrl).toString();
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'SoftwareApplication',
+      name: '回响 EchoMemory',
+      description: '本地优先、由用户确认并且能够回到原始证据的个人记忆系统。',
+      applicationCategory: 'ProductivityApplication',
+      operatingSystem: 'Windows, macOS',
+      url: productUrl,
+      image: new URL('/echo-memory/video-poster.png', siteUrl).toString(),
+    },
+    {
+      '@type': 'VideoObject',
+      name: '回响 EchoMemory 60 秒产品演示',
+      description: '展示从原文保存、记忆确认到证据化找回的完整产品闭环。',
+      thumbnailUrl: new URL('/echo-memory/video-poster.png', siteUrl).toString(),
+      contentUrl: videoUrl,
+      uploadDate: '2026-07-18',
+      duration: 'PT1M5S',
+    },
+  ],
+};
+---
+
+<BaseLayout
+  title="回响 EchoMemory"
+  description="让过去的自己，回答现在的问题。EchoMemory 把散落的对话、资料和行动连接成可确认、可追溯的个人记忆。"
+  image="/echo-memory/video-poster.png"
+  structuredData={structuredData}
+>
+  <main class="echo-page">
+    <section class="echo-hero" aria-labelledby="echo-title">
+      <div class="echo-hero-thread" aria-hidden="true">
+        <svg viewBox="0 0 1400 920" preserveAspectRatio="none">
+          <path d="M-80 170 C 240 80, 260 610, 590 470 S 940 80, 1480 360"></path>
+        </svg>
+      </div>
+
+      <div class="echo-shell echo-hero-grid">
+        <div class="echo-hero-copy" data-reveal>
+          <h1 id="echo-title"><span>让过去的自己，</span><span>回答现在的问题。</span></h1>
+          <p>
+            回响 EchoMemory 把散落的对话、资料和行动连接成可追溯的个人记忆。先保存原文，再由你决定什么值得长期保留。
+          </p>
+          <div class="echo-hero-actions">
+            <a class="echo-button echo-button--primary" href="#demo">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5Z"></path></svg>
+              观看 60 秒演示
+            </a>
+            <a class="echo-button echo-button--quiet" href="#workflow">
+              看看它如何工作
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 10 5 5 5-5"></path></svg>
+            </a>
+          </div>
+          <p class="echo-proof">本地优先 <span>·</span> 原文可追溯 <span>·</span> 记忆由你确认</p>
+        </div>
+
+        <div class="echo-hero-visual" data-reveal>
+          <div class="echo-fragment echo-fragment--one" aria-hidden="true">网页里看到的一段话</div>
+          <div class="echo-fragment echo-fragment--two" aria-hidden="true">刚刚做下的决定</div>
+          <div class="echo-product-frame">
+            <div class="echo-window-bar" aria-hidden="true">
+              <span></span><span></span><span></span>
+              <small>EchoMemory · 本地演示环境</small>
+            </div>
+            <img
+              src="/echo-memory/ui/review.png"
+              alt="EchoMemory 记忆确认界面，可查看待确认、已确认和已忽略的记忆"
+              width="1440"
+              height="1000"
+              decoding="async"
+            />
+          </div>
+          <figure class="echo-capture-card">
+            <img
+              src="/echo-memory/ui/quick-capture-popup.png"
+              alt="EchoMemory 快速记录窗口"
+              width="480"
+              height="430"
+              decoding="async"
+            />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="echo-friction" aria-labelledby="friction-title">
+      <div class="echo-shell echo-friction-layout">
+        <div class="echo-friction-lines" aria-label="常见的信息遗忘场景" data-reveal>
+          <p>收藏了，后来没有再打开。</p>
+          <p>记录了，却忘记保存在哪里。</p>
+          <p>和 AI 聊过，下一次又要重新解释。</p>
+          <p>做过决定，几个月后只记得结果。</p>
+        </div>
+        <h2 id="friction-title" data-reveal>信息留下了，<br />思考却断开了。</h2>
+      </div>
+    </section>
+
+    <ThoughtClue />
+
+    <section class="echo-demo" id="demo" aria-labelledby="demo-title">
+      <div class="echo-shell">
+        <header class="echo-section-heading echo-section-heading--light" data-reveal>
+          <h2 id="demo-title">记录、整理、确认、找回。</h2>
+          <p>用一分钟，看一次完整的个人记忆闭环。</p>
+        </header>
+        <div class="echo-video-frame" data-reveal>
+          <video
+            controls
+            preload="metadata"
+            poster="/echo-memory/video-poster.png"
+            aria-label="回响 EchoMemory 60 秒产品演示"
+            data-echo-video
+          >
+            <source src="/echo-memory/video/echo-memory-promo-16x9.mp4" type="video/mp4" />
+            <track
+              kind="subtitles"
+              srclang="zh-CN"
+              label="简体中文"
+              src="/echo-memory/video/echo-memory-promo-16x9.vtt"
+              default
+            />
+            你的浏览器暂不支持视频播放。
+          </video>
+          <button class="echo-video-trigger" type="button" data-video-trigger aria-label="播放 EchoMemory 产品演示">
+            <span>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 7 8 5-8 5Z"></path></svg>
+            </span>
+            播放产品演示
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section class="echo-scenes echo-shell" aria-labelledby="values-title">
+      <header class="echo-section-heading echo-section-heading--wide" data-reveal>
+        <p class="echo-section-index">三个重要边界</p>
+        <h2 id="values-title">记忆系统首先应该尊重你的判断</h2>
+      </header>
+
+      <div class="echo-scene-list">
+        <ProductScene
+          index="原文先保存"
+          title="记录不会先被模型吞掉"
+          body="快速记录和文件导入都会先保存原始内容，再显示保存、解析、切分和提取进度。即使模型暂时不可用，原文仍然留在本地。"
+          image="/echo-memory/ui/quick-capture-popup.png"
+          alt="EchoMemory 快速记录窗口，显示内容输入区和本地保存状态"
+          compact={true}
+        />
+        <ProductScene
+          index="质量门禁"
+          title="记住什么，由你决定"
+          body="无意义短句不会直接污染长期记忆。有价值的候选统一进入记忆页面，你可以确认、修改、忽略、恢复或撤销。"
+          image="/echo-memory/ui/review.png"
+          alt="EchoMemory 记忆确认页面，展示记忆审核视图"
+          direction="copy-first"
+        />
+        <ProductScene
+          index="证据化找回"
+          title="回答能够回到证据"
+          body="重新提问时，系统使用本地索引寻找相关内容，并展示引用、匹配原因和原始来源，而不是只给出一段无法验证的结论。"
+          image="/echo-memory/ui/ask.png"
+          alt="EchoMemory 对话页面，可向过去的自己提问并查看证据"
+        />
+      </div>
+    </section>
+
+    <section class="echo-beyond" aria-labelledby="beyond-title">
+      <div class="echo-shell echo-beyond-grid">
+        <div class="echo-beyond-copy" data-reveal>
+          <h2 id="beyond-title">线索继续向前，<br />而不是停在收藏夹里。</h2>
+          <p>思考线索展示记忆如何随时间变化；个人、学习和工作空间保持平级，任务、决策和提醒继续承接已经形成的上下文。</p>
+          <ul>
+            <li>从观点变化回到当时的原始证据</li>
+            <li>让任务和决定保留自己的来由</li>
+            <li>在清晰边界内组织不同生活空间</li>
+          </ul>
+        </div>
+        <div class="echo-beyond-stack" data-reveal>
+          <figure class="echo-beyond-frame echo-beyond-frame--back">
+            <img src="/echo-memory/ui/workspace.png" alt="EchoMemory 我的空间页面" width="1440" height="1088" loading="lazy" decoding="async" />
+          </figure>
+          <figure class="echo-beyond-frame echo-beyond-frame--front">
+            <img src="/echo-memory/ui/threads.png" alt="EchoMemory 认知演化图页面" width="1440" height="1075" loading="lazy" decoding="async" />
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="echo-local" aria-labelledby="local-title">
+      <div class="echo-shell echo-local-grid">
+        <div class="echo-local-copy" data-reveal>
+          <p class="echo-section-index">本地优先</p>
+          <h2 id="local-title">你的记忆，不应该依赖某个平台是否一直存在。</h2>
+          <ul>
+            <li>数据默认保存在本地设备</li>
+            <li>API Key 使用本地安全存储</li>
+            <li>支持完整备份、恢复和导出</li>
+            <li>Obsidian 是可选出口，不是数据核心</li>
+            <li>没有配置模型也能使用基础能力</li>
+          </ul>
+        </div>
+        <div class="echo-local-media" data-reveal>
+          <div class="echo-window-bar" aria-hidden="true">
+            <span></span><span></span><span></span>
+            <small>数据维护 · 安全边界</small>
+          </div>
+          <img
+            src="/echo-memory/ui/settings-data.png"
+            alt="EchoMemory 数据维护设置页面"
+            width="1440"
+            height="2049"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      </div>
+    </section>
+
+    <section class="echo-closing" aria-labelledby="closing-title">
+      <img class="echo-closing-art" src="/echo-memory/visual-no-text.png" alt="" loading="lazy" decoding="async" aria-hidden="true" />
+      <div class="echo-shell echo-closing-content" data-reveal>
+        <img class="echo-closing-logo" src="/echo-memory/brand/logo-primary.svg" alt="回响 EchoMemory" width="210" height="42" />
+        <h2 id="closing-title">不是为了记住更多。<br />是为了重新找到真正重要的东西。</h2>
+        <div class="echo-closing-actions">
+          <a class="echo-button echo-button--primary" href="#demo">重看 60 秒演示</a>
+          <a class="echo-button echo-button--quiet" href="/">回到博客</a>
+        </div>
+        <p>EchoMemory 0.19.1 · 本地优先的个人记忆系统</p>
+      </div>
+    </section>
+  </main>
+
+  <script is:inline>
+    const revealItems = Array.from(document.querySelectorAll('[data-reveal]'));
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const echoPage = document.querySelector('.echo-page');
+
+    if (!reducedMotion) {
+      echoPage?.setAttribute('data-motion-ready', 'true');
+    }
+
+    if (reducedMotion || !('IntersectionObserver' in window)) {
+      revealItems.forEach((item) => item.classList.add('is-visible'));
+    } else {
+      const revealObserver = new IntersectionObserver(
+        (entries, observer) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target);
+          });
+        },
+        { threshold: 0.16, rootMargin: '0px 0px -7% 0px' },
+      );
+      revealItems.forEach((item) => revealObserver.observe(item));
+    }
+
+    const clue = document.querySelector('[data-thought-clue]');
+    let clueFrame = 0;
+    const updateClue = () => {
+      clueFrame = 0;
+      if (!clue) return;
+      const rect = clue.getBoundingClientRect();
+      const viewportAnchor = window.innerHeight * 0.84;
+      const progress = Math.min(1, Math.max(0, (viewportAnchor - rect.top) / Math.max(rect.height, 1)));
+      clue.style.setProperty('--clue-progress', String(progress));
+    };
+    const requestClueUpdate = () => {
+      if (clueFrame) return;
+      clueFrame = window.requestAnimationFrame(updateClue);
+    };
+    updateClue();
+    window.addEventListener('scroll', requestClueUpdate, { passive: true });
+    window.addEventListener('resize', requestClueUpdate);
+
+    const video = document.querySelector('[data-echo-video]');
+    const videoTrigger = document.querySelector('[data-video-trigger]');
+    if (video instanceof HTMLVideoElement && videoTrigger instanceof HTMLButtonElement) {
+      videoTrigger.addEventListener('click', async () => {
+        videoTrigger.hidden = true;
+        try {
+          await video.play();
+        } catch {
+          videoTrigger.hidden = false;
+        }
+      });
+      video.addEventListener('play', () => {
+        videoTrigger.hidden = true;
+      });
+    }
+  </script>
+</BaseLayout>

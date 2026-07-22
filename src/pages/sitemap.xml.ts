@@ -31,6 +31,7 @@ export const GET: APIRoute = async () => {
     urlEntry('/glossary/', undefined, '0.9'),
     urlEntry('/topics/', undefined, '0.9'),
     urlEntry('/posts/', undefined, '0.9'),
+    urlEntry('/projects/echo-memory/', undefined, '0.9'),
     urlEntry('/about/', undefined, '0.6'),
   ];
 

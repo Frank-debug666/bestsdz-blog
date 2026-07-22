@@ -1,0 +1,50 @@
+---
+const steps = [
+  {
+    title: '原文先保存',
+    body: '快速记录和导入资料都会先落到本地。即使模型暂时不可用，原始内容也不会消失。',
+  },
+  {
+    title: '过程看得见',
+    body: '保存、解析、切分和提取都有明确反馈。等待不再是一段没有解释的空白。',
+  },
+  {
+    title: '噪声先过滤',
+    body: '无意义短句不会直接进入长期记忆，资料知识、个人记忆和行动状态分别处理。',
+  },
+  {
+    title: '记忆由你确认',
+    body: '有价值的候选可以确认、修改、忽略和撤销，系统不会替你决定什么值得记住。',
+  },
+  {
+    title: '回答回到证据',
+    body: '重新提问时，可以查看引用、匹配原因和原始来源，让答案不止停在一句结论。',
+  },
+];
+---
+
+<section class="echo-workflow echo-shell" id="workflow" aria-labelledby="workflow-title">
+  <header class="echo-section-heading echo-section-heading--wide" data-reveal>
+    <p class="echo-section-index">从碎片到记忆</p>
+    <h2 id="workflow-title">一条能够回到原文的思考线索</h2>
+    <p>它不追求替你记住一切，而是让真正重要的信息经过清晰、可逆的过程留下来。</p>
+  </header>
+
+  <div class="echo-clue" data-thought-clue>
+    <div class="echo-clue-track" aria-hidden="true">
+      <span></span>
+    </div>
+    <ol class="echo-clue-steps">
+      {steps.map((step, index) => (
+        <li class="echo-clue-step" data-clue-step data-reveal>
+          <span class="echo-clue-node" aria-hidden="true"></span>
+          <span class="echo-clue-number">{String(index + 1).padStart(2, '0')}</span>
+          <div>
+            <h3>{step.title}</h3>
+            <p>{step.body}</p>
+          </div>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>

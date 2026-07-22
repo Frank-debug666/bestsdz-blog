@@ -25,6 +25,7 @@ export const GET: APIRoute = async () => {
     absoluteUrl('/glossary/'),
     absoluteUrl('/topics/'),
     absoluteUrl('/posts/'),
+    absoluteUrl('/projects/echo-memory/'),
     absoluteUrl('/about/'),
     ...topics.map((topic) => absoluteUrl(`/topics/${topic.slug}/`)),
     ...concepts.map((concept) => absoluteUrl(`/glossary/${concept.slug}/`)),
