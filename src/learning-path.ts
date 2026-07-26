@@ -240,7 +240,7 @@ export const learningStages: LearningStage[] = [
     positioning: '本阶段补齐实际训练需要的张量操作、自动微分、优化器家族和训练排错能力。它决定你能不能独立读懂任何 PyTorch 训练脚本，并诊断常见训练问题。',
     outcome: '独立搭建一个 PyTorch 训练脚本，正确处理 Shape、device、梯度清空、优化器选择和学习率策略，并能根据 loss/accuracy 曲线诊断训练问题。',
     readingMode: '当前更新主线，建议跟更；每篇都要配合代码自检。',
-    status: '更新中',
+    status: '已完成',
     level: '初级',
     startLesson: 43,
     postIds: [
@@ -258,20 +258,26 @@ export const learningStages: LearningStage[] = [
       'adam-adamw',
       'learning-rate-schedule',
       'pytorch-gpu-training',
+      'regularization-dropout-early-stopping',
+      'diagnose-training-loss-accuracy',
     ],
+  },
+  {
+    number: '阶段五',
+    id: 'deep-learning-projects',
+    title: '深度学习项目',
+    description: '通过回归、二维分类、表格分类和图像分类项目，把 Dataset、模型、损失、优化器、评估和推理串起来。',
+    positioning: '前面阶段已经补齐 PyTorch 训练脚本和诊断能力。本阶段开始把知识放进完整项目里，让读者从数据到推理形成可复用的工程流程。',
+    outcome: '能独立完成一个完整深度学习项目，从数据到推理全流程，并整理出可复用的项目目录结构。',
+    readingMode: '建议顺序阅读并同步跑代码；每个项目都要形成可复用目录。',
+    status: '更新中',
+    level: '项目实战',
+    startLesson: 59,
+    postIds: ['pytorch-linear-regression-project'],
   },
 ];
 
 export const futureStages: FutureStage[] = [
-  {
-    number: '阶段五',
-    range: '59-68',
-    title: '深度学习项目',
-    description: '通过回归、二维分类、表格分类和图像分类项目，把 Dataset、模型、损失、优化器、评估和推理串起来。',
-    outcome: '能独立完成一个完整深度学习项目，从数据到推理全流程，并整理出可复用的项目目录结构。',
-    status: '预告',
-    topics: ['回归项目', '二维分类', '表格分类', 'CNN', '项目模板'],
-  },
   {
     number: '阶段六',
     range: '69-78',
@@ -371,9 +377,9 @@ export const graduationProjects: GraduationProject[] = [
 ];
 
 export const upcomingLessons = [
-  ['下一篇', '正则化、Dropout 与 Early Stopping：防止过拟合的方法地图', '阶段四：PyTorch 深度学习基础'],
-  ['后续', '怎样根据 loss、accuracy 和梯度诊断训练问题', '阶段四：PyTorch 深度学习基础'],
-  ['规划中', 'PyTorch 线性回归项目：从数据到训练闭环', '阶段五：深度学习项目'],
+  ['下一篇', 'PyTorch 二维分类项目：从回归到分类边界', '阶段五：深度学习项目'],
+  ['后续', '表格分类项目：从特征到评估闭环', '阶段五：深度学习项目'],
+  ['规划中', 'CNN 图像分类项目：让模型读懂图片', '阶段五：深度学习项目'],
 ] as const;
 
 export function getLessonSortKey(label: string | number | undefined) {
