@@ -1589,6 +1589,68 @@ body.inner-page .nav {
   color: var(--ink-soft);
 }
 
+.lesson-map {
+  overflow: hidden;
+  margin: 1.8rem 0 1.2rem;
+  border: 1px solid rgba(20, 24, 31, 0.12);
+  border-radius: 8px;
+  background: #fffdf9;
+  box-shadow: 0 16px 38px rgba(17, 22, 29, 0.09);
+}
+
+.lesson-map img {
+  width: 100%;
+  aspect-ratio: 7 / 4;
+  object-fit: cover;
+}
+
+.lesson-map figcaption {
+  padding: 10px 14px 12px;
+  border-top: 1px solid rgba(20, 24, 31, 0.08);
+  color: var(--ink-soft);
+  font-size: 0.86rem;
+  text-align: center;
+}
+
+.article-prose details {
+  margin: 1.35rem 0;
+  overflow: hidden;
+  border: 1px solid rgba(74, 128, 146, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 253, 249, 0.78);
+  box-shadow: 0 10px 26px rgba(17, 22, 29, 0.06);
+}
+
+.article-prose details summary {
+  cursor: pointer;
+  padding: 14px 44px 14px 16px;
+  color: var(--ink);
+  font-weight: 800;
+  list-style-position: inside;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.article-prose details summary:hover {
+  background: rgba(184, 132, 77, 0.1);
+  color: var(--accent-deep);
+}
+
+.article-prose details[open] summary {
+  border-bottom: 1px solid rgba(20, 24, 31, 0.08);
+  background: rgba(239, 246, 244, 0.68);
+}
+
+.article-prose details > :not(summary) {
+  margin-right: 16px;
+  margin-left: 16px;
+}
+
+.article-prose details > :last-child {
+  margin-bottom: 16px;
+}
+
 .post-nav {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
