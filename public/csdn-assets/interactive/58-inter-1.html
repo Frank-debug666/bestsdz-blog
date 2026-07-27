@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习率过山车 — 小球与损失曲面</title>
+<style>
+  :root{--bg:#f7f9fc;--card:#fff;--ink:#1f2933;--muted:#66748a;--line:#d7deea;--accent:#3b6ef5;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,sans-serif;}
+  .wrap{max-width:920px;margin:0 auto;padding:24px 18px 40px;}
+  h1{font-size:21px;margin:0 0 6px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px;line-height:1.6;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px;box-shadow:0 2px 10px rgba(40,60,110,.05);}
+  .controls{display:flex;flex-wrap:wrap;gap:18px;align-items:center;}
+  .ctrl{display:flex;flex-direction:column;gap:6px;min-width:240px;}
+  label{font-size:13px;color:var(--muted);}
+  input[type=range]{width:260px;accent-color:var(--accent);}
+  .lrval{font-weight:700;color:var(--accent);}
+  .btns{display:flex;gap:10px;flex-wrap:wrap;}
+  button{font-family:inherit;font-size:14px;border:none;border-radius:10px;padding:10px 16px;cursor:pointer;font-weight:600;transition:.15s;}
+  .primary{background:var(--accent);color:#fff;} .primary:hover{filter:brightness(1.06);}
+  .ghost{background:#eef2fb;color:var(--accent);} .ghost:hover{background:#e2e9f8;}
+  canvas{display:block;width:100%;height:auto;background:#fdfefe;border-radius:10px;border:1px solid var(--line);}
+  .readout{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:14px;}
+  .readout .box{background:#f3f6fc;border:1px solid var(--line);border-radius:10px;padding:8px 12px;min-width:140px;}
+  .readout b{color:var(--accent);font-size:16px;}
+  .status{font-size:14px;margin-top:10px;line-height:1.6;}
+  .note{font-size:13px;color:var(--muted);line-height:1.7;margin-top:8px;}
+  code{background:#eef2fb;padding:1px 6px;border-radius:6px;color:#345;font-size:13px;}
+  .tag{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700;}
+  .tag.small{background:#eef2fb;color:#3b6ef5;}
+  .tag.good{background:#e3f7ec;color:#1c9c63;}
+  .tag.bad{background:#ffe9e9;color:#d9534f;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>学习率过山车</h1>
+  <p class="sub">画面是一个碗状损失曲面（俯视图，中心=最低点）。一个小球代表模型参数，用梯度下降向下滚。拖动「学习率」滑块：<b>太小</b>→小球几乎不动（对应情况1：loss 水平线）；<b>合适</b>→平滑滚入谷底；<b>太大</b>→越过谷底越弹越远，最后飞出画面变成 <code>NaN</code>（对应情况2：震荡/NaN）。直观感受 lr 与梯度爆炸的关系。</p>
+
+  <div class="card">
+    <div class="controls">
+      <div class="ctrl">
+        <label>学习率 lr：<span class="lrval" id="lrLabel">0.60</span></label>
+        <input type="range" id="lrSlider" min="0.02" max="2.4" step="0.02" value="0.6">
+      </div>
+      <div class="btns">
+        <button class="primary" id="startBtn">开始训练</button>
+        <button class="ghost" id="resetBtn">重置小球</button>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:13px;color:var(--muted);">
+      预设：
+      <button class="ghost" data-lr="0.05" style="padding:5px 12px;font-size:13px;">太小 0.05</button>
+      <button class="ghost" data-lr="0.6" style="padding:5px 12px;font-size:13px;">合适 0.6</button>
+      <button class="ghost" data-lr="1.5" style="padding:5px 12px;font-size:13px;">偏大 1.5</button>
+      <button class="ghost" data-lr="2.2" style="padding:5px 12px;font-size:13px;">爆炸 2.2</button>
+    </div>
+    <canvas id="cv" width="560" height="420"></canvas>
+    <div class="readout">
+      <div class="box">步数：<b id="step">0</b></div>
+      <div class="box">当前 loss：<b id="loss">—</b></div>
+      <div class="box">参数范数 ‖θ‖：<b id="norm">—</b></div>
+      <div class="box">状态：<b id="state">待开始</b></div>
+    </div>
+    <div class="status" id="status">点击「开始训练」，观察不同 lr 下小球的命运。</div>
+    <p class="note">曲面取 <code>loss = ½(x² + y²)</code>，梯度为 <code>(x, y)</code>，更新 <code>θ ← θ − lr·∇</code>。lr&lt;2 收敛、lr≈2 临界、lr&gt;2 发散飞出→<code>NaN</code>；lr 极小时每一步只挪一丁点，曲线看起来像被冻住的水平线。</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var cv=document.getElementById('cv');
+  var ctx=cv.getContext('2d');
+  var W=cv.width,H=cv.height;
+  var cx=W/2, cy=H/2;       // 中心=最低点
+  var scale=W/2-30;         // 参数空间 [-3,3] -> 像素
+  var BOUND=4;              // 超出即 NaN
+
+  var lr=parseFloat(document.getElementById('lrSlider').value);
+  var pos={x:-2.6,y:2.2};   // 初始参数（左上角，远离中心）
+  var traj=[];
+  var running=false, raf=null, step=0, nan=false;
+
+  function toPix(p){return {x:cx+p.x/3*scale, y:cy - p.y/3*scale};}
+
+  function loss(p){return 0.5*(p.x*p.x+p.y*p.y);}
+
+  function drawSurface(){
+    // 径向渐变：中心低（绿）-> 边缘高（红）
+    var g=ctx.createRadialGradient(cx,cy,4,cx,cy,scale);
+    g.addColorStop(0,'#bdedcb');
+    g.addColorStop(0.35,'#e9f3c4');
+    g.addColorStop(0.65,'#ffe3b0');
+    g.addColorStop(1,'#f7b9a8');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(cx,cy,scale,0,Math.PI*2);ctx.fill();
+    // 等高线圆环
+    ctx.strokeStyle='rgba(120,130,150,.35)';ctx.lineWidth=1;
+    for(var r=scale*0.2;r<scale;r+=scale*0.18){
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();
+    }
+    // 中心标记
+    ctx.fillStyle='#2bb673';ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#1c9c63';ctx.font='12px sans-serif';ctx.textAlign='center';
+    ctx.fillText('最低点 (loss≈0)',cx,cy+18);
+  }
+
+  function drawTraj(){
+    if(traj.length<2)return;
+    ctx.lineWidth=2;
+    for(var i=1;i<traj.length;i++){
+      var a=toPix(traj[i-1]),b=toPix(traj[i]);
+      ctx.strokeStyle='rgba(59,110,245,'+(0.2+0.6*i/traj.length)+')';
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+    }
+  }
+
+  function drawBall(){
+    var p=toPix(pos);
+    ctx.beginPath();ctx.arc(p.x,p.y,9,0,Math.PI*2);
+    ctx.fillStyle=nan?'#d9534f':'#3b6ef5';
+    ctx.fill();ctx.lineWidth=2;ctx.strokeStyle='#fff';ctx.stroke();
+  }
+
+  function render(){
+    ctx.clearRect(0,0,W,H);
+    drawSurface();
+    drawTraj();
+    drawBall();
+  }
+
+  function updateReadout(){
+    document.getElementById('step').textContent=step;
+    document.getElementById('loss').textContent=nan?'NaN':loss(pos).toFixed(3);
+    document.getElementById('norm').textContent=nan?'NaN':Math.sqrt(pos.x*pos.x+pos.y*pos.y).toFixed(3);
+  }
+
+  function tick(){
+    if(!running)return;
+    if(!nan){
+      // 一步梯度下降
+      var gx=pos.x, gy=pos.y;
+      pos.x=pos.x - lr*gx;
+      pos.y=pos.y - lr*gy;
+      step++;
+      traj.push({x:pos.x,y:pos.y});
+      if(Math.abs(pos.x)>BOUND||Math.abs(pos.y)>BOUND||!isFinite(pos.x)||!isFinite(pos.y)){
+        nan=true;running=false;
+        document.getElementById('status').innerHTML='<span class="tag bad">lr 太大</span> 小球越过谷底、越弹越远，参数范数爆掉 → <b>NaN</b>，训练当场报废。这就是情况2（震荡/NaN）。';
+        var st=document.getElementById('state');st.textContent='NaN';st.className='tag bad';
+      }else if(Math.sqrt(pos.x*pos.x+pos.y*pos.y)<0.05){
+        running=false;
+        document.getElementById('status').innerHTML='<span class="tag good">lr 合适</span> 小球平滑滚入谷底，loss 收敛到 0 附近，训练成功。';
+        var st2=document.getElementById('state');st2.textContent='已收敛';st2.className='tag good';
+      }
+    }
+    updateReadout();render();
+    if(running)raf=requestAnimationFrame(function(){setTimeout(tick, 60);});
+  }
+
+  function start(){
+    if(running)return;
+    if(nan){reset();}
+    running=true;
+    var st=document.getElementById('state');
+    if(lr<0.2){st.textContent='太小';st.className='tag small';
+      document.getElementById('status').innerHTML='<span class="tag small">lr 太小</span> 每步只挪一丁点，小球像被冻住——对应情况1（loss 水平线，纯随机猜）。';}
+    else if(lr>=2.0){st.textContent='可能爆炸';st.className='tag bad';
+      document.getElementById('status').innerHTML='<span class="tag bad">lr 偏大</span> 步子过大，小球将在谷底两侧来回弹射，很快飞出画面。';}
+    else{st.textContent='训练中';st.className='tag good';
+      document.getElementById('status').innerHTML='<span class="tag good">lr 合适</span> 小球正在平滑向谷底滚动……';}
+    tick();
+  }
+
+  function reset(){
+    running=false;if(raf)cancelAnimationFrame(raf);
+    pos={x:-2.6,y:2.2};traj=[];step=0;nan=false;
+    document.getElementById('state').textContent='待开始';
+    document.getElementById('state').className='';
+    document.getElementById('status').textContent='已重置。点击「开始训练」试试当前 lr。';
+    updateReadout();render();
+  }
+
+  document.getElementById('lrSlider').addEventListener('input',function(){
+    lr=parseFloat(this.value);
+    document.getElementById('lrLabel').textContent=lr.toFixed(2);
+    if(!running)reset();
+  });
+  document.getElementById('startBtn').addEventListener('click',start);
+  document.getElementById('resetBtn').addEventListener('click',reset);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-lr]'),function(b){
+    b.addEventListener('click',function(){
+      lr=parseFloat(this.getAttribute('data-lr'));
+      document.getElementById('lrSlider').value=lr;
+      document.getElementById('lrLabel').textContent=lr.toFixed(2);
+      reset();
+    });
+  });
+
+  reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>交互式 Shape 检查器 · 第46篇</title>
+<style>
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#f7f9fc; color:#1f2d3d; padding:18px; }
+  header { max-width:1080px; margin:0 auto 14px; }
+  h1 { font-size:20px; margin:0 0 6px; color:#1d4ed8; }
+  .desc { font-size:13px; color:#5a6577; line-height:1.6; }
+  .wrap { max-width:1080px; margin:0 auto; background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(20,40,80,.08); padding:16px; }
+  .cols { display:flex; flex-wrap:wrap; gap:16px; }
+  .left { width:260px; flex:0 0 auto; }
+  .mid { flex:1.6; min-width:320px; }
+  .right { width:240px; flex:0 0 auto; }
+  .blk { background:#f8fafc; border:1px solid #eef2f7; border-radius:10px; padding:12px; margin-bottom:12px; }
+  .blk h3 { margin:0 0 10px; font-size:13.5px; color:#495057; }
+  .modelBtns { display:flex; flex-direction:column; gap:8px; }
+  .modelBtns button { text-align:left; padding:10px 12px; border:1.5px solid #cdd6e4; background:#fff; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; color:#495057; }
+  .modelBtns button.on { border-color:#1d4ed8; background:#eef4ff; color:#1d4ed8; }
+  .sliderRow { margin:10px 0; font-size:12.5px; color:#495057; }
+  .sliderRow label { display:flex; justify-content:space-between; margin-bottom:3px; }
+  .sliderRow b { color:#1d4ed8; }
+  input[type=range]{ width:100%; }
+  .seg { display:flex; gap:6px; margin-top:4px; }
+  .seg button { flex:1; padding:7px 4px; font-size:11.5px; border:1.5px solid #cdd6e4; background:#fff; border-radius:7px; cursor:pointer; color:#495057; }
+  .seg button.on { border-color:#1d4ed8; background:#eef4ff; color:#1d4ed8; }
+  .card { border:1px solid #e3e8ee; border-left:5px solid #2f9e44; border-radius:9px; padding:10px 12px; margin-bottom:10px; background:#fff; }
+  .card.err { border-left-color:#e03131; background:#fff5f5; }
+  .card .top { display:flex; justify-content:space-between; align-items:center; }
+  .card .layer { font-size:13.5px; font-weight:700; color:#343a40; }
+  .card .badge { font-size:11px; font-weight:700; padding:2px 9px; border-radius:20px; }
+  .badge.ok { background:#ebfbee; color:#2b8a3e; }
+  .badge.err { background:#ffe3e3; color:#c92a2a; }
+  .card .shape { font-family:"Consolas","Courier New",monospace; font-size:13px; margin-top:6px; color:#495057; }
+  .card .shape .in { color:#868e96; }
+  .card .shape .arrow { color:#adb5bd; margin:0 6px; }
+  .card .shape .out { color:#1d4ed8; font-weight:700; }
+  .card .msg { font-size:11.5px; margin-top:5px; color:#c92a2a; }
+  .card.ok .msg { color:#2b8a3e; }
+  .right .summary { font-size:13px; line-height:1.9; }
+  .right .summary .k { color:#868e96; }
+  .right .out-box { background:#eef4ff; border-radius:8px; padding:10px; margin:6px 0; font-family:"Consolas",monospace; font-size:13px; color:#1d4ed8; }
+  .right .target-box { background:#f1f3f5; border-radius:8px; padding:10px; margin:6px 0; font-family:"Consolas",monospace; font-size:13px; color:#343a40; }
+  .verdict { margin-top:12px; padding:10px; border-radius:8px; text-align:center; font-weight:700; font-size:13.5px; }
+  .verdict.ok { background:#ebfbee; color:#2b8a3e; }
+  .verdict.err { background:#ffe3e3; color:#c92a2a; }
+</style>
+</head>
+<body>
+<header>
+  <h1>交互式 Shape 检查器</h1>
+  <div class="desc">选择模型类型，拖动滑块修改超参，中间以卡片形式实时显示每一层 Shape 变化流水线：<b style="color:#2b8a3e">绿色=匹配通过</b>、<b style="color:#c92a2a">红色=不匹配报错</b>。改一个数，整条「数据契约」跟着变。</div>
+</header>
+<div class="wrap">
+  <div class="cols">
+    <div class="left">
+      <div class="blk">
+        <h3>① 选择模型类型</h3>
+        <div class="modelBtns" id="modelBtns"></div>
+      </div>
+      <div class="blk" id="ctrlBox">
+        <h3>② 超参数（拖动）</h3>
+        <div id="sliders"></div>
+        <div id="toggles"></div>
+      </div>
+    </div>
+    <div class="mid">
+      <h3 style="margin:0 0 10px;font-size:13.5px;color:#495057">③ Shape 流水线（每张卡片 = 一层契约）</h3>
+      <div id="cards"></div>
+    </div>
+    <div class="right">
+      <div class="blk">
+        <h3>④ 当前契约检查</h3>
+        <div class="summary">
+          <div><span class="k">模型输出 logits</span></div>
+          <div class="out-box" id="sLogits">—</div>
+          <div><span class="k">标签 target</span></div>
+          <div class="target-box" id="sTarget">—</div>
+          <div id="sExtra"></div>
+        </div>
+        <div class="verdict ok" id="verdict">全部匹配 ✔</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const MODELS={
+  table:{ name:"表格分类（全连接）",
+    params:[
+      {k:"B",label:"batch_size B",min:1,max:128,val:32},
+      {k:"F",label:"特征数 F",min:1,max:512,val:20},
+      {k:"hidden",label:"隐藏层 hidden",min:1,max:256,val:64},
+      {k:"num_classes",label:"类别数",min:2,max:100,val:4},
+    ],
+    toggles:[ {k:"oneHot",label:"标签格式",opts:[["idx","[B] 索引(正确)"],["onehot","[B,C] one-hot(报错)"]],val:"idx"} ],
+    compute:p=>{
+      const stages=[];
+      stages.push({layer:"输入", inS:`[${p.B}, ${p.F}]`, outS:`[${p.B}, ${p.F}]`, ok:true, msg:"单个 batch 的样本矩阵"});
+      stages.push({layer:`Linear(in=${p.F}, out=${p.hidden})`, inS:`[${p.B}, ${p.F}]`, outS:`[${p.B}, ${p.hidden}]`, ok:true, msg:"最后一维 ${p.F} == in_features ✔"});
+      stages.push({layer:"ReLU", inS:`[${p.B}, ${p.hidden}]`, outS:`[${p.B}, ${p.hidden}]`, ok:true, msg:"逐元素，Shape 不变"});
+      stages.push({layer:`Linear(in=${p.hidden}, out=${p.num_classes})`, inS:`[${p.B}, ${p.hidden}]`, outS:`[${p.B}, ${p.num_classes}]`, ok:true, msg:"${p.hidden} == in_features ✔"});
+      const tgtOk = p.oneHot!=="onehot";
+      stages.push({layer:"CrossEntropyLoss", inS:`[${p.B}, ${p.num_classes}]`, outS:`[${p.B}] 标量`, ok:tgtOk, msg: tgtOk?"标签为 [B] 类别索引(long)":"标签写成 [B, num_classes] one-hot → RuntimeError: Expected target size"});
+      return {stages, logits:`[${p.B}, ${p.num_classes}]`, target: tgtOk?`[${p.B}] (long)`:`[${p.B}, ${p.num_classes}] (one-hot ✘)`, extra:`<div><span class='k'>损失函数</span> CrossEntropyLoss</div><div><span class='k'>标签类型</span> long</div>`};
+    }
+  },
+  cnn:{ name:"图像分类（CNN）",
+    params:[
+      {k:"B",label:"batch_size B",min:1,max:128,val:32},
+      {k:"S",label:"图像边长 S",min:8,max:64,val:32},
+      {k:"C1",label:"通道 C1",min:1,max:64,val:16},
+      {k:"C2",label:"通道 C2",min:1,max:64,val:32},
+      {k:"num_classes",label:"类别数",min:2,max:100,val:10},
+      {k:"linearIn",label:"你写的 in_features",min:1,max:10000,val:2048},
+    ],
+    compute:p=>{
+      const div4 = p.S%4===0;
+      const half=Math.floor(p.S/2), q=Math.floor(p.S/4);
+      const flat = p.C2*half*half; // 实际 Flatten = C2*(S/2)*(S/2) 经两次池化? 这里按两次 /2
+      const flatCorrect = p.C2*q*q;
+      const stages=[];
+      stages.push({layer:"输入图片", inS:`[${p.B}, 3, ${p.S}, ${p.S}]`, outS:`[${p.B}, 3, ${p.S}, ${p.S}]`, ok:true, msg:"B 批量, 3=RGB"});
+      stages.push({layer:`Conv2d(3→${p.C1})`, inS:`[${p.B}, 3, ${p.S}, ${p.S}]`, outS:`[${p.B}, ${p.C1}, ${p.S}, ${p.S}]`, ok:true, msg:"padding=1 保持空间尺寸"});
+      stages.push({layer:"MaxPool2d(2)", inS:`[${p.B}, ${p.C1}, ${p.S}, ${p.S}]`, outS:`[${p.B}, ${p.C1}, ${half}, ${half}]`, ok:true, msg:"空间尺寸减半"});
+      stages.push({layer:`Conv2d(${p.C1}→${p.C2})`, inS:`[${p.B}, ${p.C1}, ${half}, ${half}]`, outS:`[${p.B}, ${p.C2}, ${half}, ${half}]`, ok:true, msg:"padding=1 保持尺寸"});
+      stages.push({layer:"MaxPool2d(2)", inS:`[${p.B}, ${p.C2}, ${half}, ${half}]`, outS:`[${p.B}, ${p.C2}, ${q}, ${q}]`, ok:div4, msg: div4?"空间再减半":"S 不能被 4 整除 → 空间尺寸除不尽 ✘"});
+      const flatOk = div4 && (p.linearIn===flatCorrect);
+      stages.push({layer:"Flatten", inS:`[${p.B}, ${p.C2}, ${q}, ${q}]`, outS:`[${p.B}, ${flatCorrect}]`, ok:div4, msg: div4?`展平 = ${p.C2}×${q}×${q} = ${flatCorrect}`:"上游已断裂"});
+      stages.push({layer:`Linear(in=${p.linearIn}, out=${p.num_classes})`, inS:`[${p.B}, ${flatCorrect}]`, outS:`[${p.B}, ${p.num_classes}]`, ok:flatOk, msg: flatOk?`in_features ${p.linearIn} == ${flatCorrect} ✔`:`mat1 & mat2 cannot multiply: in_features 应为 ${flatCorrect}，你写 ${p.linearIn}`});
+      stages.push({layer:"CrossEntropyLoss", inS:`[${p.B}, ${p.num_classes}]`, outS:`[${p.B}] 标量`, ok:true, msg:"标签 [B] 类别索引(long)"});
+      const extra=`<div><span class='k'>Flatten 契约</span> in_features 必须 = ${flatCorrect}</div><div><span class='k'>你写</span> ${p.linearIn} ${flatOk?'✔':'✘'}</div>`;
+      return {stages, logits:`[${p.B}, ${p.num_classes}]`, target:`[${p.B}] (long)`, extra};
+    }
+  },
+  binary:{ name:"二分类",
+    params:[
+      {k:"B",label:"batch_size B",min:1,max:128,val:32},
+      {k:"F",label:"特征数 F",min:1,max:512,val:20},
+      {k:"hidden",label:"隐藏层 hidden",min:1,max:256,val:64},
+    ],
+    toggles:[ {k:"labelDim",label:"标签 Shape",opts:[["b1","[B, 1] float(正确)"],["b","[B] long(报错)"]],val:"b1"} ],
+    compute:p=>{
+      const stages=[];
+      stages.push({layer:"输入", inS:`[${p.B}, ${p.F}]`, outS:`[${p.B}, ${p.F}]`, ok:true, msg:""});
+      stages.push({layer:`Linear(in=${p.F}, out=${p.hidden})`, inS:`[${p.B}, ${p.F}]`, outS:`[${p.B}, ${p.hidden}]`, ok:true, msg:""});
+      stages.push({layer:"ReLU", inS:`[${p.B}, ${p.hidden}]`, outS:`[${p.B}, ${p.hidden}]`, ok:true, msg:""});
+      stages.push({layer:"Linear(in=${p.hidden}, out=1)", inS:`[${p.B}, ${p.hidden}]`, outS:`[${p.B}, 1]`, ok:true, msg:""});
+      const tgtOk = p.labelDim!=="b";
+      stages.push({layer:"BCEWithLogitsLoss", inS:`[${p.B}, 1]`, outS:`[${p.B}, 1]`, ok:tgtOk, msg: tgtOk?"标签 [B,1] float，逐元素对齐 ✔":"标签写成 [B] long → 静默出错/维度不匹配 ✘"});
+      return {stages, logits:`[${p.B}, 1]`, target: tgtOk?`[${p.B}, 1] (float)`:`[${p.B}] (long ✘)`, extra:`<div><span class='k'>损失函数</span> BCEWithLogitsLoss</div><div><span class='k'>标签类型</span> float</div>`};
+    }
+  }
+};
+
+let curModel="table";
+let params={};
+
+function initModel(key){
+  curModel=key;
+  params={};
+  MODELS[key].params.forEach(p=>params[p.k]=p.val);
+  if(MODELS[key].toggles) MODELS[key].toggles.forEach(t=>params[t.k]=t.val);
+  buildControls(); render();
+}
+function buildControls(){
+  // 模型按钮
+  const mb=document.getElementById("modelBtns"); mb.innerHTML="";
+  Object.keys(MODELS).forEach(k=>{
+    const b=document.createElement("button"); b.textContent=MODELS[k].name;
+    if(k===curModel)b.className="on";
+    b.onclick=()=>initModel(k);
+    mb.appendChild(b);
+  });
+  // 滑块
+  const sl=document.getElementById("sliders"); sl.innerHTML="";
+  MODELS[curModel].params.forEach(p=>{
+    const row=document.createElement("div"); row.className="sliderRow";
+    row.innerHTML=`<label>${p.label}<b id="v_${p.k}">${params[p.k]}</b></label>`;
+    const inp=document.createElement("input"); inp.type="range"; inp.min=p.min; inp.max=p.max; inp.value=params[p.k];
+    inp.oninput=()=>{ params[p.k]=+inp.value; document.getElementById("v_"+p.k).textContent=inp.value; render(); };
+    row.appendChild(inp); sl.appendChild(row);
+  });
+  // 开关
+  const tg=document.getElementById("toggles"); tg.innerHTML="";
+  if(MODELS[curModel].toggles){
+    MODELS[curModel].toggles.forEach(t=>{
+      const row=document.createElement("div"); row.className="sliderRow";
+      row.innerHTML=`<label>${t.label}</label>`;
+      const seg=document.createElement("div"); seg.className="seg";
+      t.opts.forEach(([val,lab])=>{
+        const b=document.createElement("button"); b.textContent=lab;
+        if(params[t.k]===val)b.className="on";
+        b.onclick=()=>{ params[t.k]=val; buildControls(); render(); };
+        seg.appendChild(b);
+      });
+      row.appendChild(seg); tg.appendChild(row);
+    });
+  }
+}
+function render(){
+  const r=MODELS[curModel].compute(params);
+  const cards=document.getElementById("cards"); cards.innerHTML="";
+  let allOk=true;
+  r.stages.forEach(s=>{
+    if(!s.ok)allOk=false;
+    const d=document.createElement("div"); d.className="card"+(s.ok?"":" err");
+    d.innerHTML=`<div class="top"><span class="layer">${s.layer}</span><span class="badge ${s.ok?'ok':'err'}">${s.ok?'匹配通过':'不匹配报错'}</span></div>
+      <div class="shape"><span class="in">${s.inS}</span><span class="arrow">→</span><span class="out">${s.outS}</span></div>
+      ${s.msg?`<div class="msg">${s.msg}</div>`:""}`;
+    cards.appendChild(d);
+  });
+  document.getElementById("sLogits").textContent=r.logits;
+  document.getElementById("sTarget").textContent=r.target;
+  document.getElementById("sExtra").innerHTML=r.extra;
+  const v=document.getElementById("verdict");
+  v.className="verdict "+(allOk?"ok":"err");
+  v.textContent=allOk?"整条契约匹配 ✔":"存在不匹配层 ✘ 训练会报错";
+}
+initModel("table");
+</script>
+</body>
+</html>

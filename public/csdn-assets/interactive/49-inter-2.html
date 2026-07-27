@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GPU 等待可视化：num_workers 并行加速</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f7f9fc; color: #1f3a5f; padding: 24px;
+  }
+  h1 { font-size: 21px; margin: 0 0 6px; }
+  .desc { color: #5a6b82; font-size: 14px; margin: 0 0 10px; }
+  .source {
+    display: inline-block; background: #eaf1fb; color: #1f5fb0;
+    font-size: 12px; padding: 4px 10px; border-radius: 6px; margin-bottom: 16px;
+  }
+  .controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 8px 0 14px; }
+  .controls label { font-size: 14px; font-weight: 600; }
+  input[type=range] { width: 220px; }
+  button {
+    background: #2f80ed; color: #fff; border: none; padding: 9px 16px;
+    font-size: 14px; border-radius: 8px; cursor: pointer;
+  }
+  button:hover { background: #1f6fd6; }
+  .wval { font-weight: 700; color: #2f80ed; font-size: 16px; }
+  canvas { background: #fff; border: 1px solid #d0dcec; border-radius: 12px; width: 100%; max-width: 920px; }
+  .stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 16px; }
+  .card { flex: 1; min-width: 200px; background: #fff; border: 1px solid #d0dcec; border-radius: 12px; padding: 14px 16px; }
+  .card .k { font-size: 12px; color: #5a6b82; }
+  .card .v { font-size: 24px; font-weight: 800; margin-top: 4px; }
+  .v.green { color: #27ae60; } .v.red { color: #c0392b; } .v.blue { color: #2f80ed; }
+  .legend { font-size: 12px; color: #5a6b82; margin-top: 10px; }
+  .legend span { display: inline-flex; align-items: center; margin-right: 14px; }
+  .sw { width: 14px; height: 14px; border-radius: 3px; display: inline-block; margin-right: 5px; }
+</style>
+</head>
+<body>
+  <h1>GPU 等待可视化：num_workers 并行加速</h1>
+  <p class="desc">num_workers=0 时 GPU 大段空等；调大后 CPU 并行备料，GPU 几乎不空等。拖动滑块观察耗时与利用率变化。</p>
+  <span class="source">原文建议：GPU 等待可视化——num_workers=0 慢吞吞读图、GPU 灰色空闲；num_workers=4 并行备料、GPU 绿色忙碌，并实时对比本 epoch 耗时。</span>
+
+  <div class="controls">
+    <label>num_workers:</label>
+    <input type="range" id="wRange" min="0" max="8" step="1" value="0" oninput="onW()">
+    <span class="wval" id="wVal">0</span>
+    <button onclick="play()">▶ 播放本 epoch</button>
+    <button onclick="resetSim()">重置</button>
+  </div>
+
+  <canvas id="cv" width="920" height="360"></canvas>
+
+  <div class="legend">
+    <span><i class="sw" style="background:#27ae60"></i>GPU 忙碌（计算）</span>
+    <span><i class="sw" style="background:#cfd8e3"></i>GPU 空闲（等数据）</span>
+    <span><i class="sw" style="background:#2f80ed"></i>CPU 备料中</span>
+  </div>
+
+  <div class="stats">
+    <div class="card"><div class="k">本 epoch 耗时（相对值）</div><div class="v blue" id="sTime">—</div></div>
+    <div class="card"><div class="k">GPU 利用率</div><div class="v green" id="sUtil">—</div></div>
+    <div class="card"><div class="k">相比 num_workers=0 提速</div><div class="v red" id="sSpeed">—</div></div>
+  </div>
+
+<script>
+  const cv = document.getElementById("cv");
+  const ctx = cv.getContext("2d");
+  const N = 12;          // epoch 批数
+  const LOAD = 30;       // 单批加载耗时(相对单位)
+  const COMPUTE = 20;    // 单批计算耗时(相对单位)
+  let w = 0;
+  let playing = false, t = 0, animId = null;
+
+  // 计算给定 num_workers 的 GPU 时间线分段 + 总耗时 + 利用率
+  function buildSegments(wk) {
+    const segs = [];
+    let total;
+    if (wk === 0) {
+      for (let i=0;i<N;i++) segs.push({idle:LOAD, busy:COMPUTE});
+      total = N*(LOAD+COMPUTE);
+    } else {
+      // 首段：初始管线填充（需先加载第一份）
+      segs.push({idle:LOAD, busy:COMPUTE});
+      const inter = LOAD / wk;           // 每批到达间隔（worker 并行）
+      for (let i=1;i<N;i++) {
+        const idle = Math.max(0, inter - COMPUTE);
+        segs.push({idle:idle, busy:COMPUTE});
+      }
+      let gpu = 0; segs.forEach(s=>gpu += s.idle + s.busy);
+      total = gpu;
+    }
+    const busy = N*COMPUTE;
+    return { segs, total, util: busy/total };
+  }
+
+  function currentStats() {
+    const a = buildSegments(0);
+    const b = buildSegments(w);
+    return { base:a.total, cur:b.total, util:b.util };
+  }
+
+  function draw() {
+    ctx.clearRect(0,0,cv.width,cv.height);
+    const S = buildSegments(w);
+    const padL = 20, padR = 20;
+    const W = cv.width - padL - padR;
+    const scale = W / S.total;
+
+    // 顶部：CPU 备料区
+    ctx.fillStyle = "#5a6b82";
+    ctx.font = "13px sans-serif";
+    ctx.fillText("CPU 备料（加载数据）", padL, 28);
+
+    const wkBoxY = 40, wkBoxH = 64;
+    if (w === 0) {
+      ctx.fillStyle = t < LOAD ? "#2f80ed" : "#cfd8e3";
+      roundRect(padL, wkBoxY, 200, wkBoxH, 8); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = "14px sans-serif";
+      ctx.fillText("主进程串行加载", padL+24, wkBoxY+38);
+    } else {
+      const n = Math.min(w, 8);
+      const gap = 8;
+      const bw = (W - gap*(n-1)) / n;
+      for (let i=0;i<n;i++) {
+        // 简单脉冲：随播放进度点亮不同 worker
+        const lit = playing && (Math.floor(t/ (LOAD/Math.max(1,w))) + i) % 3 === 0;
+        ctx.fillStyle = lit ? "#2f80ed" : "#dce6f5";
+        roundRect(padL + i*(bw+gap), wkBoxY, bw, wkBoxH, 8); ctx.fill();
+        ctx.fillStyle = lit ? "#fff" : "#5a6b82"; ctx.font = "12px sans-serif";
+        ctx.fillText("w"+(i+1), padL + i*(bw+gap)+bw/2-8, wkBoxY+38);
+      }
+    }
+
+    // 中间：传送带
+    const beltY = 130;
+    ctx.strokeStyle = "#b8c6da"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(padL, beltY); ctx.lineTo(padL+W, beltY); ctx.stroke();
+    if (playing) {
+      ctx.fillStyle = "#9fb6d4";
+      const off = (t*0.5) % 24;
+      for (let x = padL - off; x < padL+W; x += 24) {
+        ctx.beginPath(); ctx.arc(x, beltY, 3, 0, 7); ctx.fill();
+      }
+    }
+
+    // 底部：GPU 时间线
+    const gY = 210, gH = 56;
+    ctx.fillStyle = "#5a6b82"; ctx.font = "13px sans-serif";
+    ctx.fillText("GPU 计算（绿=忙碌，灰=等数据）", padL, gY-12);
+
+    let x = padL;
+    let playX = padL;
+    for (let i=0;i<S.segs.length;i++) {
+      const s = S.segs[i];
+      const idleW = s.idle*scale, busyW = s.busy*scale;
+      // 已播放部分才上色，未播放为浅底
+      const segStart = (x-padL)/scale;
+      const segEnd = segStart + (s.idle+s.busy);
+      const played = Math.min(Math.max(t-segStart,0), (s.idle+s.busy));
+      const pIdle = Math.min(played, s.idle);
+      const pBusy = Math.max(0, played - s.idle);
+      // 底
+      ctx.fillStyle = "#eef2f7";
+      roundRect(x, gY, idleW+busyW, gH, 6); ctx.fill();
+      // idle
+      if (pIdle>0){ ctx.fillStyle="#cfd8e3"; roundRect(x, gY, pIdle*scale, gH, 6); ctx.fill(); }
+      // busy
+      if (pBusy>0){ ctx.fillStyle="#27ae60"; roundRect(x + s.idle*scale, gY, pBusy*scale, gH, 6); ctx.fill(); }
+      // 边框 + 批号
+      ctx.strokeStyle = "#b8c6da"; ctx.lineWidth = 1;
+      roundRect(x, gY, idleW+busyW, gH, 6); ctx.stroke();
+      ctx.fillStyle = "#5a6b82"; ctx.font = "11px sans-serif";
+      ctx.fillText("B"+(i+1), x + (idleW+busyW)/2 - 8, gY + gH + 16);
+      x += idleW + busyW;
+    }
+    // 播放头
+    if (playing) {
+      playX = padL + Math.min(t, S.total)*scale;
+      ctx.strokeStyle = "#c0392b"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(playX, gY-6); ctx.lineTo(playX, gY+gH+6); ctx.stroke();
+    }
+
+    // 实时数值
+    const st = currentStats();
+    const done = Math.min(t, S.total);
+    const liveUtil = done>0 ? (busyDone(st.total, done)/done*100) : 0;
+    document.getElementById("sTime").textContent = (S.total/S.total*1).toFixed(0)
+        + " 单位 (" + S.total + ")";
+    document.getElementById("sUtil").textContent = st.util*100 >= liveUtil ? (st.util*100).toFixed(0)+"%" : liveUtil.toFixed(0)+"%";
+    const speed = st.base / st.cur;
+    document.getElementById("sSpeed").textContent = "×" + speed.toFixed(2);
+  }
+
+  function busyDone(total, tcur) {
+    const S = buildSegments(w);
+    let acc=0, busy=0;
+    for (const s of S.segs) {
+      const seg = s.idle+s.busy;
+      if (tcur <= acc) break;
+      const played = Math.min(tcur-acc, seg);
+      busy += Math.max(0, played - s.idle);
+      acc += seg;
+    }
+    return busy;
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  function onW() {
+    w = parseInt(document.getElementById("wRange").value);
+    document.getElementById("wVal").textContent = w;
+    resetSim();
+  }
+
+  function resetSim() {
+    playing = false; t = 0;
+    if (animId) cancelAnimationFrame(animId);
+    const st = currentStats();
+    document.getElementById("sTime").textContent = st.cur + " 单位";
+    document.getElementById("sUtil").textContent = (st.util*100).toFixed(0)+"%";
+    document.getElementById("sSpeed").textContent = "×" + (st.base/st.cur).toFixed(2);
+    draw();
+  }
+
+  function play() {
+    if (playing) return;
+    playing = true; t = 0;
+    const S = buildSegments(w);
+    const dur = 2600;                       // 动画时长(ms)
+    const start = performance.now();
+    function step(now) {
+      const p = (now-start)/dur;
+      t = Math.min(p,1) * S.total;
+      draw();
+      if (p < 1) { animId = requestAnimationFrame(step); }
+      else { playing = false; }
+    }
+    animId = requestAnimationFrame(step);
+  }
+
+  resetSim();
+</script>
+</body>
+</html>

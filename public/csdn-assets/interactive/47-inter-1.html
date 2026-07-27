@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>形状变换动画：view vs reshape</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #f6f8fb;
+    color: #243042;
+    line-height: 1.6;
+  }
+  header {
+    background: linear-gradient(135deg, #4a6cf7, #6f8cff);
+    color: #fff;
+    padding: 22px 28px;
+  }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0; font-size: 14px; opacity: .92; }
+  .wrap { max-width: 1080px; margin: 24px auto; padding: 0 20px; }
+  .panel {
+    background: #fff; border-radius: 12px; padding: 20px 22px;
+    box-shadow: 0 2px 10px rgba(40,60,100,.08); margin-bottom: 22px;
+  }
+  .panel h2 { margin: 0 0 14px; font-size: 16px; color: #2b3a55; }
+  .controls { display: flex; flex-wrap: wrap; gap: 18px 26px; align-items: flex-end; }
+  .ctrl { display: flex; flex-direction: column; gap: 6px; }
+  .ctrl label { font-size: 13px; color: #5a6b85; font-weight: 600; }
+  input[type=text] {
+    width: 150px; padding: 8px 10px; border: 1px solid #cfd8e6; border-radius: 8px;
+    font-size: 14px; font-family: ui-monospace, "Cascadia Code", monospace;
+  }
+  .seg { display: flex; gap: 8px; }
+  .seg button {
+    padding: 8px 16px; border: 1px solid #cfd8e6; background: #f3f6fb;
+    border-radius: 8px; cursor: pointer; font-size: 14px; color: #2b3a55;
+  }
+  .seg button.active { background: #4a6cf7; color: #fff; border-color: #4a6cf7; }
+  .btn {
+    padding: 9px 20px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 14px; font-weight: 600; background: #2bb673; color: #fff;
+  }
+  .btn.alt { background: #f0a93b; }
+  .btn.ghost { background: #eef1f6; color: #2b3a55; }
+  .state-tag {
+    display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px;
+    font-weight: 600; background: #e3fce9; color: #1d9b57;
+  }
+  .state-tag.bad { background: #fde8e8; color: #d8443c; }
+  .state-tag.warn { background: #fff3e0; color: #d9881f; }
+  .stage { position: relative; width: 100%; }
+  svg { width: 100%; height: auto; display: block; }
+  .legend { font-size: 12px; color: #6a7a93; margin-top: 8px; }
+  .msg {
+    margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 14px;
+    display: none;
+  }
+  .msg.show { display: block; }
+  .msg.err { background: #fde8e8; color: #c23b32; border: 1px solid #f6c5c0; }
+  .msg.ok { background: #e3fce9; color: #1d9b57; border: 1px solid #b8eccb; }
+  .msg.info { background: #eaf1ff; color: #3354c0; border: 1px solid #c3d4fb; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+  code.k { background:#eef1f6; padding:1px 6px; border-radius:5px; font-family:ui-monospace,monospace; }
+</style>
+</head>
+<body>
+<header>
+  <h1>张量形状变换动画：view vs reshape</h1>
+  <p>左侧是 12 格内存长条（0~11），右侧输入目标形状。选择 view / reshape 并点击「变换」，直观感受内存连续性与两者差异。</p>
+</header>
+
+<div class="wrap">
+
+  <div class="panel">
+    <h2>控制区</h2>
+    <div class="controls">
+      <div class="ctrl">
+        <label>内存是否连续</label>
+        <div class="seg" id="contigSeg">
+          <button data-c="1" class="active">连续（原始）</button>
+          <button data-c="0">先转置（不连续）</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <label>目标形状（逗号分隔，如 3,4）</label>
+        <input type="text" id="shapeInput" value="3,4">
+      </div>
+      <div class="ctrl">
+        <label>变换方式</label>
+        <div class="seg" id="modeSeg">
+          <button data-m="view" class="active">view</button>
+          <button data-m="reshape">reshape</button>
+        </div>
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="goBtn">变换 ▶</button>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <button class="btn ghost" id="resetBtn">重置</button>
+      <button class="btn alt" id="demoBtn">演示：转置后 view 报错</button>
+    </div>
+    <div class="state-tag" id="stateTag" style="margin-top:14px;">状态：内存连续</div>
+  </div>
+
+  <div class="panel">
+    <h2>可视化舞台</h2>
+    <div class="stage">
+      <svg id="stage" viewBox="0 0 1040 420" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#2bb673"></path>
+          </marker>
+          <marker id="arrowR" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L8,3 L0,6 Z" fill="#d8443c"></path>
+          </marker>
+        </defs>
+        <!-- 内容由 JS 绘制 -->
+      </svg>
+    </div>
+    <div class="legend">说明：<span style="color:#4a6cf7;font-weight:600;">蓝色</span>=同一份内存数据；<span style="color:#2bb673;font-weight:600;">绿色连线</span>=直接折叠（view 成功）；<span style="color:#d8443c;font-weight:600;">红色</span>=内存不连续 / 失败。</div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+</div>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('stage');
+const CELL = 56, GAP = 8;
+let contig = 1;      // 1 连续, 0 不连续
+let mode = 'view';
+let animTimer = null;
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent || svg).appendChild(e);
+  return e;
+}
+function clearStage() {
+  while (svg.childNodes.length > svg.querySelectorAll('defs').length + 0) {
+    // keep defs, remove rest
+    const kids = svg.querySelectorAll('g, text, rect, line, path');
+    if (kids.length === 0) break;
+    svg.removeChild(kids[kids.length - 1]);
+  }
+}
+function clearAll() {
+  [...svg.querySelectorAll('g,text,rect,line,path')].forEach(n => n.remove());
+}
+
+function stateTag(text, cls) {
+  const t = document.getElementById('stateTag');
+  t.textContent = '状态：' + text;
+  t.className = 'state-tag' + (cls ? ' ' + cls : '');
+}
+function showMsg(text, cls) {
+  const m = document.getElementById('msg');
+  m.textContent = text;
+  m.className = 'msg show ' + cls;
+}
+
+// 画 12 格内存长条
+function drawMemoryStrip(x, y, order, color) {
+  const g = el('g', {});
+  for (let i = 0; i < 12; i++) {
+    const cx = x + i * (CELL + GAP);
+    el('rect', { x: cx, y, width: CELL, height: CELL, rx: 7,
+      fill: color, stroke: '#3b4d6b', 'stroke-width': 1.5 }, g);
+    el('text', { x: cx + CELL/2, y: y + CELL/2 + 6, 'text-anchor':'middle',
+      'font-size': 18, fill: '#fff', 'font-weight': '700' }, g).textContent = order[i];
+  }
+  return g;
+}
+
+function parseShape(str) {
+  return str.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+}
+function totalOf(arr) { return arr.reduce((a, b) => a * b, 1); }
+
+function drawGrid(x, y, shape, order, color, showVals) {
+  const g = el('g', {});
+  let idx = 0;
+  const cw = Math.min(56, (1040 - x - 40) / shape[shape.length - 1]);
+  const ch = 50;
+  for (let r = 0; r < shape[0]; r++) {
+    for (let c = 0; c < shape[1]; c++) {
+      const cx = x + c * (cw + GAP), cy = y + r * (ch + GAP);
+      el('rect', { x: cx, y: cy, width: cw, height: ch, rx: 6,
+        fill: color, stroke: '#3b4d6b', 'stroke-width': 1.3 }, g);
+      if (showVals) {
+        el('text', { x: cx + cw/2, y: cy + ch/2 + 5, 'text-anchor':'middle',
+          'font-size': 15, fill: '#fff', 'font-weight': '700' }, g).textContent = order[idx++];
+      }
+    }
+  }
+  return g;
+}
+
+function drawFoldArrows(rows) {
+  // 从长条中央指向网格 的绿色连线（示意折叠）
+  const g = el('g', {});
+  el('line', { x1: 230, y1: 200, x2: 600, y2: 200, stroke: '#2bb673',
+    'stroke-width': 2.5, 'marker-end': 'url(#arrow)' }, g);
+  el('text', { x: 415, y: 192, 'text-anchor':'middle', 'font-size': 13,
+    fill: '#1d9b57', 'font-weight': 600 }, g).textContent = '直接折叠（不复制）';
+  return g;
+}
+
+// 主流程
+function run() {
+  clearAll();
+  const shape = parseShape(document.getElementById('shapeInput').value);
+  if (shape.length !== 2 || totalOf(shape) !== 12) {
+    stateTag('目标形状非法', 'bad');
+    showMsg('目标形状需为两个数且乘积等于 12（如 3,4 / 2,6 / 1,12）。当前输入：' + shape.join('×') + '，乘积 ' + (shape.length?totalOf(shape):0), 'err');
+    drawMemoryStrip(40, 150, identity(), contig ? '#4a6cf7' : '#9bb0d8');
+    return;
+  }
+
+  const baseOrder = identity();                 // 内存中的真实顺序 0..11
+  const viewOrder = contig ? baseOrder : transposeOrder();  // 不连续时"看起来"的顺序
+  // 先把内存长条画出来
+  drawMemoryStrip(40, 150, baseOrder, contig ? '#4a6cf7' : '#9bb0d8');
+  el('text', { x: 40, y: 138, 'font-size': 14, fill: '#5a6b85', 'font-weight':600 }, svg)
+    .textContent = '内存长条（物理顺序 0~11）';
+
+  if (!contig) {
+    el('text', { x: 40, y: 240, 'font-size': 13, fill: '#9aa7bd' }, svg)
+      .textContent = '⚠ 已转置：物理顺序未变，stride 改变 → 内存不连续';
+  }
+
+  if (contig) {
+    // 连续：view 和 reshape 都能直接折叠
+    drawGrid(560, 120, shape, baseOrder, '#4a6cf7', true);
+    drawFoldArrows();
+    stateTag('内存连续', '');
+    showMsg('内存连续，`' + mode + '(' + shape.join(',') + ')` 成功——绿色连线表示把长条直接折成网格，无需复制。',
+      'ok');
+  } else {
+    if (mode === 'view') {
+      // view 失败：红色提示
+      el('text', { x: 560, y: 175, 'font-size': 16, fill: '#d8443c', 'font-weight': 700 }, svg)
+        .textContent = '✗ RuntimeError';
+      el('text', { x: 560, y: 200, 'font-size': 14, fill: '#d8443c' }, svg)
+        .textContent = 'view size is not compatible';
+      el('line', { x1: 230, y1: 200, x2: 560, y2: 175, stroke: '#d8443c',
+        'stroke-width': 2.5, 'marker-end': 'url(#arrowR)' }, svg);
+      stateTag('内存不连续 → view 报错', 'bad');
+      showMsg('transpose 后内存不连续，`view(' + shape.join(',') + ')` 报错（RuntimeError: view size is not compatible）。view 要求底层数字真的按新形状排好，但转置只改了 stride、没搬数据。', 'err');
+    } else {
+      // reshape：先复制重排再折网格（动画）
+      stateTag('reshape：先复制重排 → 折网格', 'warn');
+      showMsg('reshape 发现不连续，先「复制」成连续内存，再折成网格——所以永远能用，代价是多一次复制（橙色块为新复制的数据）。', 'info');
+      animateReshape(shape, baseOrder);
+    }
+  }
+}
+
+// 不连续时"看起来"的顺序（模拟一个转置后行的阅读顺序，仅做示意）
+function transposeOrder() {
+  // 12 个元素，原 [3,4] 转置后逻辑上按列读取：[0,4,8,1,5,9,2,6,10,3,7,11]
+  return [0,4,8,1,5,9,2,6,10,3,7,11];
+}
+function identity() { return [0,1,2,3,4,5,6,7,8,9,10,11]; }
+
+function animateReshape(shape, baseOrder) {
+  // 第1步：在长条下方画出"复制重排"的橙色连续块（按 reshape 后的逻辑顺序）
+  const copyG = el('g', { opacity: 0 });
+  const logicOrder = identity(); // reshape 重排后恢复成自然顺序
+  const cy = 300;
+  for (let i = 0; i < 12; i++) {
+    const cx = 40 + i * (CELL + GAP);
+    el('rect', { x: cx, y: cy, width: CELL, height: CELL, rx: 7,
+      fill: '#f0a93b', stroke: '#b9791a', 'stroke-width': 1.5 }, copyG);
+    el('text', { x: cx + CELL/2, y: cy + CELL/2 + 6, 'text-anchor':'middle',
+      'font-size': 18, fill: '#fff', 'font-weight': 700 }, copyG).textContent = logicOrder[i];
+  }
+  el('text', { x: 40, y: cy - 10, 'font-size': 14, fill: '#b9791a', 'font-weight': 600 }, copyG)
+    .textContent = '① 复制重排成连续内存（橙色）';
+  // 第2步：目标网格
+  const gridG = el('g', { opacity: 0 });
+  const gx = 560, gy = 260;
+  const cw = 46, ch = 46;
+  let idx = 0;
+  for (let r = 0; r < shape[0]; r++)
+    for (let c = 0; c < shape[1]; c++) {
+      const cx = gx + c*(cw+GAP), cyy = gy + r*(ch+GAP);
+      el('rect', { x: cx, y: cyy, width: cw, height: ch, rx: 6,
+        fill: '#f0a93b', stroke: '#b9791a', 'stroke-width': 1.3 }, gridG);
+      el('text', { x: cx+cw/2, y: cyy+ch/2+5, 'text-anchor':'middle',
+        'font-size': 15, fill: '#fff', 'font-weight': 700 }, gridG).textContent = logicOrder[idx++];
+    }
+  el('text', { x: gx, y: gy - 10, 'font-size': 14, fill: '#b9791a', 'font-weight': 600 }, gridG)
+    .textContent = '② 折成网格 ' + shape.join('×');
+  el('line', { x1: 240, y1: cy + 28, x2: gx - 20, y2: gy + shape[0]*(ch+GAP)/2,
+    stroke: '#2bb673', 'stroke-width': 2.5, 'marker-end': 'url(#arrow)', opacity: 0 }, gridG);
+
+  // 动画：先显示复制块，再显示网格
+  requestAnimationFrame(() => { copyG.setAttribute('opacity', 1); });
+  setTimeout(() => {
+    gridG.setAttribute('opacity', 1);
+    gridG.querySelector('line').setAttribute('opacity', 1);
+  }, 700);
+}
+
+// 事件绑定
+document.getElementById('contigSeg').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  [...e.currentTarget.children].forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  contig = parseInt(e.target.dataset.c, 10);
+});
+document.getElementById('modeSeg').addEventListener('click', e => {
+  if (e.target.tagName !== 'BUTTON') return;
+  [...e.currentTarget.children].forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  mode = e.target.dataset.m;
+});
+document.getElementById('goBtn').addEventListener('click', run);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  contig = 1; mode = 'view'; document.getElementById('shapeInput').value = '3,4';
+  document.querySelectorAll('#contigSeg button').forEach((b,i)=>b.classList.toggle('active', i===0));
+  document.querySelectorAll('#modeSeg button').forEach((b,i)=>b.classList.toggle('active', i===0));
+  clearAll(); stateTag('内存连续', ''); showMsg('已重置。', 'info');
+  drawMemoryStrip(40, 150, identity(), '#4a6cf7');
+});
+document.getElementById('demoBtn').addEventListener('click', () => {
+  // 演示：转置后 view 报错
+  contig = 0; mode = 'view'; document.getElementById('shapeInput').value = '3,4';
+  document.querySelectorAll('#contigSeg button').forEach(b=>b.classList.toggle('active', b.dataset.c==='0'));
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.classList.toggle('active', b.dataset.m==='view'));
+  run();
+});
+
+// 初始绘制
+drawMemoryStrip(40, 150, identity(), '#4a6cf7');
+stateTag('内存连续', '');
+showMsg('点击「变换」开始演示。试试：① 连续 + view；② 先转置 + view（报错）；③ 先转置 + reshape（复制重排）。', 'info');
+</script>
+</body>
+</html>

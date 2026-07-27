@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>参数注册黑户陷阱：普通 list vs nn.ModuleList</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#f7f9fc; color:#1f3a5f; padding:24px; }
+  h1 { font-size:21px; margin:0 0 6px; }
+  .desc { color:#5a6b82; font-size:14px; margin:0 0 10px; }
+  .source { display:inline-block; background:#eaf1fb; color:#1f5fb0; font-size:12px; padding:4px 10px; border-radius:6px; margin-bottom:16px; }
+  .controls { display:flex; align-items:center; gap:18px; flex-wrap:wrap; margin:8px 0 14px; }
+  .radio { display:inline-flex; gap:16px; }
+  .radio label { font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+  button { background:#2f80ed; color:#fff; border:none; padding:10px 18px; font-size:14px; border-radius:8px; cursor:pointer; }
+  button:hover { background:#1f6fd6; }
+  button.ghost { background:#fff; color:#34495e; border:1px solid #cdd8e6; }
+  button:active { transform:translateY(1px); }
+  .wrap { display:flex; gap:20px; flex-wrap:wrap; align-items:flex-start; }
+  .card { background:#fff; border:1px solid #d0dcec; border-radius:12px; padding:14px 16px; flex:1; min-width:300px; }
+  .card h3 { margin:0 0 8px; font-size:15px; }
+  svg { width:100%; height:auto; display:block; background:#fbfdff; border:1px solid #e6edf6; border-radius:8px; }
+  .params { margin-top:10px; font-size:13px; }
+  .params .row { display:flex; justify-content:space-between; padding:4px 8px; border-radius:6px; background:#f4f7fb; margin-bottom:4px; }
+  .params .empty { color:#dc2626; font-weight:600; padding:8px; text-align:center; background:#fef2f2; border-radius:6px; }
+  .badge { font-size:11px; padding:2px 8px; border-radius:10px; font-weight:700; }
+  .badge.bad { background:#fee2e2; color:#dc2626; }
+  .badge.ok { background:#dcfce7; color:#16a34a; }
+  .losscard { background:#fff; border:1px solid #d0dcec; border-radius:12px; padding:14px 16px; flex:1; min-width:300px; }
+  canvas { width:100%; height:160px; display:block; background:#fbfdff; border:1px solid #e6edf6; border-radius:8px; }
+  .info { margin-top:14px; font-size:14px; color:#34495e; min-height:22px; }
+  .info b { color:#2f80ed; }
+  .layer rect { transition: fill .25s, stroke .25s; }
+  .layer text { font-size:13px; font-weight:700; }
+  .unreg rect { fill:#feeaea; stroke:#f0a3a3; }
+  .unreg text { fill:#c0392b; }
+  .reg rect { fill:#e7f8ee; stroke:#27ae60; }
+  .reg text { fill:#1e7a44; }
+</style>
+</head>
+<body>
+  <h1>参数注册黑户陷阱：普通 list vs nn.ModuleList</h1>
+  <p class="desc">选择层的存储方式，点击"构建模型"看参数是否被登记进户籍系统；再点"训练 1 步"观察 loss 是否能下降。</p>
+  <span class="source">原文建议：⚠️ 致命陷阱——用普通 list 存层，参数会被"黑户化"，optimizer 收不到任何参数，loss 死活不降；应改用 nn.ModuleList。</span>
+
+  <div class="controls">
+    <div class="radio">
+      <label><input type="radio" name="mode" value="list" checked> 普通 list 存层（❌ 错误）</label>
+      <label><input type="radio" name="mode" value="module"> nn.ModuleList 存层（✅ 正确）</label>
+    </div>
+    <button id="buildBtn">构建模型</button>
+    <button id="trainBtn" class="ghost">▶ 训练 1 步</button>
+  </div>
+
+  <div class="wrap">
+    <div class="card">
+      <h3>模型结构（3 个 Linear 层）</h3>
+      <svg id="svg" viewBox="0 0 300 240">
+        <g class="layer unreg" id="L0"><rect x="60" y="20" width="180" height="44" rx="9"/><text x="150" y="47" text-anchor="middle">Linear(10→10)</text></g>
+        <g class="layer unreg" id="L1"><rect x="60" y="90" width="180" height="44" rx="9"/><text x="150" y="117" text-anchor="middle">Linear(10→10)</text></g>
+        <g class="layer unreg" id="L2"><rect x="60" y="160" width="180" height="44" rx="9"/><text x="150" y="187" text-anchor="middle">Linear(10→10)</text></g>
+      </svg>
+      <div class="params" id="params"><span class="empty">尚未构建</span></div>
+    </div>
+
+    <div class="losscard">
+      <h3 style="margin:0 0 8px;font-size:15px;">训练 loss 曲线</h3>
+      <canvas id="loss" width="320" height="160"></canvas>
+      <div class="params" id="optStatus" style="margin-top:10px;"><span class="empty">尚未构建</span></div>
+    </div>
+  </div>
+
+  <div class="info" id="info">提示：先选"普通 list"，点"构建模型"——参数名册会是空的。</div>
+
+<script>
+  let registered = false;
+  let lossHist = [];
+
+  function setLayer(id, reg){
+    document.getElementById(id).setAttribute("class", "layer " + (reg ? "reg" : "unreg"));
+  }
+
+  function build(){
+    const mode = document.querySelector('input[name=mode]:checked').value;
+    registered = (mode === "module");
+    ["L0","L1","L2"].forEach(id => setLayer(id, registered));
+    const p = document.getElementById("params");
+    const opt = document.getElementById("optStatus");
+    lossHist = [];
+    if(registered){
+      p.innerHTML =
+        '<div class="row"><span>layers.0.weight</span><span class="badge ok">已登记</span></div>'+
+        '<div class="row"><span>layers.0.bias</span><span class="badge ok">已登记</span></div>'+
+        '<div class="row"><span>layers.1.weight</span><span class="badge ok">已登记</span></div>'+
+        '<div class="row"><span>layers.1.bias</span><span class="badge ok">已登记</span></div>'+
+        '<div class="row"><span>layers.2.weight</span><span class="badge ok">已登记</span></div>'+
+        '<div class="row"><span>layers.2.bias</span><span class="badge ok">已登记</span></div>'+
+        '<div class="row" style="background:#e7f8ee;color:#1e7a44;font-weight:700;">model.parameters() → 6 个参数 ✓</div>';
+      opt.innerHTML = '<div class="row"><span>optimizer 收到参数</span><span class="badge ok">是</span></div>';
+      document.getElementById("info").innerHTML = "✅ 用 <b>nn.ModuleList</b> 存层，每层参数都进了户籍系统，optimizer 能接管全部 6 个参数。";
+    } else {
+      p.innerHTML = '<span class="empty">model.parameters() → [] （空！参数被黑户化）</span>';
+      opt.innerHTML = '<div class="row"><span>optimizer 收到参数</span><span class="badge bad">否</span></div>';
+      document.getElementById("info").innerHTML = "❌ 用<b>普通 list</b>存层，参数从没进户籍系统——optimizer 收不到，等于这批层永远不被训练。";
+    }
+    drawLoss();
+  }
+
+  function train(){
+    if(lossHist.length === 0) lossHist = [2.4];
+    const last = lossHist[lossHist.length-1];
+    let next;
+    if(registered){
+      next = Math.max(0.05, last * 0.82 + (Math.random()-0.5)*0.05);
+    } else {
+      next = last + (Math.random()-0.5)*0.02;
+    }
+    lossHist.push(next);
+    if(lossHist.length > 12) lossHist.shift();
+    drawLoss();
+    const info = document.getElementById("info");
+    if(registered){
+      info.innerHTML = "训练第 "+lossHist.length+" 步：loss ≈ <b>"+next.toFixed(3)+"</b>，参数在更新，模型正在学习。";
+    } else {
+      info.innerHTML = "训练第 "+lossHist.length+" 步：loss ≈ <b>"+next.toFixed(3)+"</b>（几乎不动）——黑户层没被更新，这就是「loss 死活不降」的元凶。";
+    }
+  }
+
+  function drawLoss(){
+    const cv = document.getElementById("loss");
+    const ctx = cv.getContext("2d");
+    const Wd = cv.width, Ht = cv.height;
+    ctx.clearRect(0,0,Wd,Ht);
+    ctx.strokeStyle="#e6edf6"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(30,8); ctx.lineTo(30,Ht-20); ctx.lineTo(Wd-8,Ht-20); ctx.stroke();
+    ctx.fillStyle="#94a3b8"; ctx.font="10px sans-serif";
+    ctx.fillText("loss", 8, 16);
+    ctx.fillText("训练步数 →", Wd/2-24, Ht-4);
+    if(lossHist.length === 0) return;
+    const maxL = 2.6, minL = 0;
+    const x0=30, plotW=Wd-38, baseY=Ht-20, topY=8;
+    ctx.strokeStyle = registered ? "#16a34a" : "#dc2626";
+    ctx.lineWidth=2; ctx.beginPath();
+    lossHist.forEach((v,i)=>{
+      const x = x0 + (lossHist.length===1 ? 0 : i/11*plotW);
+      const y = baseY - (v-minL)/(maxL-minL)*(baseY-topY);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    lossHist.forEach((v,i)=>{
+      const x = x0 + (lossHist.length===1 ? 0 : i/11*plotW);
+      const y = baseY - (v-minL)/(maxL-minL)*(baseY-topY);
+      ctx.fillStyle = registered ? "#16a34a" : "#dc2626";
+      ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill();
+    });
+  }
+
+  document.getElementById("buildBtn").addEventListener("click", build);
+  document.getElementById("trainBtn").addEventListener("click", train);
+  document.querySelectorAll('input[name=mode]').forEach(r=>r.addEventListener("change", build));
+  build();
+</script>
+</body>
+</html>

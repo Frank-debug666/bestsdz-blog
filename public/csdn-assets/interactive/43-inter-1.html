@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备搬运演示：CPU 仓库与 GPU 车间</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f7f9fc; color: #1f2937;
+  }
+  h1 { font-size: 22px; margin: 0 0 6px; }
+  .desc { font-size: 14px; color: #6b7280; margin: 0 0 18px; }
+  .stage {
+    position: relative; width: 720px; max-width: 100%; height: 320px;
+    background: #ffffff; border: 2px solid #e5e7eb; border-radius: 16px;
+    overflow: hidden; margin: 0 auto;
+  }
+  .zone {
+    position: absolute; top: 0; height: 100%; width: 50%;
+    display: flex; flex-direction: column; align-items: center; padding-top: 22px;
+  }
+  .zone.cpu { left: 0; background: #eef2ff; border-right: 2px dashed #c7d2fe; }
+  .zone.gpu { right: 0; background: #ecfdf5; }
+  .zone .label { font-size: 16px; font-weight: 700; }
+  .zone .sub { font-size: 12px; color: #6b7280; margin-top: 4px; }
+  .icon { font-size: 40px; margin-top: 6px; }
+  /* 模型固定在 GPU */
+  #model {
+    position: absolute; top: 90px; left: 540px;
+    width: 120px; height: 90px; border-radius: 12px;
+    background: #bbf7d0; border: 2px solid #16a34a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700; color: #166534;
+  }
+  #model .pin { font-size: 11px; color: #15803d; font-weight: 400; }
+  /* 可拖拽的 Tensor */
+  #tensor {
+    position: absolute; top: 120px; left: 90px;
+    width: 96px; height: 72px; border-radius: 12px; cursor: grab;
+    background: #fde68a; border: 2px solid #d97706;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-weight: 700; color: #92400e; user-select: none; touch-action: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,.12);
+  }
+  #tensor:active { cursor: grabbing; }
+  #tensor .dev { font-size: 12px; font-weight: 400; }
+  .controls { display: flex; gap: 12px; justify-content: center; margin: 18px auto 0; flex-wrap: wrap; }
+  button {
+    font-size: 14px; padding: 10px 16px; border-radius: 10px; border: none;
+    cursor: pointer; font-weight: 700; color: #fff;
+  }
+  button.toGpu { background: #16a34a; }
+  button.toCpu { background: #6366f1; }
+  button.reset { background: #9ca3af; }
+  .status {
+    margin: 18px auto 0; width: 720px; max-width: 100%;
+    padding: 14px 18px; border-radius: 12px; font-size: 15px; font-weight: 700;
+    text-align: center;
+  }
+  .status.err { background: #fee2e2; color: #b91c1c; border: 2px solid #dc2626; }
+  .status.ok  { background: #dcfce7; color: #166534; border: 2px solid #16a34a; }
+  .hud { text-align: center; font-size: 13px; color: #6b7280; margin-top: 10px; }
+  code { background: #eef2ff; padding: 1px 6px; border-radius: 5px; color: #3730a3; }
+</style>
+</head>
+<body>
+  <h1>设备搬运演示：CPU 仓库 ↔ GPU 车间</h1>
+  <p class="desc">模型固定待在 GPU。拖动黄色 Tensor 方块（或用按钮）把它在 CPU / GPU 之间搬运；当 Tensor 与模型不在同一设备时，下方实时报错 <code>Expected all tensors to be on the same device</code>，都到 GPU 后变绿勾"计算成功"。</p>
+
+  <div class="stage" id="stage">
+    <div class="zone cpu">
+      <div class="label">CPU 仓库</div>
+      <div class="sub">大容量·搬运慢</div>
+      <div class="icon">🏬</div>
+    </div>
+    <div class="zone gpu">
+      <div class="label">GPU 车间</div>
+      <div class="sub">算力猛·工位有限</div>
+      <div class="icon">🏭</div>
+    </div>
+    <div id="model">Model
+      <div class="pin">固定在 GPU ▶ .to("cuda")</div>
+    </div>
+    <div id="tensor">Tensor
+      <div class="dev" id="devLabel">device: cpu</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="toGpu" onclick="moveTensor('gpu')">把 Tensor 搬到 GPU（.to("cuda")）</button>
+    <button class="toCpu" onclick="moveTensor('cpu')">把 Tensor 搬回 CPU（.to("cpu")）</button>
+    <button class="reset" onclick="resetAll()">重置</button>
+  </div>
+
+  <div class="status err" id="status">⚠ 模型在 GPU，Tensor 在 CPU → 报错：Expected all tensors to be on the same device</div>
+  <div class="hud">已执行 <code>.to()</code> 次数：<span id="toCount">0</span> ｜ Tensor 当前设备：<span id="curDev">cpu</span></div>
+
+<script>
+  const stage = document.getElementById('stage');
+  const tensor = document.getElementById('tensor');
+  const statusEl = document.getElementById('status');
+  const devLabel = document.getElementById('devLabel');
+  const curDevEl = document.getElementById('curDev');
+  const toCountEl = document.getElementById('toCount');
+  let toCount = 0;
+
+  function updateDevice() {
+    const mid = stage.clientWidth / 2;
+    const center = tensor.offsetLeft + tensor.offsetWidth / 2;
+    const onGpu = center >= mid;
+    const dev = onGpu ? 'cuda' : 'cpu';
+    devLabel.textContent = 'device: ' + dev;
+    curDevEl.textContent = dev;
+    // 模型固定在 GPU → 只有 Tensor 也在 GPU 才成功
+    if (onGpu) {
+      statusEl.className = 'status ok';
+      statusEl.textContent = '✔ 计算成功！Tensor 与 Model 同在 GPU，可以 .backward()';
+    } else {
+      statusEl.className = 'status err';
+      statusEl.textContent = '⚠ 模型在 GPU，Tensor 在 CPU → 报错：Expected all tensors to be on the same device';
+    }
+  }
+
+  function moveTensor(target) {
+    const w = stage.clientWidth;
+    let left;
+    if (target === 'gpu') {
+      left = w * 0.66 - tensor.offsetWidth / 2; // 进入右侧 GPU 区
+    } else {
+      left = w * 0.18; // 进入左侧 CPU 区
+    }
+    // 边界保护
+    left = Math.max(8, Math.min(left, w - tensor.offsetWidth - 8));
+    tensor.style.left = left + 'px';
+    toCount++;
+    toCountEl.textContent = toCount;
+    updateDevice();
+  }
+
+  function resetAll() {
+    tensor.style.left = '90px';
+    toCount = 0;
+    toCountEl.textContent = 0;
+    updateDevice();
+  }
+
+  // 拖拽
+  let dragging = false, offX = 0;
+  tensor.addEventListener('mousedown', (e) => {
+    dragging = true;
+    offX = e.clientX - tensor.getBoundingClientRect().left;
+    e.preventDefault();
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const rect = stage.getBoundingClientRect();
+    let left = e.clientX - rect.left - offX;
+    left = Math.max(8, Math.min(left, stage.clientWidth - tensor.offsetWidth - 8));
+    tensor.style.left = left + 'px';
+    updateDevice();
+  });
+  window.addEventListener('mouseup', () => dragging = false);
+
+  // 触摸支持
+  tensor.addEventListener('touchstart', (e) => {
+    dragging = true;
+    const t = e.touches[0];
+    offX = t.clientX - tensor.getBoundingClientRect().left;
+    e.preventDefault();
+  }, {passive:false});
+  window.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const t = e.touches[0];
+    const rect = stage.getBoundingClientRect();
+    let left = t.clientX - rect.left - offX;
+    left = Math.max(8, Math.min(left, stage.clientWidth - tensor.offsetWidth - 8));
+    tensor.style.left = left + 'px';
+    updateDevice();
+  }, {passive:false});
+  window.addEventListener('touchend', () => dragging = false);
+
+  window.addEventListener('resize', updateDevice);
+  updateDevice();
+</script>
+</body>
+</html>

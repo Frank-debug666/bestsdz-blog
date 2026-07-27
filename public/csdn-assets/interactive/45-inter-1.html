@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>可视化计算图工具 · 第45篇</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f7f9fc; color: #1f2d3d; padding: 18px;
+  }
+  header { max-width: 1000px; margin: 0 auto 14px; }
+  h1 { font-size: 20px; margin: 0 0 6px; color: #1d4ed8; }
+  .desc { font-size: 13px; color: #5a6577; line-height: 1.6; }
+  .wrap { max-width: 1000px; margin: 0 auto; background: #fff; border-radius: 12px;
+          box-shadow: 0 2px 12px rgba(20,40,80,.08); padding: 16px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+  input[type=text] {
+    flex: 1; min-width: 240px; padding: 9px 12px; font-size: 14px;
+    font-family: "Consolas","Courier New",monospace; border: 1.5px solid #cdd6e4;
+    border-radius: 8px; outline: none;
+  }
+  input[type=text]:focus { border-color: #3b82f6; }
+  button {
+    padding: 9px 14px; font-size: 13.5px; border: none; border-radius: 8px;
+    cursor: pointer; font-weight: 600; transition: .15s;
+  }
+  .b-draw { background: #1d4ed8; color: #fff; }
+  .b-back { background: #ea580c; color: #fff; }
+  .b-again { background: #c2410c; color: #fff; }
+  .b-clear { background: #e9ecef; color: #495057; }
+  button:hover { filter: brightness(1.08); }
+  button:active { transform: translateY(1px); }
+  .examples { font-size: 12px; color: #868e96; margin: 0 0 12px 2px; }
+  .examples code { background:#eef2f7; padding:1px 6px; border-radius:4px; cursor:pointer; color:#3b82f6; }
+  .examples code:hover { background:#dbeafe; }
+  #graph { width: 100%; height: 460px; border: 1px solid #eef2f7; border-radius: 10px; background: #fcfdff; }
+  .status { font-size: 13px; color: #495057; margin-top: 10px; min-height: 20px; }
+  .status b { color: #1d4ed8; }
+  .legend { display:flex; gap:18px; flex-wrap:wrap; font-size:12px; color:#5a6577; margin-top:8px; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .sw { width:14px; height:14px; display:inline-block; border-radius:3px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>可视化计算图工具</h1>
+  <div class="desc">输入任意前向表达式，右侧实时绘制计算图：叶子节点用<b>方框</b>、中间节点用<b>圆圈</b>，边上标注运算类型（mul / add / relu / sum）。点击「反向传播」看梯度沿虚线流回每个叶子并显示 .grad；「不清零再 backward 一次」可亲眼看到 .grad 翻倍累加。</div>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <input type="text" id="expr" value="(w*x+b).relu().sum()" spellcheck="false">
+    <button class="b-draw" onclick="rebuild()">绘制计算图</button>
+    <button class="b-back" onclick="runBackward(false)">反向传播</button>
+    <button class="b-again" onclick="runBackward(true)">不清零再 backward 一次</button>
+    <button class="b-clear" onclick="clearGrad()">清空梯度</button>
+  </div>
+  <div class="examples">示例（点击填入）：
+    <code onclick="setExpr('(w*x+b).relu().sum()')">(w*x+b).relu().sum()</code>
+    <code onclick="setExpr('w*x + w*b')">w*x + w*b</code>
+    <code onclick="setExpr('(w+x).sum()')">(w+x).sum()</code>
+    <code onclick="setExpr('w*w + x')">w*w + x</code>
+  </div>
+  <svg id="graph" viewBox="0 0 960 460" preserveAspectRatio="xMidYMid meet"></svg>
+  <div class="legend">
+    <span><i class="sw" style="background:#eef4ff;border:2px solid #3b82f6"></i>叶子节点(requires_grad=True)</span>
+    <span><i class="sw" style="background:#fff;border:2.5px solid #ef6c4d;border-radius:50%"></i>中间节点(grad_fn)</span>
+    <span><i class="sw" style="background:#2f9e44;height:4px"></i>前向(实线)</span>
+    <span><i class="sw" style="background:#e8590c;height:4px"></i>反向(虚线)</span>
+  </div>
+  <div class="status" id="status">请输入表达式并点击「绘制计算图」。</div>
+</div>
+
+<script>
+const SVGNS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("graph");
+const statusEl=document.getElementById("status");
+
+let nodes=[];        // {id,kind,op,label,children:[id],value,grad,depth,x,y}
+let nodeById={};
+let varMap={};       // name -> node id (leaf 复用)
+let varValues={};    // name -> value
+let outputId=null;
+let topoRev=[];      // 反向拓扑序
+let backwardEdges={};// "parentId->childId" -> element
+let hasGrad=false;
+
+/* ---------- 词法 + 语法分析 ---------- */
+function tokenize(s){
+  const toks=[]; let i=0;
+  const isId=c=>/[a-zA-Z_]/.test(c); const isIdc=c=>/[a-zA-Z0-9_]/.test(c);
+  while(i<s.length){
+    const c=s[i];
+    if(/\s/.test(c)){i++;continue;}
+    if(isId(c)){ let j=i+1; while(j<s.length&&isIdc(s[j]))j++; toks.push({t:"id",v:s.slice(i,j)}); i=j; continue; }
+    if("+*().".includes(c)){ toks.push({t:c,v:c}); i++; continue; }
+    throw new Error("非法字符: "+c);
+  }
+  return toks;
+}
+function parse(s){
+  const toks=tokenize(s); let p=0;
+  function peek(){return toks[p];}
+  function next(){return toks[p++];}
+  function expect(v){ if(!peek()||peek().t!==v) throw new Error("缺少 "+v); return next(); }
+  function primary(){
+    const tk=peek();
+    if(!tk) throw new Error("表达式不完整");
+    if(tk.t==="id"){ next(); return {type:"var",name:tk.v}; }
+    if(tk.t==="("){ next(); const e=expr(); expect(")"); return e; }
+    throw new Error("意外的符号 "+tk.v);
+  }
+  function postfix(){
+    let node=primary();
+    while(peek()&&peek().t==="."){
+      next(); // .
+      const m=next(); if(!m||m.t!=="id") throw new Error("方法名错误");
+      expect("("); expect(")");
+      node={type:"unary",op:m.v,child:node};
+    }
+    return node;
+  }
+  function term(){
+    let node=postfix();
+    while(peek()&&peek().t==="*"){ next(); const r=postfix(); node={type:"binop",op:"*",l:node,r:r}; }
+    return node;
+  }
+  function expr(){
+    let node=term();
+    while(peek()&&peek().t==="+"){ next(); const r=term(); node={type:"binop",op:"+",l:node,r:r}; }
+    return node;
+  }
+  const ast=expr();
+  if(p<toks.length) throw new Error("多余的符号 "+toks[p].v);
+  return ast;
+}
+
+/* ---------- 构建图节点 ---------- */
+function buildNodes(ast){
+  nodes=[]; nodeById={}; varMap={}; let idc=0;
+  function mk(o){ o.id="n"+(idc++); o.children=o.children||[]; o.grad=0; nodes.push(o); nodeById[o.id]=o; return o.id; }
+  function walk(a){
+    if(a.type==="var"){
+      if(varMap[a.name]) return varMap[a.name];
+      const id=mk({kind:"var",label:a.name}); varMap[a.name]=id; return id;
+    }
+    if(a.type==="unary"){
+      const cid=walk(a.child);
+      return mk({kind:"op",op:a.op,label:a.op==="relu"?"ReLU":"Sum",children:[cid]});
+    }
+    // binop
+    const lid=walk(a.l), rid=walk(a.r);
+    const opSym=a.op==="*"?"mul":"add";
+    return mk({kind:"op",op:opSym,label:opSym==="mul"?"Mul":"Add",children:[lid,rid]});
+  }
+  outputId=walk(ast);
+  // 深度
+  function depthOf(id,seen=new Set()){
+    if(seen.has(id)) return 0; seen.add(id);
+    const n=nodeById[id];
+    if(n.kind==="var"){n.depth=0;return 0;}
+    const d=Math.max(...n.children.map(c=>depthOf(c,seen)))+1;
+    n.depth=d; return d;
+  }
+  depthOf(outputId);
+  // 叶子随机取值（每个变量 1~5）
+  nodes.forEach(n=>{ if(n.kind==="var"&&varValues[n.label]===undefined){ varValues[n.label]=Math.round((1+Math.random()*4)*10)/10; }});
+  // 前向求值
+  (function evalF(id){
+    const n=nodeById[id];
+    if(n.kind==="var"){ n.value=varValues[n.label]; return n.value; }
+    const vals=n.children.map(evalF);
+    if(n.op==="mul") n.value=vals[0]*vals[1];
+    else if(n.op==="add") n.value=vals[0]+vals[1];
+    else if(n.op==="relu") n.value=Math.max(0,vals[0]);
+    else if(n.op==="sum") n.value=vals[0];
+    return n.value;
+  })(outputId);
+  // 反向拓扑序（后序）
+  topoRev=[];
+  (function post(id,seen=new Set()){
+    if(seen.has(id))return; seen.add(id);
+    nodeById[id].children.forEach(c=>post(c,seen));
+    topoRev.push(id);
+  })(outputId);
+  topoRev.reverse();
+}
+
+/* ---------- 反向传播（手算 autograd） ---------- */
+function backward(){
+  nodes.forEach(n=>{ if(n.kind!=="var") n.grad=0; }); // 中间节点清零，叶子保留（累加）
+  nodeById[outputId].grad=1;
+  for(const id of topoRev){
+    const n=nodeById[id];
+    if(n.kind==="var") continue;
+    const g=n.grad;
+    if(n.op==="mul"){
+      const a=nodeById[n.children[0]], b=nodeById[n.children[1]];
+      a.grad+=g*b.value; b.grad+=g*a.value;
+    } else if(n.op==="add"){
+      nodeById[n.children[0]].grad+=g; nodeById[n.children[1]].grad+=g;
+    } else if(n.op==="relu"){
+      const a=nodeById[n.children[0]]; a.grad+=(a.value>0?g:0);
+    } else if(n.op==="sum"){
+      nodeById[n.children[0]].grad+=g;
+    }
+  }
+  hasGrad=true;
+}
+
+/* ---------- 布局 + 渲染 ---------- */
+function layout(){
+  const W=960,H=460, mx=70,my=40;
+  const cols={};
+  nodes.forEach(n=>{ (cols[n.depth]=cols[n.depth]||[]).push(n); });
+  const maxD=Math.max(...nodes.map(n=>n.depth));
+  const colW=(W-2*mx)/(maxD||1);
+  Object.keys(cols).forEach(d=>{
+    const arr=cols[d]; const x=mx+Number(d)*colW;
+    arr.forEach((n,i)=>{ n.x=x; n.y=my+(i+1)/(arr.length+1)*(H-2*my); });
+  });
+}
+function el(tag,attrs){ const e=document.createElementNS(SVGNS,tag); for(const k in attrs)e.setAttribute(k,attrs[k]); return e; }
+function render(){
+  svg.innerHTML="";
+  backwardEdges={};
+  // 箭头标记
+  const defs=el("defs",{});
+  defs.innerHTML=`
+    <marker id="fwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 z" fill="#2f9e44"/></marker>
+    <marker id="bwd" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 z" fill="#e8590c"/></marker>`;
+  svg.appendChild(defs);
+  // 边
+  nodes.forEach(n=>{
+    n.children.forEach(cid=>{
+      const c=nodeById[cid];
+      const fwd=el("line",{x1:c.x,y1:c.y,x2:n.x,y2:n.y,stroke:"#2f9e44","stroke-width":2.2,"marker-end":"url(#fwd)"});
+      svg.appendChild(fwd);
+      const bwd=el("line",{x1:n.x,y1:n.y,x2:c.x,y2:c.y,stroke:"#e8590c","stroke-width":3,"stroke-dasharray":"7 5",opacity:0,
+        "marker-end":"url(#bwd)"});
+      svg.appendChild(bwd);
+      backwardEdges[n.id+"->"+cid]=bwd;
+      // 运算标签（中点）
+      const mx2=(c.x+n.x)/2, my2=(c.y+n.y)/2;
+      const lbl=el("text",{x:mx2,y:my2-6,"text-anchor":"middle","font-size":11,fill:"#868e96"});
+      lbl.textContent=n.label; svg.appendChild(lbl);
+    });
+  });
+  // 节点
+  nodes.forEach(n=>{
+    const g=el("g",{});
+    if(n.kind==="var"){
+      const r=el("rect",{x:n.x-34,y:n.y-26,width:68,height:52,rx:7,fill:"#eef4ff",stroke:"#3b82f6","stroke-width":2.5});
+      g.appendChild(r);
+      const t1=el("text",{x:n.x,y:n.y-4,"text-anchor":"middle","font-size":18,"font-weight":700,fill:"#1d4ed8"}); t1.textContent=n.label; g.appendChild(t1);
+      const t2=el("text",{x:n.x,y:n.y+15,"text-anchor":"middle","font-size":11,fill:"#3b82f6"}); t2.textContent="="+fmt(n.value); g.appendChild(t2);
+      const gd=el("text",{x:n.x,y:n.y+44,"text-anchor":"middle","font-size":12,"font-weight":700,fill:"#ea580c",id:"grad-"+n.id}); gd.textContent=""; g.appendChild(gd);
+    } else {
+      const c=el("circle",{cx:n.x,cy:n.y,r:30,fill:"#fff",stroke:"#ef6c4d","stroke-width":2.5});
+      g.appendChild(c);
+      const t1=el("text",{x:n.x,y:n.y-2,"text-anchor":"middle","font-size":15,"font-weight":700,fill:"#c2410c"}); t1.textContent=n.label; g.appendChild(t1);
+      const t2=el("text",{x:n.x,y:n.y+15,"text-anchor":"middle","font-size":11,fill:"#9a3412"}); t2.textContent="="+fmt(n.value); g.appendChild(t2);
+      const gfn=el("text",{x:n.x,y:n.y-40,"text-anchor":"middle","font-size":10.5,fill:"#ef6c4d","font-style":"italic"});
+      gfn.textContent="grad_fn: "+ (n.op==="mul"?"MulBackward":n.op==="add"?"AddBackward":n.op==="relu"?"ReluBackward":"SumBackward");
+      g.appendChild(gfn);
+    }
+    svg.appendChild(g);
+  });
+}
+function fmt(v){ return (Math.round(v*100)/100).toString(); }
+
+/* ---------- 行为 ---------- */
+function rebuild(){
+  const s=document.getElementById("expr").value.trim();
+  try{
+    parse(s); // 校验
+  }catch(e){ statusEl.innerHTML="<b style='color:#e03131'>表达式错误：</b>"+e.message; return; }
+  buildNodes(parse(s));
+  layout(); render();
+  hasGrad=false;
+  statusEl.innerHTML="已绘制计算图，叶子取值随机生成。<b>loss = "+fmt(nodeById[outputId].value)+"</b>。点击「反向传播」开始求导。";
+}
+function setExpr(s){ document.getElementById("expr").value=s; rebuild(); }
+function runBackward(accumulate){
+  if(!outputId){ statusEl.textContent="请先绘制计算图。"; return; }
+  if(!accumulate){ // 先清空叶子梯度再反传
+    Object.values(varMap).forEach(id=>nodeById[id].grad=0);
+  }
+  const before=Object.values(varMap).map(id=>nodeById[id].grad);
+  backward();
+  // 动画：依次点亮反向虚线
+  let k=0; const seq=[...topoRev].filter(id=>nodeById[id].kind!=="var");
+  // 反向顺序：从输出开始向叶子
+  seq.forEach((id,idx)=>{
+    setTimeout(()=>{
+      nodeById[id].children.forEach(cid=>{
+        const e=backwardEdges[id+"->"+cid]; if(e) e.setAttribute("opacity",1);
+      });
+    }, idx*180);
+  });
+  setTimeout(()=>{
+    Object.values(varMap).forEach(id=>{
+      const t=document.getElementById("grad-"+id); if(t) t.textContent=".grad="+fmt(nodeById[id].grad);
+    });
+    const parts=Object.values(varMap).map(id=>nodeById[id].label+".grad="+fmt(nodeById[id].grad));
+    statusEl.innerHTML=(accumulate?"不清零累加：":"反向传播完成：")+" "+parts.join("， ");
+  }, seq.length*180+120);
+}
+function clearGrad(){
+  if(!outputId){statusEl.textContent="请先绘制计算图。";return;}
+  Object.values(varMap).forEach(id=>nodeById[id].grad=0);
+  Object.values(varMap).forEach(id=>{ const t=document.getElementById("grad-"+id); if(t)t.textContent=""; });
+  Object.keys(backwardEdges).forEach(k=>backwardEdges[k].setAttribute("opacity",0));
+  hasGrad=false;
+  statusEl.textContent="已清空所有叶子 .grad。";
+}
+rebuild();
+</script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>衰减力度对比 · Adam vs AdamW</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#fff; --ink:#1f2a37; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#2563eb; --soft:#eef2ff;
+    --cAdam:#e11d48; --cAdamW:#0891b2;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);
+    color:var(--ink);line-height:1.55;padding:24px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:21px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .ctrl{margin-bottom:6px;}
+  .ctrl label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .ctrl .val{color:var(--accent);font-weight:600;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .row2{display:flex;gap:14px;align-items:center;margin-top:8px;}
+  .btn{padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:9px;
+    font-size:13px;cursor:pointer;color:var(--ink);}
+  .btn:hover{background:var(--soft);}
+  .readout{margin-left:auto;font-size:13px;color:var(--muted);}
+  .readout b{color:var(--ink);}
+  canvas{width:100%;height:360px;display:block;margin-top:14px;background:#fff;border-radius:10px;}
+  .legend{display:flex;gap:18px;font-size:13px;margin-top:12px;color:var(--muted);}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>衰减力度对比 · Adam vs AdamW</h1>
+  <p class="sub">同一参数在 50 步内经历若干「大梯度尖峰」。分别用 Adam（耦合衰减）与 AdamW（解耦衰减）更新，观察权重绝对值随步数的曲线：Adam 衰减力度随尖峰忽大忽小，AdamW 被平稳持续压小。</p>
+
+  <div class="card">
+    <div class="ctrl" style="max-width:420px">
+      <label>权重衰减 weight_decay：<span class="val" id="wdVal">0.05</span></label>
+      <input type="range" id="wd" min="0.01" max="0.30" step="0.01" value="0.05">
+      <div style="font-size:12px;color:var(--muted)">调节它，看两条曲线整体衰减快慢的变化</div>
+    </div>
+
+    <div class="row2">
+      <button class="btn" id="reroll">重新生成尖峰序列</button>
+      <div class="readout">末步 |w|：Adam <b id="aEnd">—</b> ｜ AdamW <b id="wEnd">—</b></div>
+    </div>
+
+    <canvas id="chart" width="820" height="360"></canvas>
+
+    <div class="legend">
+      <span><span class="dot" style="background:var(--cAdam)"></span>Adam（耦合：衰减先混进梯度再过动量）</span>
+      <span><span class="dot" style="background:var(--cAdamW)"></span>AdamW（解耦：衰减直接作用于参数）</span>
+    </div>
+
+    <div class="hint">
+      红叉尖峰处梯度骤增 → Adam 中该步二阶矩 v<sub>t</sub> 变大，自适应分母把衰减项<b>稀释</b>，衰减「忽小」；
+      平时梯度小、分母小，又把衰减<b>放大</b>，衰减「忽大」——力度根本不稳。AdamW 把衰减独立出来，每步恒为 <code>lr × weight_decay × w</code>，平稳可控。
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas=document.getElementById('chart');
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height;
+  const PAD={l:56,r:18,t:18,b:42};
+  const T=50;
+  const b1=0.9,b2=0.999,lr=0.01,eps=1e-8, w0=1.0;
+  let spikeSeed=20240;
+
+  const wdEl=document.getElementById('wd');
+  const wdVal=document.getElementById('wdVal');
+  const aEnd=document.getElementById('aEnd');
+  const wEnd=document.getElementById('wEnd');
+  const reroll=document.getElementById('reroll');
+
+  function rnd(){ spikeSeed=(spikeSeed*1103515245+12345)&0x7fffffff; return spikeSeed/0x7fffffff; }
+
+  function genSpikes(){
+    const g=[]; const spikes=[5,15,25,35,45];
+    for(let i=0;i<T;i++){
+      let val=0.02; // 基线梯度
+      if(spikes.indexOf(i)!==-1) val+=0.8*(0.8+0.4*rnd()); // 大梯度尖峰
+      g.push(val);
+    }
+    return g;
+  }
+
+  function run(g, wd){
+    let wA=w0,wW=w0,mA=0,vA=0,mW=0,vW=0;
+    const aArr=[wA], wArr=[wW];
+    for(let t=1;t<=T;t++){
+      // Adam（耦合）：衰减先加进梯度
+      const gradA=g[t-1]+wd*wA;
+      mA=b1*mA+(1-b1)*gradA;
+      vA=b2*vA+(1-b2)*gradA*gradA;
+      const mhA=mA/(1-Math.pow(b1,t)), vhA=vA/(1-Math.pow(b2,t));
+      wA=wA-lr*mhA/(Math.sqrt(vhA)+eps);
+      // AdamW（解耦）：动量只看真实梯度，衰减直接作用参数
+      const gradW=g[t-1];
+      mW=b1*mW+(1-b1)*gradW;
+      vW=b2*vW+(1-b2)*gradW*gradW;
+      const mhW=mW/(1-Math.pow(b1,t)), vhW=vW/(1-Math.pow(b2,t));
+      wW=wW-lr*mhW/(Math.sqrt(vhW)+eps)-lr*wd*wW;
+      aArr.push(wA); wArr.push(wW);
+    }
+    return {aArr,wArr};
+  }
+
+  function draw(){
+    const wd=+wdEl.value; wdVal.textContent=wd.toFixed(2);
+    spikeSeed=20240;
+    const g=genSpikes();
+    const {aArr,wArr}=run(g,wd);
+
+    const x0=PAD.l,x1=W-PAD.r,y0=H-PAD.b,y1=PAD.t;
+    let maxV=0,minV=Infinity;
+    aArr.concat(wArr).forEach(v=>{ maxV=Math.max(maxV,v); minV=Math.min(minV,v); });
+    minV=Math.min(minV,0); maxV=maxV*1.08;
+    const sx=i=>x0+(x1-x0)*(i/T);
+    const sy=v=>y0-(y0-y1)*((v-minV)/(maxV-minV||1));
+
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#eef2f7';ctx.lineWidth=1;ctx.fillStyle='#9aa4b2';ctx.font='12px sans-serif';
+    for(let i=0;i<=4;i++){ const v=minV+(maxV-minV)*i/4, y=sy(v);
+      ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(v.toFixed(2),x0-8,y+4); }
+    // 0 线
+    if(minV<0){ const yz=sy(0); ctx.strokeStyle='#cbd5e1';ctx.beginPath();ctx.moveTo(x0,yz);ctx.lineTo(x1,yz);ctx.stroke(); }
+    ctx.strokeStyle='#cbd5e1';
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0,y1);ctx.stroke();
+    ctx.fillStyle='#6b7280';ctx.textAlign='center';
+    ctx.fillText('训练步数 t →',(x0+x1)/2,H-12);
+    ctx.save();ctx.translate(15,(y0+y1)/2);ctx.rotate(-Math.PI/2);
+    ctx.fillText('参数权重 |w|',0,0);ctx.restore();
+
+    // 尖峰标记
+    [5,15,25,35,45].forEach(s=>{ const X=sx(s);
+      ctx.strokeStyle='#fca5a5';ctx.setLineDash([3,3]);ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(X,y0);ctx.lineTo(X,y1);ctx.stroke();ctx.setLineDash([]); });
+
+    function plot(arr,color){ ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.beginPath();
+      arr.forEach((v,i)=>{ const X=sx(i),Y=sy(v); i===0?ctx.moveTo(X,Y):ctx.lineTo(X,Y); });
+      ctx.stroke(); }
+    plot(aArr,'#e11d48');
+    plot(wArr,'#0891b2');
+
+    aEnd.textContent=Math.abs(aArr[T]).toFixed(3);
+    wEnd.textContent=Math.abs(wArr[T]).toFixed(3);
+  }
+
+  wdEl.oninput=draw;
+  reroll.onclick=()=>{ spikeSeed=(Date.now()&0x7fffffff); draw(); };
+  draw();
+})();
+</script>
+</body>
+</html>

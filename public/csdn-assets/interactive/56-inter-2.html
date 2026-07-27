@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设备搬运 Demo · 交互演示</title>
+<style>
+  :root{--bg:#f7f9fc;--card:#fff;--ink:#1f2d3d;--sub:#7b8794;--line:#e3e8ef;
+    --accent:#2f80ed;--green:#27ae60;--red:#eb5757;--orange:#f2994a;}
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.5;}
+  .wrap{max-width:900px;margin:0 auto;padding:24px 18px 40px;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .desc{color:var(--sub);font-size:13px;margin:0 0 18px;background:#eef4ff;padding:10px 14px;border-radius:8px;border:1px solid #d6e4ff;}
+  .stage{display:flex;gap:16px;margin-bottom:16px;}
+  .dev{flex:1;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;min-height:230px;}
+  .dev h3{margin:0 0 4px;font-size:15px;}
+  .dev.cpu h3{color:var(--orange);}
+  .dev.gpu h3{color:var(--green);}
+  .dev p{font-size:11px;color:var(--sub);margin:0 0 12px;}
+  .slot{display:flex;flex-direction:column;gap:10px;min-height:150px;}
+  .item{background:#fbfcfe;border:1px solid var(--line);border-radius:9px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;}
+  .item .name{font-weight:700;font-size:13px;}
+  .item .tag{font-size:11px;color:var(--sub);}
+  .item button{cursor:pointer;border:none;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600;background:var(--accent);color:#fff;}
+  .item.gpu button{background:var(--orange);}
+  .status{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;font-family:Consolas,monospace;font-size:14px;}
+  .status.ok{background:#e9fbf0;border-color:#9be0b8;color:#1e7a45;}
+  .status.bad{background:#fdecec;border-color:#f3b5b5;color:#c0392b;}
+  .status .big{font-weight:800;font-size:15px;}
+  .bar{margin-top:12px;background:#eef2f7;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--sub);font-family:Consolas,monospace;}
+  .hint{font-size:11px;color:var(--sub);margin-top:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>设备搬运 Demo：模型 / 输入 x / 标签 y 必须同设备</h1>
+  <p class="desc">核心需求：点击按钮把模型、输入 x、标签 y 在 CPU / GPU 之间搬动；三者设备不全一致时实时弹出红色报错 <code>Expected all tensors to be on the same device</code>；一旦三者都落到 GPU，报错变绿勾“计算成功”。</p>
+
+  <div class="stage">
+    <div class="dev cpu">
+      <h3>🏬 CPU 仓库</h3>
+      <p>容量大、搬运慢（DataLoader 默认产出地）</p>
+      <div class="slot" id="cpuSlot"></div>
+    </div>
+    <div class="dev gpu">
+      <h3>🏭 GPU 车间</h3>
+      <p>算力猛、工位有限（模型与数据要搬来这）</p>
+      <div class="slot" id="gpuSlot"></div>
+    </div>
+  </div>
+
+  <div class="status bad" id="status">
+    <span class="big">✕ RuntimeError</span><br>
+    Expected all tensors to be on the same device
+  </div>
+  <div class="bar" id="bar"></div>
+  <p class="hint">提示：把三个方块都搬进 GPU 车间即可消除报错（DataLoader 产出的 x、y 默认在 CPU，需手动 .to(device)）。</p>
+</div>
+
+<script>
+(function(){
+  const items = [
+    {id:'model', name:'model（模型参数）', dev:'cpu'},
+    {id:'x',     name:'x（输入数据）',     dev:'cpu'},
+    {id:'y',     name:'y（标签）',         dev:'cpu'},
+  ];
+  const $ = id=>document.getElementById(id);
+
+  function render(){
+    $('cpuSlot').innerHTML=''; $('gpuSlot').innerHTML='';
+    items.forEach(it=>{
+      const el=document.createElement('div');
+      const onGpu = it.dev==='gpu';
+      el.className='item'+(onGpu?' gpu':'');
+      el.innerHTML='<div><div class="name">'+it.name+'</div>'+
+        '<div class="tag">当前设备：'+(onGpu?'cuda:0':'cpu')+'</div></div>'+
+        '<button>'+(onGpu?'搬回 CPU':'搬到 GPU')+'</button>';
+      el.querySelector('button').addEventListener('click',()=>{
+        it.dev = onGpu ? 'cpu' : 'gpu'; render();
+      });
+      (onGpu?$('gpuSlot'):$('cpuSlot')).appendChild(el);
+    });
+    updateStatus();
+  }
+
+  function updateStatus(){
+    const devs = items.map(i=>i.dev);
+    const allSame = devs.every(d=>d===devs[0]);
+    const bar = $('bar');
+    if(!allSame){
+      $('status').className='status bad';
+      $('status').innerHTML='<span class="big">✕ RuntimeError</span><br>Expected all tensors to be on the same device';
+      bar.textContent='状态：model='+items[0].dev+'  x='+items[1].dev+'  y='+items[2].dev+'  → 设备不一致，无法计算';
+    }else{
+      const dev = devs[0];
+      $('status').className='status ok';
+      if(dev==='gpu'){
+        $('status').innerHTML='<span class="big">✓ 计算成功</span><br>model / x / y 都在 cuda:0，前向反向丝滑运行';
+        bar.textContent='状态：三者均在 cuda:0  →  model(x) 正常执行';
+      }else{
+        $('status').innerHTML='<span class="big">✓ 计算成功（CPU）</span><br>三者都在 cpu，能算但慢——这不是 GPU 训练';
+        bar.textContent='状态：三者均在 cpu  →  未启用 GPU，速度受限';
+      }
+    }
+  }
+  render();
+})();
+</script>
+</body>
+</html>

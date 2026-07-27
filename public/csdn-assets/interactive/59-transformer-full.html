@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformer 从零讲透：自注意力到底在算什么（手把手 + 可交互）</title>
+<style>
+  :root{
+    --bg:#0a0d14; --panel:#111726; --panel2:#19202f; --ink:#e9eef6;
+    --muted:#93a1bb; --accent:#6ea8fe; --accent2:#9d7bff; --warm:#ff8a5b;
+    --green:#4ade80; --pink:#ff6b9d; --line:#273349; --gold:#ffd166; --cyan:#22d3ee;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:radial-gradient(1200px 800px at 80% -10%,#15203a 0,var(--bg) 55%);
+    color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}
+  header{padding:72px 24px 30px;text-align:center;max-width:1000px;margin:0 auto}
+  h1{font-size:40px;margin:0 0 14px;letter-spacing:-.5px;
+    background:linear-gradient(90deg,#fff,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.25}
+  header p{color:var(--muted);font-size:18px;margin:0}
+  .badge{display:inline-block;margin-top:18px;padding:6px 16px;border:1px solid var(--accent2);border-radius:999px;color:var(--accent2);font-size:13px;letter-spacing:1px}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px 90px}
+  section{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:30px 32px;margin:18px 0;box-shadow:0 12px 40px rgba(0,0,0,.32);scroll-margin-top:60px}
+  h2{font-size:25px;margin:0 0 4px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  h2 .num{flex:0 0 40px;height:40px;border-radius:11px;display:grid;place-items:center;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#08101f;font-weight:800;font-size:18px}
+  .sub{color:var(--muted);margin:2px 0 14px;font-size:15px}
+  .read{font-size:15.5px}
+  .read p{margin:11px 0}
+  .geo{background:var(--panel2);border-left:3px solid var(--accent2);padding:13px 17px;border-radius:8px;margin:16px 0}
+  .geo b{color:var(--accent2)}
+  .why{background:rgba(110,168,254,.07);border-left:3px solid var(--accent);padding:13px 17px;border-radius:8px;margin:16px 0}
+  .why b{color:var(--accent)}
+  .tip{background:rgba(255,209,102,.08);border-left:3px solid var(--gold);padding:13px 17px;border-radius:8px;margin:16px 0}
+  .tip b{color:var(--gold)}
+  .trap{background:rgba(255,107,157,.08);border-left:3px solid var(--pink);padding:13px 17px;border-radius:8px;margin:16px 0}
+  .trap b{color:var(--pink)}
+  canvas{background:#070a11;border-radius:14px;border:1px solid var(--line);display:block;width:100%;touch-action:none}
+  .grid2{display:grid;grid-template-columns:1.05fr 1fr;gap:24px;align-items:start}
+  @media(max-width:820px){.grid2{grid-template-columns:1fr}}
+  .ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0 4px}
+  button{background:var(--panel2);color:var(--ink);border:1px solid var(--line);padding:8px 15px;border-radius:9px;cursor:pointer;font-size:14px;transition:.15s}
+  button:hover{border-color:var(--accent);background:#202a44}
+  button.on{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#08101f;border-color:transparent;font-weight:700}
+  label.sl{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:14px}
+  input[type=range]{accent-color:var(--accent);width:140px}
+  .pill{display:inline-block;background:#202a44;border:1px solid var(--line);border-radius:999px;padding:2px 11px;font-size:13px;color:var(--muted);margin:2px 3px}
+  .legend{display:flex;flex-wrap:wrap;gap:14px;font-size:13px;color:var(--muted);margin-top:10px}
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  code{background:#070a11;padding:2px 7px;border-radius:6px;color:var(--warm);font-size:14px}
+  pre{background:#070a11;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow-x:auto;font-size:13.5px;line-height:1.7}
+  pre code{background:none;padding:0;color:#cfe0ff}
+  .fml{background:#070a11;border:1px solid var(--line);border-radius:10px;padding:13px 16px;margin:14px 0;font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:14.5px;color:#cfe0ff;overflow-x:auto;line-height:1.9}
+  .fml .c{color:var(--muted)}
+  .fml .h{color:var(--gold)}
+  .nav{position:sticky;top:0;z-index:20;background:rgba(10,13,20,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);padding:10px 0;margin-bottom:8px}
+  .nav .inner{max-width:1140px;margin:0 auto;padding:0 24px;display:flex;gap:6px;flex-wrap:wrap;overflow-x:auto}
+  .nav a{color:var(--muted);text-decoration:none;font-size:13px;padding:5px 11px;border-radius:8px;white-space:nowrap}
+  .nav a:hover{color:var(--ink);background:var(--panel2)}
+  .foot{text-align:center;color:var(--muted);font-size:14px;padding:30px}
+  .hint{font-size:13px;color:var(--muted);margin-top:8px;font-style:italic}
+  table{width:100%;border-collapse:collapse;margin:8px 0;font-size:14.5px}
+  th,td{border:1px solid var(--line);padding:9px 12px;text-align:left}
+  th{background:var(--panel2);color:var(--accent)}
+  td b{color:var(--warm)}
+  .bridge{max-width:1140px;margin:0 auto;padding:2px 24px}
+  .bridge .card{display:flex;align-items:center;gap:16px;background:linear-gradient(90deg,rgba(157,123,255,.10),rgba(110,168,254,.06));
+    border:1px dashed var(--accent2);border-radius:14px;padding:12px 20px;margin:8px 0}
+  .bridge .arrow{font-size:22px;color:var(--accent2);flex:0 0 auto}
+  .bridge .txt{font-size:14.5px;color:#d6def0}
+  .bridge .txt b{color:var(--accent2)}
+  .shape{font-family:"SF Mono",ui-monospace,monospace;font-size:12.5px;color:var(--cyan);background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.3);border-radius:6px;padding:1px 8px;margin-left:6px;white-space:nowrap}
+  .sent{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:8px 0 2px}
+  .sent span{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:4px 14px;font-size:15px}
+  .sent span.q{border-color:var(--pink);color:var(--pink)}
+  .lead{font-size:17px;color:#d6def0;line-height:1.85}
+  .takeaway{background:linear-gradient(135deg,rgba(110,168,254,.10),rgba(157,123,255,.06));border:1px solid var(--accent2);border-radius:14px;padding:18px 22px;margin:18px 0}
+  .takeaway h3{margin:0 0 10px;color:var(--accent2);font-size:18px}
+  .takeaway ol{margin:0;padding-left:22px}
+  .takeaway li{margin:7px 0}
+  .exercise{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:18px 0}
+  .exercise h3{margin:0 0 10px;color:var(--green);font-size:18px}
+  .series{text-align:center;color:var(--muted);font-size:14.5px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px;margin-top:24px;line-height:1.9}
+  .series a{color:var(--accent);text-decoration:none}
+  .hl{color:var(--gold);font-weight:700}
+  .em{color:var(--pink);font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Transformer 从零讲透：自注意力到底在算什么</h1>
+  <p>不背公式、不绕弯子。用「舞台聚光灯」和「工位同事」两个比喻，<br>带你把自注意力、多头、位置编码、残差、LayerNorm、FFN 一次看明白——<b style="color:var(--ink)">还能动手拖一拖</b>。</p>
+  <div class="badge">★ 通俗 + 可交互 · 图文并茂 · 含调库版 &amp; 面试手搓版</div>
+  <div class="sent" style="margin-top:22px">
+    <span>猫</span><span>坐</span><span>在</span><span>垫子</span><span>上</span><span class="q">？(待预测)</span>
+  </div>
+  <p style="font-size:13px;margin-top:6px">↑ 我们拿这句话当例子，让它走完 Transformer 的每一步。</p>
+</header>
+
+<div class="nav"><div class="inner">
+  <a href="#s0">总览</a><a href="#s1">1 为什么</a><a href="#s2">2 自注意力</a><a href="#s3">3 QKV</a>
+  <a href="#s4">4 缩放√d</a><a href="#s5">5 注意力矩阵</a><a href="#s6">6 多头</a><a href="#s7">7 位置编码</a>
+  <a href="#s8">8 Encoder</a><a href="#s9">9 残差&LN</a><a href="#s10">10 FFN</a><a href="#s11">11 堆叠</a>
+  <a href="#s12">12 代码</a><a href="#s13">13 小结</a>
+</div></div>
+
+<div class="wrap">
+
+<!-- 0 总览 -->
+<section id="s0">
+  <h2><span class="num">∑</span>总览：先记住两句话，全文就通了</h2>
+  <p class="sub">Transformer 不是某个单一魔法，而是「几种简单动作」反复叠加出来的。</p>
+  <div class="lead">
+    <p>你大概听说过：<b>Transformer 是 BERT、GPT、ChatGPT 的共同骨架</b>。它凭什么这么强？一句话——</p>
+    <p>👉 <span class="hl">它让一句话里「任意两个词」都能直接对话</span>，而且<span class="hl">所有词是同时算、可以并行</span>的。</p>
+  </div>
+  <div class="read">
+    <p>为了让你后面不迷路，先把整篇的「贯穿比喻」立起来：</p>
+    <div class="geo">
+      <b>比喻 A · 舞台聚光灯：</b>一句话是一支队伍上台。每个词头顶有一束<span class="hl">聚光灯</span>，灯光照向谁，谁就被「重点关注」。自注意力，就是大家一起决定：<b>我的灯该打在谁身上</b>。
+    </div>
+    <div class="geo">
+      <b>比喻 B · 工位同事：</b>每个词是办公室里一个同事。开会时，每个人同时向全场发问、也听全场回答。谁的问题和你对口，你就多听谁的——这就是「加权融合」。
+    </div>
+    <p>文章里每个交互小图，都是把上面这两个比喻「画」出来给你拖着玩。下面正式开始。</p>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>先问「为什么需要它」：</b>在 Transformer 之前，大家用 RNN 处理序列，但它有两个老毛病——算得慢、记性差的远处就忘。Transformer 正是来治这两个病的。<span class="shape">RNN → Transformer</span>
+</div></div></div>
+
+<!-- 1 为什么 -->
+<section id="s1">
+  <h2><span class="num">1</span>为什么是 Transformer：RNN 的两个老毛病</h2>
+  <p class="sub">理解「它解决了什么」，比死记「它是什么」重要十倍。</p>
+  <div class="read">
+    <p>在 Transformer 之前，处理「一句话 / 一段序列」的主力是 <b>RNN（循环神经网络）</b>。它像一条流水线：看完第 1 个词，才看第 2 个，再看第 3 个……时间步必须 <b>串行</b>。</p>
+    <div class="trap"><b>毛病① 算得慢（不能并行）：</b>第 2 个词必须等第 1 个词算完。句子越长，排队越久，GPU 的并行算力被白白浪费。</div>
+    <div class="trap"><b>毛病② 记性差（长程依赖丢失）：</b>信息要从第 1 个词一路「传递」到第 100 个词，每传一步都打点折扣，传到远处就<span class="em">梯度消失</span>、记不住开头了。所以 RNN 很难理解「一句话开头和结尾的呼应」。</div>
+    <p>Transformer 的解法是「换思路」：<b>不让词排队，而是让所有词同时坐在一屋子里，两两直接对话</b>。于是：</p>
+  </div>
+  <table>
+    <tr><th>维度</th><th>RNN（旧）</th><th>Transformer（新）</th></tr>
+    <tr><td>计算方式</td><td>串行，必须等上一时间步</td><td><b>并行</b>，所有位置同时算</td></tr>
+    <tr><td>长程依赖</td><td>远处易梯度消失，记不住</td><td>任意两位置<b>直连</b>，一步可达</td></tr>
+    <tr><td>复杂度</td><td>O(n)，随长度线性</td><td>O(n²)，随长度平方（吃显存）</td></tr>
+    <tr><td>位置信息</td><td>天然按顺序输入</td><td>无序，需额外加<b>位置编码</b></td></tr>
+    <tr><td>现状</td><td>渐被取代</td><td>GPT / BERT / 大模型基石</td></tr>
+  </table>
+  <div class="tip"><b>一句话记忆：</b>Transformer 用「平方的算力」换「并行 + 长程直连」，在长序列上完胜 RNN。序列特别长时 O(n²) 成为瓶颈 → 催生 FlashAttention、稀疏注意力等优化。</div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>现在进入核心：</b>所谓「两两直接对话」，具体怎么算？这就是大名鼎鼎的<span class="hl">自注意力（Self-Attention）</span>。我们从最直观的「聚光灯」讲起。<span class="shape">Attention(Q,K,V)=softmax(QKᵀ/√d)V</span>
+</div></div></div>
+
+<!-- 2 自注意力 -->
+<section id="s2">
+  <h2><span class="num">2</span>自注意力：一句话的「聚光灯」</h2>
+  <p class="sub">核心公式就一行，但每个符号都能翻译成大白话。先拖下面的图感受「注意力」是什么。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cSpot" height="400"></canvas>
+      <div class="hint">拖动中心的 <b style="color:var(--pink)">Query（聚光灯）</b>，看它照向哪个词、哪个词的气泡变大。</div>
+    </div>
+    <div class="read">
+      <p>自注意力的公式长这样：</p>
+      <div class="fml">Attention(Q, K, V) = <span class="h">softmax</span>( Q·Kᵀ / √d_k ) · V</div>
+      <p>别慌，拆成两步就懂：</p>
+      <p><b>第一步 · 打分：</b>每个词拿自己的「提问」去和别人的「标签」比对，算出<b>该关注谁多少</b>（就是中间那个 Q·Kᵀ）。</p>
+      <p><b>第二步 · 融合：</b>把分数变成权重（每行加起来=1），再按权重把大家的「内容」搅和在一起（最后那个 ·V）。</p>
+      <div class="geo"><b>聚光灯版解释：</b>每个词头顶一束灯（Query），灯指向谁，谁就被照亮、被「吸收」进自己的理解里。灯越亮=关注越多。上面拖动时，<b>气泡越大 = 被关注越多</b>。</div>
+      <p class="kbd">⚠️ 此刻只是「算出该关注谁」，还没真正改变任何词。改变发生在第二步融合。</p>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>承上：</b>打分靠 Q 和 K，融合靠 V。那 Q、K、V 到底是哪来的？下一步给每个词发三张「角色卡」。<span class="shape">X → Q,K,V</span>
+</div></div></div>
+
+<!-- 3 QKV -->
+<section id="s3">
+  <h2><span class="num">3</span>Q / K / V：每个词的「三张角色卡」</h2>
+  <p class="sub">同一个词，分别被投影成「提问卡 Query、名牌卡 Key、内容卡 Value」。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cQKV" height="380"></canvas>
+      <div class="ctrl"><button id="qkvBtn" class="on">▶ 播放变换</button><label class="sl">手动 <input id="qkvAng" type="range" min="0" max="100" value="0"></label></div>
+      <div class="hint">同一团词（左）被 W_Q / W_K / W_V 三个矩阵旋转拉伸到三个不同子空间。</div>
+    </div>
+    <div class="read">
+      <p>Q、K、V 都来自<b>同一个输入</b>，只是各乘了一个不同的线性矩阵：</p>
+      <div class="fml">Q = X·W_Q    <span class="c"># Query：我想找什么样的上下文（我的问题卡）</span>
+K = X·W_K    <span class="c"># Key  ：我能匹配什么样的提问（我的名牌卡）</span>
+V = X·W_V    <span class="c"># Value：若被选中，我贡献什么内容（我的资料卡）</span></div>
+      <div class="geo"><b>工位同事版：</b>开会时，每个人都同时拿着三张卡——<br>• <span class="hl">Q（提问卡）</span>：我现在想搞懂什么？<br>• <span class="hl">K（名牌卡）</span>：我擅长回答哪类问题？<br>• <span class="hl">V（资料卡）</span>：我被问到时，掏出什么真东西给你？</div>
+      <div class="why"><b>为什么要拆三份：</b>「用来匹配的特征」和「用来传递的内容」往往不同。比如代词「它」的 Q 想找一个「动物名词」，而它真正要搬运的 V 是那个名词的具体含义——拆开 K 和 V，让「找人」和「给料」两件事解耦，表达力更强。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>问题来了：</b>Q·Kᵀ 这种「点积」算出来的分数，维度一高就会飘得很离谱， Softmax 直接「死机」。所以公式里有个 <span class="hl">÷√d_k</span> 来压一压。<span class="shape">Q·Kᵀ → ÷√d_k → softmax</span>
+</div></div></div>
+
+<!-- 4 缩放 -->
+<section id="s4">
+  <h2><span class="num">4</span>缩放 √d_k：给「吵闹的打分」降噪</h2>
+  <p class="sub">为什么点积要除以 √d_k？一句话：防止分数方差爆炸，Softmax 变「独热」导致梯度消失。</p>
+  <div class="read">
+    <p>Q 和 K 每个维度里的值，都是随机初始化、近似独立的小数字。两个 d_k 维向量做点积，相当于把 d_k 个这样的小乘积<b>加起来</b>。</p>
+    <div class="fml">score = q·k = |q|·|k|·<span class="h">cosθ</span>
+<span class="c"># d_k 越大，累加项越多，score 的方差≈ d_k 也越大</span></div>
+    <p>维度 d_k 越高，点积的方差越大（≈ d_k 倍）。不处理的话，分数会极端到 ±很大，送进 Softmax 后几乎变成「只选一个、其余全 0」的 one-hot，<b>梯度直接消失，模型学不动</b>。</p>
+    <div class="why"><b>除以 √d_k 做了什么：</b>把方差从 ≈d_k 拉回到 ≈1，分数分布变得「温和」，Softmax 才会给多个词都分一点注意力，梯度也健康。这也就是名字 <span class="hl">Scaled Dot-Product Attention（缩放点积注意力）</span> 的由来。</div>
+    <div class="tip"><b>面试高频追问：</b>「为什么除 √d_k 而不是别的？」→ 因为要让缩放后点积的方差稳定在 1，√d_k 是方差开根号恰好抵消的那一档。答到「方差稳定」四个字就对了。</div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>单个 Query 看完了。</b>把句子里每个词都当一次 Query，对所有 Key 打分，就得到一张「注意力全景图」——著名的 n×n 热力图。<span class="shape">分数 [n×n] → 按行 softmax → 权重 [n×n]</span>
+</div></div></div>
+
+<!-- 5 注意力矩阵 -->
+<section id="s5">
+  <h2><span class="num">5</span>注意力矩阵：整句的「关注全景」</h2>
+  <p class="sub">n×n 热力图：第 i 行 = 第 i 个词把注意力如何分配给全句。每行经 Softmax 后和为 1。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cMat" height="380"></canvas>
+      <div class="ctrl"><label class="sl">温度 τ <input id="matTemp" type="range" min="8" max="120" value="35"></label><span id="matTempV" class="pill">τ=0.35</span></div>
+      <div class="hint">悬停看具体数值。τ 越小越聚焦（亮点更尖），越大越平均。</div>
+    </div>
+    <div class="read">
+      <p>把每个词当 Query 打一遍分，排成矩阵，再按行做 Softmax：</p>
+      <div class="fml">A = softmax( <span class="h">Q·Kᵀ / √d_k</span> )
+softmax(z)_j = e^(z_j / τ) / Σ_k e^(z_k / τ)</div>
+      <div class="geo"><b>聚光灯全景版：</b>这就是「谁在看谁」的全局地图。亮带通常对应语法/指代关系，比如「它→猫」「动词→主语」。</div>
+      <div class="why"><b>温度 τ 的作用：</b>τ→0，权重集中到最相关的那个词（硬选择）；τ→∞，权重趋于均匀（平均一切）。训练时 τ 固定为 1（已含在 √d_k 里）；推理采样时调它能控制「专注 vs 发散」。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>一次注意力只看了一种关系。</b>但语言里同时存在「语法、指代、距离」等多种关系。怎么办？把空间切成多块，<b>多个「头」并行各看一种</b>，再拼起来。<span class="shape">切 h 份 → 并行 → 拼接</span>
+</div></div></div>
+
+<!-- 6 多头 -->
+<section id="s6">
+  <h2><span class="num">6</span>多头注意力：多组聚光灯，各看一面</h2>
+  <p class="sub">把 d 维切成 h 个低维子空间，每个头独立做一遍注意力，结果拼接后用 W_O 融合。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cHead" height="400"></canvas>
+      <div class="ctrl"><label class="sl">头数 h <input id="headN" type="range" min="1" max="8" value="4"></label><span id="headV" class="pill">h = 4</span><button id="headBtn" class="on">▶ 循环演示</button></div>
+      <div class="hint">向量切成 h 段 → 每段各自做注意力 → 沿维度拼回 → 经 W_O 混合。</div>
+    </div>
+    <div class="read">
+      <p>每个头有自己的 W_Q/W_K/W_V（维度 d/h），h 个头并行运算后拼接：</p>
+      <div class="fml">head_t = Attention(X·W_Q^t, X·W_K^t, X·W_V^t)
+MultiHead = Concat(head_1, …, head_h) · <span class="h">W_O</span></div>
+      <div class="geo"><b>多组聚光灯版：</b>一个头像一盏聚光灯，只能照一个角度。多头 = 同时打 <b>h 盏不同颜色的灯</b>：有的专照「主谓一致」，有的专照「代词指代」，有的专照「相邻距离」。最后 W_O 把各盏灯的发现重新混回完整表示。</div>
+      <div class="why"><b>为什么不是一个大头：</b>单一空间里，「语法对齐」和「语义相关」会互相干扰、挤在同一组夹角里。拆成多头，让每种关系拥有独立子空间、互不打架——实践里这显著提升表达力。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>注意力算出了「该往哪挪」。</b>但还有个前提问题：注意力本身<b>看不到词的顺序</b>——「猫坐」和「坐猫」在它眼里是一样的点集。所以必须额外注入位置信息。<span class="shape">无序 → 加位置编码</span>
+</div></div></div>
+
+<!-- 7 位置编码 -->
+<section id="s7">
+  <h2><span class="num">7</span>位置编码：给每个词贴「座位号」</h2>
+  <p class="sub">用一组不同频率的 sin/cos（或 RoPE 旋转）把位置写进向量，让模型分辨语序。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cPos" height="380"></canvas>
+      <div class="ctrl"><label class="sl">看位置 pos <input id="posSlider" type="range" min="0" max="40" value="6"></label><span id="posVal" class="pill">pos = 6</span></div>
+      <div class="hint">每条彩色曲线是一个维度随位置的取值；橙色竖线 = 当前位置的「座位指纹」。</div>
+    </div>
+    <div class="read">
+      <p>正弦编码给每个维度安排一个不同频率：低维转得慢（管粗略位置），高维转得快（管精细位置）——像钟表的时针/分针/秒针叠加，组合出独一无二的位置指纹。</p>
+      <div class="fml">PE(pos, 2i)  = sin( pos / 10000^(2i/d) )
+PE(pos, 2i+1) = cos( pos / 10000^(2i/d) )
+x_i ← x_i + PE(i)        <span class="c"># 把座位号加到词向量上</span></div>
+      <div class="geo"><b>座位号版：</b>注意力是「对称」的——它只看词与词的内容关系，天然分不清先后。位置编码就是给每个人发一张<b>座位牌</b>，贴进向量里，模型这才知道「谁坐在第几个」。</div>
+      <div class="why"><b>为什么是 sin/cos：</b>三角函数有界（不会随句子变长而爆炸）、且 PE(pos+k) 可由 PE(pos) 线性表示，模型容易学会「相对距离」。现代大模型常用 <b>RoPE</b>：把向量<b>旋转</b>一个正比于位置的角度，于是「相对位置」变成「夹角差」——恰好能被下一步的点积感知。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>把上面的零件装起来：</b>一个 Encoder Block = 多头注意力 + 残差&LayerNorm + 前馈网络 + 残差&LayerNorm。这是 Transformer 的「标准间」。<span class="shape">Block = Attn + FFN (+残差+LN)</span>
+</div></div></div>
+
+<!-- 8 Encoder -->
+<section id="s8">
+  <h2><span class="num">8</span>Encoder Block 四件套（堆叠 N 层）</h2>
+  <p class="sub">一个 Block 由四部分组成。理解这四件套，就理解了 90% 的 Transformer。</p>
+  <div class="read">
+    <ol>
+      <li><b>多头自注意力</b>：让词与词充分对话（第 2~6 节）。</li>
+      <li><b>残差连接 + LayerNorm</b>：把注意力的结果「小步」加回原值，并归一化（下一节）。</li>
+      <li><b>前馈网络 FFN</b>：每个词独立过一个非线性小网络（第 10 节）。</li>
+      <li><b>残差连接 + LayerNorm</b>：再把 FFN 的结果小步加回。</li>
+    </ol>
+    <div class="fml"><span class="c"># 一个 Block 的数据流（Post-LN 写法）</span>
+x = x + <span class="h">Attention</span>(LayerNorm(x))     <span class="c"># 子层1：注意力 + 残差</span>
+x = x + <span class="h">FFN</span>(LayerNorm(x))          <span class="c"># 子层2：前馈 + 残差</span></div>
+    <div class="geo"><b>乐高版：</b>把「注意力」和「FFN」想成两块功能不同的乐高，每块外面都裹一层「残差+归一化」的保护壳。把这块乐高重复堆 N 次，就是完整的 Transformer 编码器。</div>
+    <div class="tip"><b>Pre-LN vs Post-LN：</b>上面是原论文的 Post-LN（先注意力后 Norm）。现代大模型多用 <b>Pre-LN</b>（<code>x + Attn(LayerNorm(x))</code> 顺序不变，但 Norm 在子层里面），训练更稳、更深也不易崩。</div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>两个稳定器揭秘：</b>残差 + LayerNorm 是让几十层网络「训得动、不飘」的关键。下面两个交互，分别演示它们做了什么。<span class="shape">x ← x + Δ ； LayerNorm</span>
+</div></div></div>
+
+<!-- 9 残差 LN -->
+<section id="s9">
+  <h2><span class="num">9</span>残差 &amp; LayerNorm：让深层网络稳如老狗</h2>
+  <p class="sub">残差 = 只走一小步，不推倒重来；LayerNorm = 把点拉回固定半径球面，只留方向。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cRes" height="380"></canvas>
+      <div class="ctrl"><button id="resBtn" class="on">▶ 逐层前进</button><button id="resReset">↺ 重置</button></div>
+      <div class="hint">一个点沿折线轨迹被一层层微调到目标，而非瞬移。</div>
+    </div>
+    <div class="read">
+      <p><b>残差连接：</b>注意力和 FFN 都不<b>替换</b>输入，而是作为「增量 Δ」加回去：</p>
+      <div class="fml">x ← x + <span class="h">Δ</span></div>
+      <div class="geo"><b>便利贴版：</b>残差就像在原件上<b>贴便利贴补充</b>，而不是把整页重写。信息沿一条「残差流」主干一路累加，每层的修改都很小。</div>
+      <div class="why"><b>为什么不可或缺：</b>没有残差，每层要从零重建表示，几十层叠加会让梯度在反向传播中指数衰减（梯度消失），根本训不动。有了 <code>x+Δ</code>，梯度有一条「高速公路」直达浅层——这是深层网络可行的关键。</div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:24px">
+    <div>
+      <canvas id="cLN" height="380"></canvas>
+      <div class="ctrl"><button id="lnBtn" class="on">▶ 归一化动画</button></div>
+      <div class="hint">长度各异、四散的点 → 被收拢到同一圆环（高维里是球面）上。</div>
+    </div>
+    <div class="read">
+      <p><b>LayerNorm：</b>对每个向量减均值、除标准差，再用可学习的 γ、β 微调：</p>
+      <div class="fml">LN(x) = γ · (x − μ) / σ + β
+        μ,σ 为该向量自身的均值/标准差</div>
+      <div class="geo"><b>统一格式版：</b>LayerNorm 抹掉「长度/尺度」，只保留「方向」。把所有点推到半径固定的球面上，后续点积比较只看角度，不会被某个模长过大的点带偏。</div>
+      <div class="why"><b>深层含义：</b>正因为 LayerNorm 不断归一化长度，Transformer 里真正承载语义的是向量的<b>方向</b>而非长度——这也解释了为什么分析模型常用余弦相似度。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>到此，词之间已充分交流（注意力）。</b>但只做加权平均是「线性」的，无法表达复杂模式。下一步让每个词单独过一个非线性网络，把空间<b>折弯</b>。<span class="shape">逐点 [d] → [4d] → 激活 → [d]</span>
+</div></div></div>
+
+<!-- 10 FFN -->
+<section id="s10">
+  <h2><span class="num">10</span>前馈网络 FFN：把空间「折弯」出非线性</h2>
+  <p class="sub">每个点独立过一个两层 MLP，先升维再降维。激活函数像折痕，把直空间折弯。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cFFN" height="400"></canvas>
+      <div class="ctrl"><label class="sl">折叠强度 <input id="ffnSlider" type="range" min="0" max="100" value="0"></label><button id="ffnBtn" class="on">▶ 自动折</button></div>
+      <div class="hint">一张平直网格被几条 ReLU 折痕折成弯曲曲面——这就是非线性。</div>
+    </div>
+    <div class="read">
+      <p>结构是「升维 → 激活 → 降维」，中间层通常是 4 倍宽：</p>
+      <div class="fml">FFN(x) = W_2 · <span class="h">GELU</span>(W_1·x + b_1) + b_2
+   W_1: d→4d   W_2: 4d→d</div>
+      <div class="geo"><b>折纸版：</b>线性层只能旋转拉伸（保持「直」），<b>唯有激活函数能把空间折弯</b>。每个 ReLU 神经元像在空间压一道折痕，许多折痕叠加，就能把原本线性不可分的点云揉成可分的形状。</div>
+      <div class="why"><b>另一种读法（键值记忆）：</b>升维后的每个神经元像一个「探测器」，命中就往输出写入一段对应的「知识向量」。研究表明 FFN 正是模型<b>存储事实</b>的地方（「巴黎—法国首都」这类知识就编码在这里），它占了模型约 2/3 的参数量。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>一层 = 注意力(交换) + FFN(变形) + 残差&LN(稳定)。</b>把这一整块叠 N 次（GPT-3 有 96 层），点云从混沌逐步整理出清晰结构，最后读出答案。<span class="shape">[n×d] ×N层 → 末词向量 → 词表概率</span>
+</div></div></div>
+
+<!-- 11 堆叠 -->
+<section id="s11">
+  <h2><span class="num">11</span>堆叠 N 层 → 从混沌到语义</h2>
+  <p class="sub">几十个相同的块反复作用，点云从杂乱聚成语义簇；最后用末位点和词表做夹角比较选词。</p>
+  <div class="grid2">
+    <div>
+      <canvas id="cStack" height="400"></canvas>
+      <div class="ctrl"><label class="sl">层 <input id="layerSlider" type="range" min="0" max="12" value="0"></label><span id="layerVal" class="pill">layer 0 / 12</span><button id="stackBtn" class="on">▶ 逐层演化</button></div>
+      <div class="hint">随层数增加，杂乱点云逐步聚成有结构的簇——语义在几何上浮现。</div>
+    </div>
+    <div class="read">
+      <p>浅层多处理表层/语法关系，深层逐步形成抽象、任务相关的语义。最后取<b>末位 token</b> 的向量，和词表每个词向量做点积，选出最对齐的：</p>
+      <div class="fml">logits = x_last · Eᵀ        <span class="c"># 又是一次夹角比较！</span>
+P(下一个词) = softmax(logits)
+   → 预测：「睡 / 趴 / 打盹 …」</div>
+      <div class="geo"><b>首尾呼应：</b>输出（Unembedding）又回到了点积——把末位点的方向和词表里每个词向量比夹角，最对齐的方向就是预测的下一个词。<b>从输入到输出，模型自始至终只在反复比较和调整「方向」。</b></div>
+      <div class="why"><b>这就是生成：</b>选出一个词后，接到句尾，整流程再跑一遍预测下下个词——如此自回归，逐字写出整段回答。</div>
+    </div>
+  </div>
+</section>
+
+<div class="bridge"><div class="card"><div class="arrow">↓</div><div class="txt">
+  <b>理论讲完，落地到代码。</b>下面给你两套写法：<b>调库版</b>（写应用、5 分钟跑通）+ <b>面试手搓版</b>（从零写矩阵运算，必背核心 5 行）。<span class="shape">理论 → 代码</span>
+</div></div></div>
+
+<!-- 12 代码 -->
+<section id="s12">
+  <h2><span class="num">12</span>代码实战：调库版 + 面试手搓版</h2>
+  <p class="sub">用 PyTorch 内置 nn.TransformerEncoder 五分钟搭一个分类器；再手搓核心注意力，应付面试。</p>
+
+  <h3 style="color:var(--accent);margin-top:6px">① 调库版：把 MNIST 图片当序列做分类</h3>
+  <div class="read"><p>我们把 28×28 的图看作「28 个时间步、每步 28 维特征」的序列，喂给 Transformer 编码器。<b>真正的重点不是这堆代码，而是后面那张「张量尺寸变化表」</b>——它告诉你数据每一步变成什么样。</p></div>
+  <pre><code>import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader
+from torchvision import datasets, transforms
+
+# ===== 一、构建模型：继承 nn.Module，实现两个方法 =====
+class TransformerModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.embed = nn.Linear(28, 64)                  # 每步28维 → 64维(d_model)
+        self.pos = nn.Parameter(torch.randn(1, 28, 64)) # 可学习的位置编码
+        layer = nn.TransformerEncoderLayer(
+                    d_model=64, nhead=4,               # 4个注意力头
+                    dim_feedforward=128,               # FFN 隐藏维度
+                    batch_first=True)                  # 形状 [批, 序列, 特征]
+        self.encoder = nn.TransformerEncoder(layer, num_layers=2)  # 叠2层
+        self.fc = nn.Linear(64, 10)                    # 全连接: 64 → 10类
+
+    def forward(self, x):
+        x = self.embed(x) + self.pos     # 投影 + 加位置编码  [批,28,64]
+        x = self.encoder(x)              # 过编码器
+        x = x.mean(dim=1)                # 序列维平均(池化) [批,64]
+        return self.fc(x)                # 得到 10 类得分
+
+# ===== 二、准备数据 / 设备 / 训练循环（套路固定）=====
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+model = TransformerModel().to(device)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.Adam(model.parameters(), lr=0.001)
+
+transform = transforms.ToTensor()
+train_set = datasets.MNIST('./data', train=True, download=True, transform=transform)
+train_loader = DataLoader(train_set, batch_size=64, shuffle=True)
+
+for epoch in range(5):
+    for images, labels in train_loader:
+        images = images.squeeze(1).to(device)   # [批,1,28,28]→[批,28,28]
+        labels = labels.to(device)
+        outputs = model(images)
+        loss = criterion(outputs, labels)
+        optimizer.zero_grad(); loss.backward(); optimizer.step()
+    print(f'Epoch {epoch+1}, Loss: {loss.item():.4f}')</code></pre>
+
+  <h3 style="color:var(--accent);margin-top:22px">张量尺寸变化追踪（务必看懂）</h3>
+  <table>
+    <tr><th>阶段</th><th>形状</th></tr>
+    <tr><td>输入序列</td><td><code>[批, 28, 28]</code></td></tr>
+    <tr><td>投影 + 位置编码</td><td><code>[批, 28, 64]</code></td></tr>
+    <tr><td>Encoder 输出</td><td><code>[批, 28, 64]</code></td></tr>
+    <tr><td>序列平均池化</td><td><code>[批, 64]</code></td></tr>
+    <tr><td>全连接</td><td><code>[批, 10]</code></td></tr>
+  </table>
+
+  <h3 style="color:var(--pink);margin-top:22px">② 面试手搓版：缩放点积注意力（必背核心 5 行）</h3>
+  <div class="read"><p>面试说「手搓 Transformer」= <b>不准用 nn.TransformerEncoder</b>，要自己写出注意力的矩阵运算。重点是默写下面这几行。</p></div>
+  <pre><code>import torch.nn.functional as F
+
+def attention(Q, K, V, mask=None):
+    # Q,K,V: [批, 头, 序列, d_k]
+    d_k = Q.size(-1)
+    scores = Q @ K.transpose(-2, -1) / d_k ** 0.5   # ← 缩放点积
+    if mask is not None:
+        scores = scores.masked_fill(mask == 0, -1e9) # 挡住的位置填 -∞
+    attn = F.softmax(scores, dim=-1)                 # 每行归一化
+    return attn @ V                                  # 加权求和</code></pre>
+  <div class="trap"><b>面试高频追问预案：</b><br>
+  • <b>为什么除 √d_k</b> → 防点积方差随维度变大、Softmax 梯度消失。<br>
+  • <b>多头的意义</b> → 不同头关注不同子空间（语法/语义/位置），信息更丰富。<br>
+  • <b>Encoder vs Decoder</b> → Decoder 多一层带 causal mask 的自注意力 + 交叉注意力。<br>
+  • <b>手搓 vs 调库</b> → 手搓 = 自己写 QKᵀ/√d_k 那 5 行；调库 = 写应用。</div>
+
+  <h3 style="color:var(--green);margin-top:22px">训练四连（固定套路，所有模型通用）</h3>
+  <pre><code>optimizer.zero_grad()   # 1. 清零
+loss.backward()         # 2. 反传
+optimizer.step()         # 3. 更新</code></pre>
+  <div class="tip"><b>口诀：</b>清零 → 反传 → 更新。无论 CNN / RNN / LSTM / Transformer，这套训练循环<b>完全一样</b>。</div>
+</section>
+
+<!-- 13 小结 -->
+<section id="s13">
+  <h2><span class="num">★</span>核心要点小结</h2>
+  <p class="sub">十三节，归根到底只是几种简单动作的组合与重复。</p>
+  <div class="takeaway">
+    <h3>一句话带走 Transformer</h3>
+    <ol>
+      <li><b>自注意力 = 聚光灯</b>：每个词同时向全场发问、按相关度融合别人的内容（Q·Kᵀ/√d_k → softmax → ·V）。</li>
+      <li><b>Q/K/V 三张卡</b>：提问卡、名牌卡、资料卡，由同一输入乘三个矩阵得来，「找人」与「给料」解耦。</li>
+      <li><b>÷√d_k 是降噪</b>：把点积方差拉回 1，防止 Softmax 变独热、梯度消失。</li>
+      <li><b>多头 = 多组聚光灯</b>：切分子空间，各看一种关系（语法/指代/距离），再融合。</li>
+      <li><b>位置编码 = 座位号</b>：注意力本身不分先后，必须额外注入顺序信息。</li>
+      <li><b>Encoder 四件套</b>：多头注意力 → 残差+LN → FFN → 残差+LN，叠 N 层。</li>
+      <li><b>残差 = 贴便利贴</b>：x ← x + Δ，只走小步、不推倒重来，深层才训得动。</li>
+      <li><b>LayerNorm = 统一格式</b>：抹掉长度只留方向，把点拉回球面，稳定尺度。</li>
+      <li><b>FFN = 折纸</b>：激活函数把空间折弯，制造非线性，约占 2/3 参数、存事实。</li>
+      <li><b>它取代了 RNN</b>：用 O(n²) 算力换「并行 + 长程直连」，是 BERT/GPT 的基石。</li>
+    </ol>
+  </div>
+
+  <div class="exercise">
+    <h3>动手思考题</h3>
+    <ol>
+      <li>把「猫坐在垫子上」改成「垫子在猫坐上」，注意力矩阵会怎么变？位置编码在这里起了什么作用？</li>
+      <li>如果去掉 √d_k 缩放，d_k=512 时点积分数可能多大？Softmax 后权重会变成什么样？模型为什么学不动？</li>
+      <li>为什么多头用「切分子空间」而不是「用一个更大的头」？结合「语法对齐 vs 语义相关互相干扰」想一想。</li>
+      <li>假设只有 1 层、没有残差，深层网络会遇到什么具体问题？用「梯度高速公路」的比喻解释。</li>
+      <li>在评论区贴出你第一次看注意力公式时的困惑，我们一起排雷 💬</li>
+    </ol>
+  </div>
+</section>
+
+<div class="series">
+  📚 本文是 <b>「AI 学习路线 · 阶段四：PyTorch 深度学习基础」</b> 系列中的一篇。<br>
+  所有文章在我的个人博客上都有 <b>可交互动画 + 完整学习路线</b> 版本 👇<br><br>
+  🔗 在博客阅读本文原版（含可交互组件、公式动画）：<a href="https://bestsdz.xyz/">bestsdz.xyz</a><br>
+  觉得有帮助的话，欢迎去点个收藏 ⭐，你的支持是我更新的最大动力！
+</div>
+
+<div class="foot">★ 通俗 + 可交互版 · 全程跟踪「猫坐在垫子上」· 9 个交互组件 + 调库/手搓双代码<br>拖动控件 / 点击按钮，观察每一步「图像如何变化」。</div>
+
+</div>
+
+<script>
+const TAU=Math.PI*2;
+function ctxOf(id){const c=document.getElementById(id);const dpr=Math.min(2,window.devicePixelRatio||1);
+  const x=c.getContext('2d');
+  const baseH=parseInt(c.getAttribute('height'))||360;c.style.height=baseH+'px';
+  function fit(){c.width=c.clientWidth*dpr;c.height=c.clientHeight*dpr;x.setTransform(dpr,0,0,dpr,0,0);}
+  fit();window.addEventListener('resize',fit);return {c,x,W:()=>c.clientWidth,H:()=>c.clientHeight};}
+const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function heat(t){t=clamp(t,0,1);const s=[[8,12,30],[55,45,130],[157,123,255],[255,138,91],[255,209,102]];
+  const f=t*(s.length-1),i=Math.floor(f),fr=f-i,a=s[i],b=s[Math.min(i+1,s.length-1)];
+  return `rgb(${a[0]+(b[0]-a[0])*fr|0},${a[1]+(b[1]-a[1])*fr|0},${a[2]+(b[2]-a[2])*fr|0})`;}
+function arrow(x,fromx,fromy,tox,toy,col,w){x.strokeStyle=col;x.fillStyle=col;x.lineWidth=w||2;
+  x.beginPath();x.moveTo(fromx,fromy);x.lineTo(tox,toy);x.stroke();const a=Math.atan2(toy-fromy,tox-fromx),s=7+(w||2);
+  x.beginPath();x.moveTo(tox,toy);x.lineTo(tox-s*Math.cos(a-0.4),toy-s*Math.sin(a-0.4));x.lineTo(tox-s*Math.cos(a+0.4),toy-s*Math.sin(a+0.4));x.closePath();x.fill();}
+function axes(x,cx,cy,R){x.strokeStyle='#1a2336';x.lineWidth=1;x.beginPath();x.moveTo(cx-R,cy);x.lineTo(cx+R,cy);x.moveTo(cx,cy-R);x.lineTo(cx,cy+R);x.stroke();}
+
+const TOKENS=['猫','坐','在','垫子','上'];
+
+/* 2 Spotlight single attention */
+(function(){const {c,x,W,H}=ctxOf('cSpot');let q={a:-0.7},drag=false;
+  const keys=TOKENS.map((t,i)=>({a:i/5*TAU+0.2,t}));
+  function move(e){const r=c.getBoundingClientRect();q.a=Math.atan2(e.clientY-r.top-H()/2,e.clientX-r.left-W()/2);}
+  c.addEventListener('mousedown',e=>{drag=true;move(e);});window.addEventListener('mouseup',()=>drag=false);c.addEventListener('mousemove',e=>{if(drag)move(e);});
+  c.addEventListener('touchstart',e=>{drag=true;move(e.touches[0]);e.preventDefault();});c.addEventListener('touchmove',e=>{if(drag)move(e.touches[0]);e.preventDefault();},{passive:false});window.addEventListener('touchend',()=>drag=false);
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);const cx=w/2,cy=h/2+10,R=Math.min(w,h)*.30,qa=q.a;
+    axes(x,cx,cy,R+30);keys.forEach(k=>k._sc=Math.exp(Math.cos(k.a-qa)*3));let Z=keys.reduce((s,k)=>s+k._sc,0);
+    keys.forEach(k=>{const wg=k._sc/Z,kx=cx+Math.cos(k.a)*R,ky=cy+Math.sin(k.a)*R;
+      x.strokeStyle='#6ea8fe';x.globalAlpha=clamp(wg*4,.05,.9);x.lineWidth=clamp(wg*32,.6,13);x.beginPath();x.moveTo(cx,cy);x.lineTo(kx,ky);x.stroke();x.globalAlpha=1;
+      x.beginPath();x.fillStyle='#6ea8fe';x.globalAlpha=clamp(.25+wg*4,.25,1);x.arc(kx,ky,clamp(7+wg*42,7,22),0,TAU);x.fill();x.globalAlpha=1;
+      x.fillStyle='#fff';x.font='bold 14px sans-serif';x.textAlign='center';x.fillText(k.t,kx,ky+5);
+      x.fillStyle='#93a1bb';x.font='11px sans-serif';x.fillText((wg*100|0)+'%',kx+Math.cos(k.a)*30,ky+Math.sin(k.a)*30);});
+    const qx=cx+Math.cos(qa)*R*.6,qy=cy+Math.sin(qa)*R*.6;arrow(x,cx,cy,qx,qy,'#ff6b9d',3);
+    x.beginPath();x.fillStyle='#ff6b9d';x.arc(qx,qy,7,0,TAU);x.fill();x.fillStyle='#ff6b9d';x.font='bold 13px sans-serif';x.fillText('Query',qx,qy-13);
+    x.beginPath();x.fillStyle='#475569';x.arc(cx,cy,4,0,TAU);x.fill();
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('score = q·k = |q||k|cosθ ：方向越一致，气泡越大',w/2,20);
+    requestAnimationFrame(d);})();
+})();
+
+/* 3 QKV */
+(function(){const {c,x,W,H}=ctxOf('cQKV');const btn=document.getElementById('qkvBtn'),ang=document.getElementById('qkvAng');
+  let auto=true,t=0;btn.onclick=()=>{auto=!auto;btn.classList.toggle('on',auto);btn.textContent=auto?'▶ 播放变换':'⏸ 暂停';};
+  ang.oninput=()=>{auto=false;btn.classList.remove('on');btn.textContent='▶ 播放变换';t=+ang.value/100;};
+  const pts=[];for(let i=0;i<5;i++){const a=i/5*TAU+0.3,r=0.55;pts.push({x:Math.cos(a)*r,y:Math.sin(a)*r,t:TOKENS[i]});}
+  const mat=(th,sx,sy)=>[Math.cos(th)*sx,-Math.sin(th)*sy,Math.sin(th)*sx,Math.cos(th)*sy];
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);if(auto){t+=0.006;if(t>1)t=0;ang.value=t*100;}
+    const cells=[{n:'W_Q → Query 提问卡',col:'#ff6b9d',cx:w*.20,th:t*1.2,sx:1,sy:.65},{n:'W_K → Key 名牌卡',col:'#6ea8fe',cx:w*.50,th:-t*1.4,sx:.75,sy:1},{n:'W_V → Value 资料卡',col:'#4ade80',cx:w*.80,th:t*.8,sx:1.15,sy:.85}];
+    const R=Math.min(w/7.5,h/3.2),cy=h*.46;
+    cells.forEach(cl=>{axes(x,cl.cx,cy,R);x.strokeStyle='#1a2336';x.beginPath();x.arc(cl.cx,cy,R,0,TAU);x.stroke();const m=mat(cl.th,cl.sx,cl.sy);
+      pts.forEach((p,i)=>{const X=m[0]*p.x+m[1]*p.y,Y=m[2]*p.x+m[3]*p.y;const px=cl.cx+X*R,py=cy+Y*R;
+        arrow(x,cl.cx,cy,px,py,cl.col,1.4);x.beginPath();x.fillStyle=cl.col;x.arc(px,py,3.5,0,TAU);x.fill();
+        x.fillStyle='#cfe0ff';x.font='10px sans-serif';x.fillText(p.t,px+(X>0?7:-7),py+(Y>0?9:-4));});
+      x.fillStyle=cl.col;x.font='bold 13px sans-serif';x.textAlign='center';x.fillText(cl.n,cl.cx,cy+R+24);});
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('同一组词向量 → 三个矩阵 → 旋转/拉伸到三个角色子空间',w/2,20);
+    requestAnimationFrame(d);})();
+})();
+
+/* 5 Attention matrix */
+(function(){const {c,x,W,H}=ctxOf('cMat');const ts=document.getElementById('matTemp'),tv=document.getElementById('matTempV');
+  let temp=0.35;ts.oninput=()=>{temp=+ts.value/100;tv.textContent='τ='+temp.toFixed(2);};
+  const n=5;const aff=[];for(let i=0;i<n;i++){aff[i]=[];for(let j=0;j<n;j++)aff[i][j]=Math.random()*0.35;}
+  aff[1][0]+=1.3;aff[2][3]+=1.0;aff[4][3]+=1.2;aff[3][2]+=0.7;for(let i=0;i<n;i++)aff[i][i]+=0.5;
+  let hover=[-1,-1];c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();const mx=e.clientX-r.left,my=e.clientY-r.top;
+    const pad=64,cell=(Math.min(W(),H())-pad-30)/n,x0=Math.max(64,(W()-n*cell)/2),j=Math.floor((mx-x0)/cell),i=Math.floor((my-18)/cell);hover=(i>=0&&i<n&&j>=0&&j<n)?[i,j]:[-1,-1];});
+  c.addEventListener('mouseleave',()=>hover=[-1,-1]);
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);const pad=64,cell=(Math.min(w,h)-pad-30)/n,x0=Math.max(64,(w-n*cell)/2),y0=18;
+    const M=[];for(let i=0;i<n;i++){const ex=aff[i].map(v=>Math.exp(v/temp));const Z=ex.reduce((a,b)=>a+b,0);M[i]=ex.map(e=>e/Z);}
+    for(let i=0;i<n;i++)for(let j=0;j<n;j++){x.fillStyle=heat(M[i][j]);x.fillRect(x0+j*cell+1,y0+i*cell+1,cell-2,cell-2);
+      x.fillStyle=M[i][j]>0.45?'#000':'#dbe5f7';x.font='bold 11px monospace';x.textAlign='center';x.fillText((M[i][j]*100|0),x0+j*cell+cell/2,y0+i*cell+cell/2+4);
+      if(hover[0]===i&&hover[1]===j){x.strokeStyle='#fff';x.lineWidth=2;x.strokeRect(x0+j*cell+1,y0+i*cell+1,cell-2,cell-2);}}
+    x.fillStyle='#93a1bb';x.font='13px sans-serif';
+    for(let i=0;i<n;i++){x.textAlign='right';x.fillText(TOKENS[i],x0-8,y0+i*cell+cell/2+5);x.textAlign='center';x.fillText(TOKENS[i],x0+i*cell+cell/2,y0+n*cell+18);}
+    x.textAlign='left';x.fillStyle='#6ea8fe';x.font='12px sans-serif';x.fillText('行=Query(在看)↓',x0,h-8);x.textAlign='right';x.fillStyle='#ff8a5b';x.textText='';x.fillText('列=Key(被看)→',x0+n*cell,h-8);
+    if(hover[0]>=0){x.fillStyle='#ffd166';x.textAlign='center';x.fillText(`「${TOKENS[hover[0]]}」对「${TOKENS[hover[1]]}」的注意力 ${(M[hover[0]][hover[1]]*100|0)}%`,w/2,14);}
+    requestAnimationFrame(d);})();
+})();
+
+/* 6 Multi-head */
+(function(){const {c,x,W,H}=ctxOf('cHead');const sl=document.getElementById('headN'),hv=document.getElementById('headV'),btn=document.getElementById('headBtn');
+  let h=4,play=true,t=0;sl.oninput=()=>{h=+sl.value;hv.textContent='h = '+h;};btn.onclick=()=>{play=!play;btn.classList.toggle('on',play);btn.textContent=play?'▶ 循环演示':'⏸ 暂停';};
+  const cols=['#6ea8fe','#ff6b9d','#4ade80','#ff8a5b','#9d7bff','#ffd166','#22d3ee','#f472b6'];
+  const roles=['距离','指代','语法','语义','韵律','主谓','修饰','并列'];
+  (function d(){const w=W(),H0=H();x.clearRect(0,0,w,H0);if(play){t+=0.009;if(t>1)t=0;}const phase=t*3;
+    const D=24,cw=Math.min(13,(w-120)/D),inW=D*cw,inX=w/2-inW/2,topY=46,botY=H0-56;
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('输入向量（d 维）',w/2,topY-12);
+    for(let i=0;i<D;i++){const seg=Math.floor(i/(D/h));x.fillStyle=cols[seg%cols.length];x.globalAlpha=.9;x.fillRect(inX+i*cw,topY,cw-1.5,15);x.globalAlpha=1;}
+    const segLen=D/h,midY=H0/2,slotW=w/h;
+    for(let s=0;s<h;s++){const col=cols[s%cols.length],hx=slotW*s+slotW/2,srcX=inX+(s*segLen+segLen/2)*cw,sp=clamp(phase,0,1);
+      x.strokeStyle=col;x.globalAlpha=.5;x.lineWidth=2;x.beginPath();x.moveTo(srcX,topY+15);x.lineTo(lerp(srcX,hx,sp),lerp(topY+15,midY-28,sp));x.stroke();x.globalAlpha=1;
+      if(phase>0.9){const at=clamp(phase-1,0,1);x.strokeStyle=col;x.globalAlpha=.85;x.lineWidth=2;x.beginPath();x.arc(hx,midY,17,0,TAU*at);x.stroke();x.globalAlpha=1;
+        x.fillStyle=col;x.beginPath();x.arc(hx,midY,5,0,TAU);x.fill();x.fillStyle='#cfe0ff';x.font='11px sans-serif';x.fillText('头'+(s+1),hx,midY+32);
+        if(h<=6){x.fillStyle='#7a88a3';x.font='10px sans-serif';x.fillText(roles[s%roles.length],hx,midY+46);}}
+      if(phase>2){const ct=clamp(phase-2,0,1),dstX=inX+(s*segLen+segLen/2)*cw;x.strokeStyle=col;x.globalAlpha=.5;x.lineWidth=2;x.beginPath();x.moveTo(hx,midY+19);x.lineTo(lerp(hx,dstX,ct),lerp(midY+19,botY,ct));x.stroke();x.globalAlpha=1;}}
+    if(phase>2){for(let i=0;i<D;i++){const seg=Math.floor(i/(D/h));x.fillStyle=cols[seg%cols.length];x.globalAlpha=.9;x.fillRect(inX+i*cw,botY,cw-1.5,15);x.globalAlpha=1;}
+      x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('拼接 → W_O 融合（d 维）',w/2,botY+30);}
+    x.fillStyle='#9d7bff';x.font='bold 13px sans-serif';x.textAlign='center';x.fillText(phase<1?'① 切成 h 段（正交子空间）':phase<2?'② 每段并行做注意力（各看一种关系）':'③ 拼接 + W_O 混合',w/2,22);
+    requestAnimationFrame(d);})();
+})();
+
+/* 7 Positional */
+(function(){const {c,x,W,H}=ctxOf('cPos');const sl=document.getElementById('posSlider'),pv=document.getElementById('posVal');
+  let pos=6;sl.oninput=()=>{pos=+sl.value;pv.textContent='pos = '+pos;};const dims=8;
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);const pL=44,pR=20,pT=28,pB=28,gw=w-pL-pR,gh=h-pT-pB;
+    x.strokeStyle='#141c2e';x.beginPath();x.moveTo(pL,pT+gh/2);x.lineTo(pL+gw,pT+gh/2);x.stroke();
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='left';x.fillText('维度0(低频/慢) → 维度7(高频/快)',pL,16);
+    for(let dd=0;dd<dims;dd++){const freq=1/Math.pow(40,dd/dims);x.beginPath();x.strokeStyle=`hsl(${205+dd*20},72%,62%)`;x.lineWidth=2;x.globalAlpha=.85;
+      for(let p=0;p<=40;p+=.2){const val=(dd%2===0?Math.sin(p*freq):Math.cos(p*freq));const px=pL+p/40*gw,py=pT+gh/2-val*gh/2*.4;p===0?x.moveTo(px,py):x.lineTo(px,py);}x.stroke();x.globalAlpha=1;}
+    const sx=pL+pos/40*gw;x.strokeStyle='#ff8a5b';x.lineWidth=2.5;x.setLineDash([5,5]);x.beginPath();x.moveTo(sx,pT);x.lineTo(sx,pT+gh);x.stroke();x.setLineDash([]);
+    for(let dd=0;dd<dims;dd++){const freq=1/Math.pow(40,dd/dims);const val=(dd%2===0?Math.sin(pos*freq):Math.cos(pos*freq));const py=pT+gh/2-val*gh/2*.4;x.beginPath();x.fillStyle='#ff8a5b';x.arc(sx,py,4.5,0,TAU);x.fill();}
+    x.fillStyle='#ff8a5b';x.font='bold 12px sans-serif';x.textAlign='center';x.fillText('pos '+pos+' 的指纹',sx,pT-4>pT?pT-4:pT+gh+16);
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('位置 pos →（每位置一条独一无二的竖切片）',pL+gw/2,h-8);
+    requestAnimationFrame(d);})();
+})();
+
+/* 9 Residual */
+(function(){const {c,x,W,H}=ctxOf('cRes');const btn=document.getElementById('resBtn'),rst=document.getElementById('resReset');
+  const steps=[[.12,.5],[.24,.40],[.36,.52],[.50,.36],[.62,.50],[.74,.34],[.86,.46]];const names=['','+注意力','+FFN','+注意力','+FFN','+注意力','+FFN'];let prog=0,play=true;
+  btn.onclick=()=>{play=!play;btn.classList.toggle('on',play);btn.textContent=play?'▶ 逐层前进':'⏸ 暂停';};rst.onclick=()=>prog=0;
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);if(play)prog=Math.min(prog+0.004,1);
+    x.strokeStyle='#141c2e';x.lineWidth=20;x.lineCap='round';x.beginPath();x.moveTo(steps[0][0]*w,h*.64);x.lineTo(steps[steps.length-1][0]*w,h*.64);x.stroke();
+    x.fillStyle='#475569';x.font='12px sans-serif';x.textAlign='center';x.fillText('残差流主干（信息传送带，贯穿所有层）',w/2,h*.64+36);
+    const total=steps.length-1,fp=prog*total,seg=Math.floor(fp),fr=fp-seg;
+    x.strokeStyle='#9d7bff';x.lineWidth=2.5;x.beginPath();for(let i=0;i<=seg;i++){const px=steps[i][0]*w,py=steps[i][1]*h;i===0?x.moveTo(px,py):x.lineTo(px,py);}
+    let cx,cy;if(seg<total){cx=lerp(steps[seg][0],steps[seg+1][0],fr)*w;cy=lerp(steps[seg][1],steps[seg+1][1],fr)*h;x.lineTo(cx,cy);}else{cx=steps[total][0]*w;cy=steps[total][1]*h;}x.stroke();
+    steps.forEach((s,i)=>{if(i>seg+1)return;x.beginPath();x.fillStyle=i<=seg?'#6ea8fe':'#334155';x.arc(s[0]*w,s[1]*h,5,0,TAU);x.fill();if(i<=seg&&names[i]){x.fillStyle='#93a1bb';x.font='11px sans-serif';x.textAlign='center';x.fillText(names[i],s[0]*w,s[1]*h-12);}});
+    x.beginPath();x.fillStyle='#9d7bff';x.arc(cx,cy,9,0,TAU);x.fill();x.fillStyle='#9d7bff';x.font='bold 12px sans-serif';x.fillText('「猫」的点',cx,cy-16);
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('x ← x + Δ：每个子层只加一个小增量，点缓慢漂移而非瞬移',w/2,22);
+    requestAnimationFrame(d);})();
+})();
+
+/* 9b LayerNorm */
+(function(){const {c,x,W,H}=ctxOf('cLN');const btn=document.getElementById('lnBtn');let play=true,t=0;
+  btn.onclick=()=>{play=!play;btn.classList.toggle('on',play);btn.textContent=play?'▶ 归一化动画':'⏸ 暂停';};
+  const pts=[];for(let i=0;i<30;i++)pts.push({a:Math.random()*TAU,r:Math.random()*.9+.12});
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);const cx=w/2,cy=h/2,R=Math.min(w,h)*.33;if(play){t+=0.012;if(t>2)t=0;}const k=t<1?t:2-t;
+    axes(x,cx,cy,R+24);x.strokeStyle='#9d7bff';x.lineWidth=1.5;x.globalAlpha=.4+k*.4;x.setLineDash([4,4]);x.beginPath();x.arc(cx,cy,R,0,TAU);x.stroke();x.setLineDash([]);x.globalAlpha=1;
+    pts.forEach(p=>{const rr=lerp(p.r,1,k);const px=cx+Math.cos(p.a)*R*rr,py=cy+Math.sin(p.a)*R*rr;
+      x.strokeStyle='#6ea8fe';x.globalAlpha=.25;x.lineWidth=1;x.beginPath();x.moveTo(cx,cy);x.lineTo(px,py);x.stroke();x.globalAlpha=1;
+      x.beginPath();x.fillStyle='#6ea8fe';x.arc(px,py,4,0,TAU);x.fill();});
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText('长度各异的点 → 投影到固定半径球面（只保留方向）',w/2,18);
+    x.fillStyle='#9d7bff';x.font='bold 12px sans-serif';x.textText='';x.fillText(k<.5?'散开（归一化前·尺度混乱）':'收拢到球面（归一化后·尺度统一）',cx,cy+R+28);
+    requestAnimationFrame(d);})();
+})();
+
+/* 10 FFN folding */
+(function(){const {c,x,W,H}=ctxOf('cFFN');const sl=document.getElementById('ffnSlider'),btn=document.getElementById('ffnBtn');
+  let f=0,auto=true;btn.onclick=()=>{auto=!auto;btn.classList.toggle('on',auto);btn.textContent=auto?'▶ 自动折':'⏸ 暂停';};
+  sl.oninput=()=>{auto=false;btn.classList.remove('on');btn.textContent='▶ 自动折';f=+sl.value/100;};
+  function fold(u,v,amt){let X=u,Y=v;const cr=[{a:0.6,b:-0.1,s:1},{a:-0.4,b:0.2,s:1},{a:1.2,b:-0.3,s:0.8}];
+    cr.forEach(c=>{const dd=Math.cos(c.a)*X+Math.sin(c.a)*Y-c.b;if(dd>0){const p=dd*amt*c.s;X-=Math.cos(c.a)*p*0.6;Y-=Math.sin(c.a)*p*0.6-p*0.5*amt;}});return [X,Y];}
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);if(auto){f+=0.006;if(f>1)f=0;sl.value=f*100;}
+    const amt=f,cx=w/2,cy=h*.48,S=Math.min(w,h)*.30,N=13;const P=(u,v)=>{const[X,Y]=fold(u,v,amt*1.6);return [cx+X*S,cy-Y*S];};x.lineWidth=1;
+    for(let i=0;i<N;i++){const u=lerp(-1,1,i/(N-1));x.strokeStyle=`hsl(${262-i*5},62%,56%)`;x.globalAlpha=.72;x.beginPath();for(let j=0;j<N;j++){const v=lerp(-1,1,j/(N-1));const[px,py]=P(u,v);j===0?x.moveTo(px,py):x.lineTo(px,py);}x.stroke();}
+    for(let j=0;j<N;j++){const v=lerp(-1,1,j/(N-1));x.strokeStyle=`hsl(${198+j*5},62%,56%)`;x.globalAlpha=.72;x.beginPath();for(let i=0;i<N;i++){const u=lerp(-1,1,i/(N-1));const[px,py]=P(u,v);i===0?x.moveTo(px,py):x.lineTo(px,py);}x.stroke();}
+    x.globalAlpha=1;x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText(amt<0.05?'平直网格（线性变换：只转不弯）':'ReLU/GELU 折痕把空间折弯 = 非线性',w/2,18);
+    requestAnimationFrame(d);})();
+})();
+
+/* 11 Stacking */
+(function(){const {c,x,W,H}=ctxOf('cStack');const sl=document.getElementById('layerSlider'),lv=document.getElementById('layerVal'),btn=document.getElementById('stackBtn');
+  let layer=0,auto=true,acc=0;btn.onclick=()=>{auto=!auto;btn.classList.toggle('on',auto);btn.textContent=auto?'▶ 逐层演化':'⏸ 暂停';};
+  sl.oninput=()=>{auto=false;btn.classList.remove('on');btn.textContent='▶ 逐层演化';layer=+sl.value;lv.textContent='layer '+layer+' / 12';};
+  const groups=[{c:'#6ea8fe',cx:.27,cy:.34},{c:'#ff8a5b',cx:.73,cy:.34},{c:'#4ade80',cx:.5,cy:.74}];
+  const pts=[];for(let g=0;g<3;g++)for(let i=0;i<9;i++)pts.push({g,sx:Math.random(),sy:Math.random()});
+  (function d(){const w=W(),h=H();x.clearRect(0,0,w,h);if(auto){acc+=0.012;if(acc>=1){acc=0;layer=(layer+1)%13;sl.value=layer;}}lv.textContent='layer '+layer+' / 12';
+    const tt=clamp((layer+(auto?acc:0))/12,0,1);
+    pts.forEach(p=>{const G=groups[p.g];const sX=lerp(.08,.92,p.sx),sY=lerp(.1,.9,p.sy),tX=G.cx+(p.sx-.5)*.13,tY=G.cy+(p.sy-.5)*.13;
+      x.beginPath();x.fillStyle=G.c;x.globalAlpha=.85;x.arc(lerp(sX,tX,tt)*w,lerp(sY,tY,tt)*h,5,0,TAU);x.fill();x.globalAlpha=1;});
+    if(tt>.6)groups.forEach(G=>{x.strokeStyle=G.c;x.globalAlpha=(tt-.6)/.4*.45;x.lineWidth=2;x.beginPath();x.arc(G.cx*w,G.cy*h,Math.min(w,h)*.13,0,TAU);x.stroke();x.globalAlpha=1;});
+    x.fillStyle='#93a1bb';x.font='12px sans-serif';x.textAlign='center';x.fillText(tt<.3?'浅层：点云混沌（处理表层/语法）':tt<.7?'中层：结构开始浮现':'深层：清晰语义簇（抽象语义已成形）',w/2,18);
+    requestAnimationFrame(d);})();
+})();
+</script>
+</body>
+</html>

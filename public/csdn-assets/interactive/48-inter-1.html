@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dataset 取料可视化</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family:-apple-system,"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;
+    background:#f6f8fb; color:#243042; line-height:1.6;
+  }
+  header { background:linear-gradient(135deg,#4a6cf7,#6f8cff); color:#fff; padding:22px 28px; }
+  header h1 { margin:0 0 6px; font-size:22px; }
+  header p { margin:0; font-size:14px; opacity:.92; }
+  .wrap { max-width:1140px; margin:24px auto; padding:0 20px; }
+  .panel { background:#fff; border-radius:12px; padding:18px 22px; box-shadow:0 2px 10px rgba(40,60,100,.08); margin-bottom:20px; }
+  .panel h2 { margin:0 0 12px; font-size:16px; color:#2b3a55; }
+  .layout { display:grid; grid-template-columns: 120px 1fr 320px; gap:18px; align-items:start; }
+  .idx-list { display:flex; flex-direction:column; gap:8px; }
+  .idx-list button {
+    padding:9px 0; border:1px solid #cfd8e6; background:#f3f6fb; border-radius:8px;
+    cursor:pointer; font-size:14px; color:#2b3a55; font-weight:600;
+  }
+  .idx-list button:hover { background:#e6ecfb; }
+  .idx-list button.active { background:#4a6cf7; color:#fff; border-color:#4a6cf7; }
+  .actions { display:flex; gap:10px; margin-top:12px; }
+  .btn { padding:9px 16px; border:none; border-radius:8px; cursor:pointer; font-size:13px; font-weight:600; background:#4a6cf7; color:#fff; }
+  .btn.alt { background:#2bb673; }
+  .btn.ghost { background:#eef1f6; color:#2b3a55; }
+  .stage { width:100%; }
+  svg { width:100%; height:auto; display:block; }
+  .outbox {
+    background:#fbfcfe; border:1px solid #e2e8f2; border-radius:10px; padding:14px; min-height:200px;
+    font-family: ui-monospace, "Cascadia Code", monospace; font-size:12.5px; color:#2b3a55;
+  }
+  .outbox h3 { margin:0 0 8px; font-size:14px; color:#2b3a55; }
+  .outbox .xy { background:#eef6ff; padding:8px 10px; border-radius:8px; margin:6px 0; }
+  .outbox .tray { background:#eafaf1; padding:8px 10px; border-radius:8px; margin:6px 0; }
+  .legend { font-size:12px; color:#6a7a93; margin-top:8px; }
+  .hint { font-size:13px; color:#5a6b85; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Dataset 取料可视化：单条 → batch</h1>
+  <p>点击左侧索引，MyDataset 货架高亮取出该条并弹出 (x, y)；再点「拼 3 个 batch」，看连续 3 条如何被打包成 [3, F] 托盘送走。</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <div class="layout">
+      <!-- 索引按钮 -->
+      <div>
+        <h2 style="margin-bottom:10px;">索引</h2>
+        <div class="idx-list" id="idxList"></div>
+      </div>
+
+      <!-- 货架 -->
+      <div>
+        <h2>MyDataset 货架（10 条假数据，每条含特征 x 与标签 y）</h2>
+        <div class="stage">
+          <svg id="shelf" viewBox="0 0 640 360" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+        <div class="legend">每条小方块高度代表该样本特征向量（F 维）的某种“强度”示意；颜色点表示标签类别（0/1/2）。</div>
+      </div>
+
+      <!-- 输出 / 打包工 -->
+      <div>
+        <h2>DataLoader 打包工</h2>
+        <div class="outbox" id="outbox">
+          <h3>取料结果</h3>
+          <div class="hint">← 先点左侧某个索引，看单条 (x, y)；<br>再点「拼 3 个 batch」看批量堆叠。</div>
+        </div>
+        <div class="actions">
+          <button class="btn alt" id="batchBtn">拼 3 个 batch ▶</button>
+          <button class="btn ghost" id="clearBtn">清空</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+const shelf = document.getElementById('shelf');
+const outbox = document.getElementById('outbox');
+const N = 10, F = 6;
+const LABEL_COLORS = ['#4a6cf7','#f0a93b','#e0588f'];
+
+// 确定性假数据
+function feat(i){ const v=[]; for(let f=0; f<F; f++){ v.push(((Math.sin(i*1.7+f*0.9)+1)/2)); } return v; }
+function label(i){ return i % 3; }
+function dataAt(i){ return { x: feat(i), y: label(i) }; }
+
+function el(tag, attrs, parent){
+  const e=document.createElementNS(SVG_NS, tag);
+  for(const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent||shelf).appendChild(e);
+  return e;
+}
+function clearShelf(){ while(shelf.firstChild) shelf.removeChild(shelf.firstChild); }
+
+let selected = -1;
+let batchOn = false;
+
+// 画货架
+function drawShelf(){
+  clearShelf();
+  // 列数
+  const cols = 5, rows = 2;
+  const cw = 116, ch = 168, gx = 8, gy = 8;
+  for(let i=0;i<N;i++){
+    const r = Math.floor(i/cols), c = i%cols;
+    const x = 10 + c*(cw+gx), y = 10 + r*(ch+gy);
+    const picked = (selected===i) || (batchOn && i>=batchStart && i<batchStart+3);
+    const g = el('g',{ cursor:'pointer' });
+    g.addEventListener('click', ()=> pick(i));
+    // 卡片
+    el('rect',{x,y,width:cw,height:ch,rx:9,
+      fill: picked ? '#fff7e0' : '#ffffff',
+      stroke: picked ? '#e08f1f' : '#dbe3ee', 'stroke-width': picked?2.5:1.2},g);
+    // 序号
+    el('text',{x:x+10,y:y+22,'font-size':14,'font-weight':700,fill:'#2b3a55'},g).textContent='#'+i;
+    // 特征小方块（条形）
+    const bx = x+14, by = y+36, bw=14, bh=12, bg=4;
+    const fv = feat(i);
+    for(let f=0; f<F; f++){
+      el('rect',{x:bx+f*(bw+bg), y:by+(1-fv[f])*bh*3, width:bw, height:fv[f]*bh*3+2, rx:3,
+        fill:'#4a6cf7','fill-opacity':0.8},g);
+    }
+    el('text',{x:bx, y:by+10, 'font-size':10, fill:'#9aa7bd'},g).textContent='x';
+    // 标签点
+    el('circle',{cx:x+cw-22, cy:y+44, r:9, fill:LABEL_COLORS[label(i)]},g);
+    el('text',{cx:x+cw-22, cy:y+48, 'text-anchor':'middle','font-size':12, fill:'#fff','font-weight':700},g).textContent=label(i);
+    el('text',{x:x+14, y:y+ch-14, 'font-size':11, fill:'#5a6b85'},g).textContent='label = '+label(i);
+    if(picked){
+      // 角标 ✓
+      el('circle',{cx:x+cw-14, cy:y+14, r:10, fill:'#2bb673'},g);
+      el('text',{x:x+cw-14, y:y+18,'text-anchor':'middle','font-size':12,fill:'#fff','font-weight':700},g).textContent='✓';
+    }
+  }
+}
+
+// 取单条
+function pick(i){
+  selected = i; batchOn = false;
+  drawShelf();
+  const d = dataAt(i);
+  const xStr = '['+d.x.map(v=>v.toFixed(2)).join(', ')+']';
+  outbox.innerHTML = '<h3>取料结果（dataset['+i+']）</h3>'+
+    '<div class="xy">x = '+xStr+'</div>'+
+    '<div class="xy">y = '+d.y+'  <span style="color:#9aa7bd;">(类别 '+d.y+')</span></div>'+
+    '<div class="hint" style="margin-top:8px;">这就是 __getitem__ 返回的一条 (x, y)。</div>';
+}
+
+// 拼 batch
+let batchStart = 0;
+function packBatch(){
+  batchOn = true; selected = -1;
+  batchStart = (batchStart + 1) % (N-2); // 换个起点演示
+  drawShelf();
+  const items = [];
+  for(let k=0;k<3;k++){
+    const i = batchStart + k;
+    const d = dataAt(i);
+    items.push({i, x:'['+d.x.map(v=>v.toFixed(2)).join(', ')+']', y:d.y});
+  }
+  let html = '<h3>拼 3 个 batch（batch_size=3）</h3>';
+  html += '<div class="tray">DataLoader 取 #'+items.map(it=>it.i).join(', #')+' 并沿第 0 维 stack：</div>';
+  items.forEach(it=>{
+    html += '<div class="xy">#'+it.i+' → x='+it.x+' , y='+it.y+'</div>';
+  });
+  html += '<div class="tray">→ batch x.shape = [3, '+F+']，y.shape = [3]</div>';
+  html += '<div class="hint" style="margin-top:8px;">最前面悄悄多了一个 B（batch 维），这正是 Dataset 吐单条、DataLoader 拼批的结果。</div>';
+  outbox.innerHTML = html;
+  // 简单动画：依次高亮
+  animateBatch();
+}
+function animateBatch(){
+  let k=0;
+  const timer = setInterval(()=>{
+    selected = batchStart + k;
+    drawShelf();
+    k++;
+    if(k>=3){ clearInterval(timer); selected=-1; drawShelf(); }
+  }, 450);
+}
+
+// 索引按钮
+const idxList = document.getElementById('idxList');
+for(let i=0;i<N;i++){
+  const b=document.createElement('button');
+  b.textContent='取 #'+i;
+  b.addEventListener('click', ()=>pick(i));
+  idxList.appendChild(b);
+}
+
+document.getElementById('batchBtn').addEventListener('click', packBatch);
+document.getElementById('clearBtn').addEventListener('click', ()=>{
+  selected=-1; batchOn=false; drawShelf();
+  outbox.innerHTML='<h3>取料结果</h3><div class="hint">← 先点左侧某个索引，看单条 (x, y)；<br>再点「拼 3 个 batch」看批量堆叠。</div>';
+});
+
+drawShelf();
+</script>
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>广播可视化工具：右对齐检查法</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: #f6f8fb; color: #243042; line-height: 1.6;
+  }
+  header { background: linear-gradient(135deg, #4a6cf7, #6f8cff); color: #fff; padding: 22px 28px; }
+  header h1 { margin: 0 0 6px; font-size: 22px; }
+  header p { margin: 0; font-size: 14px; opacity: .92; }
+  .wrap { max-width: 1120px; margin: 24px auto; padding: 0 20px; }
+  .panel { background:#fff; border-radius:12px; padding:18px 22px; box-shadow:0 2px 10px rgba(40,60,100,.08); margin-bottom:20px; }
+  .panel h2 { margin:0 0 12px; font-size:16px; color:#2b3a55; }
+  .inputs { display:flex; gap:22px; flex-wrap:wrap; align-items:flex-end; }
+  .ctrl { display:flex; flex-direction:column; gap:6px; }
+  .ctrl label { font-size:13px; color:#5a6b85; font-weight:600; }
+  input[type=text] {
+    width:160px; padding:8px 10px; border:1px solid #cfd8e6; border-radius:8px;
+    font-size:14px; font-family: ui-monospace, "Cascadia Code", monospace;
+  }
+  .btn { padding:9px 20px; border:none; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; background:#4a6cf7; color:#fff; }
+  .btn.ghost { background:#eef1f6; color:#2b3a55; }
+  .qes { font-size:13px; color:#5a6b85; margin:4px 0 0; }
+  .stage { width:100%; }
+  svg { width:100%; height:auto; display:block; }
+  .msg { margin-top:14px; padding:12px 16px; border-radius:8px; font-size:14px; display:none; }
+  .msg.show { display:block; }
+  .msg.err { background:#fde8e8; color:#c23b32; border:1px solid #f6c5c0; }
+  .msg.ok { background:#e3fce9; color:#1d9b57; border:1px solid #b8eccb; }
+  .legend { font-size:12px; color:#6a7a93; margin-top:8px; }
+  .presets { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .presets button { padding:5px 12px; border:1px solid #cfd8e6; background:#f3f6fb; border-radius:18px; cursor:pointer; font-size:12px; color:#2b3a55; }
+</style>
+</head>
+<body>
+<header>
+  <h1>广播可视化工具：右对齐检查法</h1>
+  <p>输入两个张量的 Shape，逐维从右往左检查「相等 / 为 1 / 缺位」，绿色通过、红色失败；右侧动画演示小维度如何复制拉伸铺满大维度。</p>
+</header>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>输入两个张量形状</h2>
+    <div class="inputs">
+      <div class="ctrl">
+        <label>张量 A 的 Shape（逗号分隔，如 3,1）</label>
+        <input type="text" id="aInput" value="3,1">
+      </div>
+      <div class="ctrl">
+        <label>张量 B 的 Shape（逗号分隔，如 1,2）</label>
+        <input type="text" id="bInput" value="1,2">
+      </div>
+      <div class="ctrl">
+        <button class="btn" id="goBtn">检查并广播 ▶</button>
+        <button class="btn ghost" id="resetBtn">重置</button>
+      </div>
+    </div>
+    <div class="presets">
+      <span style="font-size:12px;color:#5a6b85;align-self:center;">快速示例：</span>
+      <button data-a="3,1" data-b="1,2">[3,1]+[1,2] ✓</button>
+      <button data-a="4,3" data-b="3,3">[4,3]+[3,3] ✗</button>
+      <button data-a="2,1,3" data-b="4,3">[2,1,3]+[4,3] ✓</button>
+      <button data-a="32,10" data-b="10">[32,10]+[10] ✓</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>可视化舞台</h2>
+    <div class="stage">
+      <svg id="stage" viewBox="0 0 1080 460" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div class="legend">配色：<span style="color:#4a6cf7;font-weight:600;">蓝</span>=张量A，<span style="color:#f0a93b;font-weight:600;">橙</span>=张量B，<span style="color:#1d9b57;font-weight:600;">绿</span>=广播后结果；拉伸的维度用虚线虚框表示。</div>
+    <div class="msg" id="msg"></div>
+  </div>
+</div>
+
+<script>
+const SVG_NS = "http://www.w3.org/2000/svg";
+const svg = document.getElementById('stage');
+function el(tag, attrs, parent){
+  const e = document.createElementNS(SVG_NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  (parent||svg).appendChild(e);
+  return e;
+}
+function clearAll(){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+
+function parseShape(str){
+  return str.split(',').map(s=>parseInt(s.trim(),10)).filter(n=>!isNaN(n) && n>0);
+}
+function showMsg(t,c){ const m=document.getElementById('msg'); m.textContent=t; m.className='msg show '+c; }
+
+// 右对齐检查：返回逐维结果数组 {aVal,bVal,pass,reason,dim}
+function checkBroadcast(a, b){
+  const res = [];
+  const maxLen = Math.max(a.length, b.length);
+  const A = a.slice(), B = b.slice();
+  // 右对齐：前面补 1（缺位）
+  while(A.length < maxLen) A.unshift(1);
+  while(B.length < maxLen) B.unshift(1);
+  let ok = true;
+  for (let i=maxLen-1; i>=0; i--){
+    const av = A[i], bv = B[i];
+    let pass, reason;
+    if (av === bv){ pass=true; reason='相等'; }
+    else if (av === 1){ pass=true; reason='A 为 1，拉伸'; }
+    else if (bv === 1){ pass=true; reason='B 为 1，拉伸'; }
+    else { pass=false; reason='都不满足 → 报错'; ok=false; }
+    res.unshift({aVal:av, bVal:bv, pass, reason});
+  }
+  // 结果 shape
+  const outShape = [];
+  for (let i=0;i<maxLen;i++) outShape.push(Math.max(A[i], B[i]));
+  return { res, outShape, ok };
+}
+
+function run(){
+  clearAll();
+  const a = parseShape(document.getElementById('aInput').value);
+  const b = parseShape(document.getElementById('bInput').value);
+  if (a.length===0 || b.length===0){
+    showMsg('形状格式有误，请用逗号分隔的正整数，例如 3,1', 'err');
+    return;
+  }
+  const { res, outShape, ok } = checkBroadcast(a, b);
+
+  // ---- 左：两个张量 + 逐维检查 ----
+  drawTensor(60, 70, a, '#4a6cf7', '张量 A  ' + arrStr(a));
+  drawTensor(60, 250, b, '#f0a93b', '张量 B  ' + arrStr(b));
+
+  // 检查表（中间）
+  const tx = 430;
+  el('text',{x:tx,y:60,'font-size':15,'font-weight':700,fill:'#2b3a55'},svg).textContent='右对齐逐维检查';
+  let yy = 90;
+  res.forEach((r, i) => {
+    const col = r.pass ? '#1d9b57' : '#d8443c';
+    el('rect',{x:tx,y:yy-18,width:300,height:34,rx:7,fill: r.pass?'#eefaf1':'#fdeeee',stroke:col,'stroke-width':1.2},svg);
+    el('text',{x:tx+12,y:yy+4,'font-size':13,fill:col,'font-weight':600},svg)
+      .textContent = '维'+i+'：A='+r.aVal+'  B='+r.bVal+'  →  '+(r.pass?'✓ '+r.reason:'✗ '+r.reason);
+    yy += 42;
+  });
+
+  // ---- 右：广播结果 ----
+  const rx = 800;
+  if (ok){
+    el('text',{x:rx,y:60,'font-size':15,'font-weight':700,fill:'#1d9b57'},svg)
+      .textContent='广播成功 → '+arrStr(outShape);
+    drawBroadcastResult(rx, 90, res, outShape);
+    showMsg('右对齐检查全部通过！结果 Shape = ['+outShape.join(', ')+']。小维度（=1 或 缺位）被复制拉伸以铺满大维度，底层用 stride=0 实现，不真的占内存。', 'ok');
+  } else {
+    el('text',{x:rx,y:60,'font-size':15,'font-weight':700,fill:'#d8443c'},svg)
+      .textContent='广播失败 ✗';
+    el('text',{x:rx,y:90,'font-size':13,fill:'#d8443c'},svg)
+      .textContent='存在不满足的维度，运行时会报';
+    el('text',{x:rx,y:110,'font-size':13,fill:'#d8443c'},svg)
+      .textContent='RuntimeError: 形状不可广播';
+    showMsg('右对齐检查发现不满足的维度（两个数字既不相等、也都不是 1）。这就是广播报错的根因——先把不满足的维度改成 1 或相等即可。', 'err');
+  }
+}
+
+function arrStr(a){ return '['+a.join(', ')+']'; }
+
+function drawTensor(x, y, shape, color, label){
+  el('text',{x:x,y:y-10,'font-size':13,'font-weight':600,fill:color},svg).textContent = label;
+  // 用网格表示最后一维×倒数第二维（最多画 2 维）
+  const dims = shape.slice();
+  let rows = dims.length>1 ? dims[dims.length-2] : 1;
+  let cols = dims.length>0 ? dims[dims.length-1] : 1;
+  // 限制显示大小
+  rows = Math.min(rows, 6); cols = Math.min(cols, 10);
+  const cw = 30, ch = 26, gap = 4;
+  const g = el('g',{});
+  for (let r=0;r<rows;r++)
+    for (let c=0;c<cols;c++){
+      el('rect',{x:x+c*(cw+gap), y:y+r*(ch+gap), width:cw, height:ch, rx:4,
+        fill:color, 'fill-opacity':0.85, stroke:'#3b4d6b','stroke-width':0.8},g);
+    }
+  // 维度标注
+  if (dims.length>=2){
+    el('text',{x:x, y:y+rows*(ch+gap)+14, 'font-size':11, fill:'#5a6b85'},svg)
+      .textContent='维'+(dims.length-1)+'('+dims[dims.length-1]+') ←  维'+(dims.length-2)+'('+dims[dims.length-2]+')';
+  } else {
+    el('text',{x:x, y:y+rows*(ch+gap)+14, 'font-size':11, fill:'#5a6b85'},svg)
+      .textContent='维0('+dims[0]+')';
+  }
+  return g;
+}
+
+function drawBroadcastResult(x, y, res, outShape){
+  // 用网格画结果（取最后两维），被拉伸的维度用虚线框标注
+  const dims = outShape.slice();
+  let rows = dims.length>1 ? Math.min(dims[dims.length-2],6) : 1;
+  let cols = dims.length>0 ? Math.min(dims[dims.length-1],10) : 1;
+  const cw = 30, ch = 26, gap = 4;
+  const g = el('g',{});
+  for (let r=0;r<rows;r++)
+    for (let c=0;c<cols;c++){
+      el('rect',{x:x+c*(cw+gap), y:y+r*(ch+gap), width:cw, height:ch, rx:4,
+        fill:'#2bb673','fill-opacity':0.8, stroke:'#1d9b57','stroke-width':0.8},g);
+    }
+  el('text',{x:x, y:y+rows*(ch+gap)+14, 'font-size':11, fill:'#1d9b57'},svg)
+    .textContent='结果 ['+outShape.join(', ')+']';
+  // 拉伸说明
+  let stretchNote = res.filter(r=>r.pass && r.reason.indexOf('拉伸')>=0);
+  if (stretchNote.length){
+    el('text',{x:x, y:y+rows*(ch+gap)+34, 'font-size':11, fill:'#9aa7bd'},svg)
+      .textContent='（虚框=被复制拉伸的维度）';
+  }
+}
+
+document.getElementById('goBtn').addEventListener('click', run);
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  document.getElementById('aInput').value='3,1';
+  document.getElementById('bInput').value='1,2';
+  clearAll(); showMsg('已重置。','ok');
+  run();
+});
+document.querySelectorAll('.presets button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.getElementById('aInput').value = btn.dataset.a;
+    document.getElementById('bInput').value = btn.dataset.b;
+    run();
+  });
+});
+
+// 初始
+run();
+</script>
+</body>
+</html>

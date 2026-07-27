@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梯度累加沙盘 · 第45篇</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         background:#f7f9fc; color:#1f2d3d; padding:18px; }
+  header { max-width: 960px; margin:0 auto 14px; }
+  h1 { font-size:20px; margin:0 0 6px; color:#1d4ed8; }
+  .desc { font-size:13px; color:#5a6577; line-height:1.6; }
+  .wrap { max-width:960px; margin:0 auto; background:#fff; border-radius:12px;
+          box-shadow:0 2px 12px rgba(20,40,80,.08); padding:16px; }
+  .panel { display:flex; flex-wrap:wrap; gap:18px; }
+  .left { flex:1; min-width:280px; }
+  .right { flex:1.4; min-width:340px; }
+  .controls { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  button { padding:10px 15px; font-size:13.5px; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
+  .b-back { background:#ea580c; color:#fff; }
+  .b-zero { background:#e9ecef; color:#495057; }
+  .b-reset { background:#dbe4ff; color:#1d4ed8; }
+  button:hover { filter:brightness(1.07); }
+  button:active { transform:translateY(1px); }
+  .sliderRow { display:flex; align-items:center; gap:10px; font-size:13px; color:#495057; margin:10px 0; }
+  input[type=range]{ flex:1; }
+  .stats { background:#f8fafc; border:1px solid #eef2f7; border-radius:10px; padding:12px 14px; font-size:13px; line-height:1.9; }
+  .stats .big { font-size:26px; font-weight:700; color:#ea580c; }
+  .stats .lab { color:#868e96; }
+  canvas { width:100%; height:320px; background:#fcfdff; border:1px solid #eef2f7; border-radius:10px; }
+  .lg { display:flex; gap:16px; font-size:12px; color:#5a6577; margin-top:8px; flex-wrap:wrap; }
+  .lg span { display:inline-flex; align-items:center; gap:6px; }
+  .ln { width:22px; height:4px; display:inline-block; border-radius:2px; }
+  .note { font-size:12px; color:#868e96; margin-top:10px; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <h1>梯度累加沙盘</h1>
+  <div class="desc">点「backward 一次」：系统按当前轮次 i 算出 grad = i+1 并累加到 <b>w.grad</b>，实时显示当前值与历史累加曲线；「zero_grad」清空。下方同时画出<b>理论·不清零</b>与<b>理论·每轮清零</b>两条参考曲线，对比 10 轮后的天壤之别。</div>
+</header>
+<div class="wrap">
+  <div class="panel">
+    <div class="left">
+      <div class="controls">
+        <button class="b-back" onclick="backward()">backward 一次</button>
+        <button class="b-zero" onclick="zeroGrad()">zero_grad 清空</button>
+        <button class="b-reset" onclick="resetAll()">重置沙盘</button>
+      </div>
+      <div class="sliderRow">
+        <span>轮数上限 N</span>
+        <input type="range" id="N" min="1" max="20" value="10" oninput="drawChart()">
+        <b id="Nval" style="color:#1d4ed8">10</b>
+      </div>
+      <div class="stats">
+        <div><span class="lab">当前轮次 i：</span><b id="round">0</b></div>
+        <div><span class="lab">本轮回填梯度 grad = i+1：</span><b id="stepGrad">—</b></div>
+        <div><span class="lab">w.grad 当前值：</span><span class="big" id="wgrad">0.0</span></div>
+        <hr style="border:none;border-top:1px solid #eef2f7;margin:8px 0">
+        <div><span class="lab">若不清零到 N 轮（理论）：</span><b id="thNoZero" style="color:#1d4ed8">—</b></div>
+        <div><span class="lab">若每轮清零到 N 轮（理论）：</span><b id="thZero" style="color:#2f9e44">—</b></div>
+      </div>
+      <div class="note">提示：连续点「backward 一次」但不清零，w.grad 会像滚雪球（红实线）一路追上理论不清零线；中途点一次「zero_grad」，红线立刻归零，与蓝线拉开差距——这就是训练忘记清梯度的后果。</div>
+    </div>
+    <div class="right">
+      <canvas id="cv" width="600" height="320"></canvas>
+      <div class="lg">
+        <span><i class="ln" style="background:#1d4ed8"></i>理论·不清零（累积和）</span>
+        <span><i class="ln" style="background:#2f9e44"></i>理论·每轮清零（i+1）</span>
+        <span><i class="ln" style="background:#e03131"></i>你的 w.grad（实际操作）</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const cv=document.getElementById("cv");
+const ctx=cv.getContext("2d");
+let round=0, wgrad=0;
+let live=[];            // 每步后的 w.grad（实际操作）
+let lastStep=0;         // 最近一次回填的梯度
+
+function backward(){
+  round++;
+  lastStep=round;       // grad = i+1
+  wgrad+=lastStep;
+  live.push(wgrad);
+  updateStats(); drawChart();
+}
+function zeroGrad(){
+  wgrad=0;
+  lastStep=0;
+  live.push(0);         // 记录一次清零
+  updateStats(); drawChart();
+}
+function resetAll(){
+  round=0; wgrad=0; live=[]; lastStep=0;
+  updateStats(); drawChart();
+}
+function getN(){ return +document.getElementById("N").value; }
+function thNoZero(n){ return n*(n+1)/2; }
+function updateStats(){
+  document.getElementById("round").textContent=round;
+  document.getElementById("stepGrad").textContent=lastStep?lastStep:"—";
+  document.getElementById("wgrad").textContent=wgrad.toFixed(1);
+  const n=getN();
+  document.getElementById("Nval").textContent=n;
+  document.getElementById("thNoZero").textContent=thNoZero(n).toFixed(1);
+  document.getElementById("thZero").textContent=n.toFixed(1);
+}
+
+function drawChart(){
+  const n=getN();
+  document.getElementById("Nval").textContent=n;
+  const W=cv.width, H=cv.height;
+  const padL=46, padR=16, padT=18, padB=34;
+  const plotW=W-padL-padR, plotH=H-padT-padB;
+  const yMax=Math.max(thNoZero(n), wgrad, 1)*1.1;
+  ctx.clearRect(0,0,W,H);
+  // 网格 + Y 轴刻度
+  ctx.strokeStyle="#eef2f7"; ctx.fillStyle="#adb5bd"; ctx.font="11px sans-serif"; ctx.lineWidth=1;
+  for(let g=0; g<=5; g++){
+    const y=padT+plotH*g/5;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
+    const val=Math.round(yMax*(1-g/5));
+    ctx.fillText(val, 8, y+4);
+  }
+  // 轴
+  ctx.strokeStyle="#ced4da"; ctx.beginPath();
+  ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(W-padR,padT+plotH); ctx.stroke();
+  ctx.fillStyle="#868e96"; ctx.fillText("轮次 i →", W-padR-54, H-10);
+  ctx.save(); ctx.translate(14,padT+plotH/2); ctx.rotate(-Math.PI/2);
+  ctx.fillText("w.grad", 0,0); ctx.restore();
+
+  const X=i=> padL + (n<=1?plotW/2 : plotW*(i-1)/(n-1));
+  const Y=v=> padT + plotH*(1 - v/yMax);
+
+  // 理论·不清零（蓝实线）
+  ctx.strokeStyle="#1d4ed8"; ctx.lineWidth=2.5; ctx.beginPath();
+  for(let i=1;i<=n;i++){ const x=X(i), y=Y(thNoZero(i)); i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.stroke();
+  // 理论·每轮清零（绿虚线）
+  ctx.strokeStyle="#2f9e44"; ctx.lineWidth=2; ctx.setLineDash([6,4]); ctx.beginPath();
+  for(let i=1;i<=n;i++){ const x=X(i), y=Y(i); i===1?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.stroke(); ctx.setLineDash([]);
+
+  // 实际操作曲线（红实线，带点）
+  if(live.length>0){
+    ctx.strokeStyle="#e03131"; ctx.lineWidth=2.5; ctx.beginPath();
+    const steps=live.length;
+    for(let s=0;s<steps;s++){
+      const i=s+1; const x=X(Math.min(i,n)), y=Y(live[s]);
+      s===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+    for(let s=0;s<steps;s++){
+      const i=s+1; const x=X(Math.min(i,n)), y=Y(live[s]);
+      ctx.fillStyle="#e03131"; ctx.beginPath(); ctx.arc(x,y,3.2,0,7); ctx.fill();
+    }
+    // 当前点高亮
+    const li=live.length, lx=X(Math.min(li,n)), ly=Y(live[li-1]);
+    ctx.fillStyle="#fff"; ctx.strokeStyle="#e03131"; ctx.lineWidth=2.5;
+    ctx.beginPath(); ctx.arc(lx,ly,5.5,0,7); ctx.fill(); ctx.stroke();
+  }
+  // X 轴轮次标注
+  ctx.fillStyle="#adb5bd"; ctx.font="10px sans-serif";
+  for(let i=1;i<=n;i+=Math.max(1,Math.round(n/10))){ ctx.fillText(i, X(i)-4, H-18); }
+}
+updateStats(); drawChart();
+</script>
+</body>
+</html>

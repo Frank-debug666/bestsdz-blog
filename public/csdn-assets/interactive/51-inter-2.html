@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>信号传播实验：初始化 std 决定信号的命运</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#fff; --ink:#1f2933; --muted:#64748b; --line:#e2e8f0; --accent:#2563eb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); padding:24px; line-height:1.5;}
+  header{max-width:1000px; margin:0 auto 16px;}
+  h1{font-size:22px; margin:0 0 6px;}
+  .desc{color:var(--muted); font-size:14px; margin:0;}
+  .controls{max-width:1000px; margin:0 auto 14px; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:16px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+  .ctl{display:flex; flex-direction:column; gap:6px; min-width:260px; flex:1;}
+  .ctl label{font-size:13px; color:var(--muted);}
+  .ctl .val{color:var(--accent); font-weight:600;}
+  input[type=range]{width:100%;}
+  button{font:inherit; font-size:14px; padding:10px 18px; border-radius:8px; border:1px solid var(--line);
+    background:var(--accent); color:#fff; cursor:pointer;}
+  button.ghost{background:#fff; color:var(--ink);}
+  button:active{transform:translateY(1px);}
+  .panels{max-width:1000px; margin:0 auto; display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .panel h3{font-size:14px; margin:0 0 4px;}
+  .panel .meta{font-size:12px; color:var(--muted); margin:0 0 6px;}
+  .verdict{font-size:12px; font-weight:600; margin-top:6px; padding:4px 8px; border-radius:6px; text-align:center;}
+  .v-good{background:#dcfce7; color:#16a34a;}
+  .v-bad{background:#fee2e2; color:#dc2626;}
+  .v-warn{background:#fef9c3; color:#a16207;}
+  canvas{width:100%; height:170px; display:block; background:#fbfdff; border:1px solid var(--line); border-radius:8px;}
+  .note{max-width:1000px; margin:14px auto 0; font-size:13px; color:var(--muted); background:var(--card);
+    border:1px solid var(--line); border-radius:10px; padding:12px 16px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>信号传播实验：初始化 std 决定信号的命运</h1>
+  <p class="desc">拖动滑动条设定初始化标准差 σ，点击"前向传播 20 层"，实时观察第 1 / 10 / 20 层激活值分布：太小塌缩到 0、太大爆掉、中间才健康。亲手找到"稳定带"。</p>
+</header>
+
+<div class="controls">
+  <div class="ctl">
+    <label>初始化标准差 σ = <span class="val" id="stdVal">0.100</span>（范围 0.001 ~ 1.0）</label>
+    <input type="range" id="std" min="0" max="1000" value="662">
+  </div>
+  <button id="run">▶ 前向传播 20 层</button>
+  <button id="reset" class="ghost">↺ 重置</button>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <h3>第 1 层</h3>
+    <p class="meta" id="m1">σ 层方差：—</p>
+    <canvas id="c1" width="300" height="170"></canvas>
+    <div class="verdict" id="v1">待运行</div>
+  </div>
+  <div class="panel">
+    <h3>第 10 层</h3>
+    <p class="meta" id="m10">σ 层方差：—</p>
+    <canvas id="c10" width="300" height="170"></canvas>
+    <div class="verdict" id="v10">待运行</div>
+  </div>
+  <div class="panel">
+    <h3>第 20 层</h3>
+    <p class="meta" id="m20">σ 层方差：—</p>
+    <canvas id="c20" width="300" height="170"></canvas>
+    <div class="verdict" id="v20">待运行</div>
+  </div>
+</div>
+
+<div class="note">
+  原理：每层 <code>h = ReLU(W·h_prev)</code>，权重 <code>W~N(0,σ²)</code>。方差逐层放大倍数 <code>f = 0.5 × fan_in × σ²</code>。
+  f&lt;1 → 逐层衰减塌缩（梯度消失）；f≈1 → 稳定（Kaiming 思想）；f&gt;1 → 逐层放大爆炸（梯度爆炸）。本实验 fan_in=32。
+</div>
+
+<script>
+(function(){
+  // 对数滑动条: 0..1000 -> 0.001..1.0
+  const slider=document.getElementById("std");
+  const stdVal=document.getElementById("stdVal");
+  // 初始化滑块到 σ=0.1
+  function sliderToStd(v){ return 0.001*Math.pow(1000, v/1000); }
+  function initSlider(){
+    const s=Math.round(Math.log10(0.1/0.001)/Math.log10(1.0/0.001)*1000);
+    slider.value=s;
+  }
+  initSlider();
+
+  function gauss(){ // Box-Muller
+    let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+
+  const FAN=32, LAYERS=20, SAMPLES=500;
+  // 预生成权重：20 层，每层 FAN×FAN
+  const W=[];
+  for(let l=0;l<LAYERS;l++){
+    const m=new Float64Array(FAN*FAN);
+    for(let i=0;i<m.length;i++) m[i]=gauss();
+    W.push(m);
+  }
+
+  function run(){
+    const sigma=sliderToStd(+slider.value);
+    stdVal.textContent=sigma.toFixed(4);
+    const collect={1:[],10:[],20:[]};
+    const cur=new Float64Array(FAN);
+    // 输入 x0 ~ N(0,1)
+    for(let i=0;i<FAN;i++) cur[i]=gauss();
+    for(let s=0;s<SAMPLES;s++){
+      let x=new Float64Array(FAN);
+      for(let i=0;i<FAN;i++) x[i]=gauss();
+      for(let l=0;l<LAYERS;l++){
+        const w=W[l];
+        const out=new Float64Array(FAN);
+        for(let i=0;i<FAN;i++){
+          let sum=0; const base=i*FAN;
+          for(let j=0;j<FAN;j++) sum+=w[base+j]*x[j];
+          sum*=sigma;
+          out[i]=sum>0?sum:0; // ReLU
+        }
+        x=out;
+        if(l===0) collect[1].push(Array.from(x));
+        if(l===9) collect[10].push(Array.from(x));
+        if(l===19) collect[20].push(Array.from(x));
+      }
+    }
+    // 展平
+    function flat(arr){const r=[]; for(const a of arr) for(const v of a) r.push(v); return r;}
+    draw("c1", flat(collect[1]), "m1","v1");
+    draw("c10", flat(collect[10]), "m10","v10");
+    draw("c20", flat(collect[20]), "m20","v20");
+  }
+
+  function draw(cid, data, mid, vid){
+    const cv=document.getElementById(cid);
+    const ctx=cv.getContext("2d");
+    const Wd=cv.width, Ht=cv.height;
+    ctx.clearRect(0,0,Wd,Ht);
+    // 统计
+    let mean=0; for(const v of data) mean+=v; mean/=data.length;
+    let variance=0; for(const v of data) variance+=(v-mean)*(v-mean); variance/=data.length;
+    const sd=Math.sqrt(variance);
+    // 直方图
+    const bins=28;
+    // 自适应范围，但限制在合理尺度
+    let maxAbs=0; for(const v of data) maxAbs=Math.max(maxAbs,Math.abs(v));
+    let range=Math.max(maxAbs, 0.5); // 至少 ±0.5
+    if(range>50) range=50; // 防止爆炸时全挤一边
+    const lo=-range, hi=range;
+    const hist=new Array(bins).fill(0);
+    const binW=(hi-lo)/bins;
+    for(const v of data){
+      let b=Math.floor((v-lo)/binW);
+      if(b<0)b=0; if(b>=bins)b=bins-1;
+      hist[b]++;
+    }
+    const maxH=Math.max(...hist,1);
+    // 坐标轴
+    ctx.strokeStyle="#e2e8f0"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(28,8); ctx.lineTo(28,Ht-22); ctx.lineTo(Wd-6,Ht-22); ctx.stroke();
+    ctx.fillStyle="#94a3b8"; ctx.font="10px sans-serif";
+    ctx.fillText("激活值", Wd/2-12, Ht-6);
+    ctx.save(); ctx.translate(10,Ht/2+18); ctx.rotate(-Math.PI/2); ctx.fillText("样本数",0,0); ctx.restore();
+    // 零刻度线
+    const zeroX=28+(0-lo)/(hi-lo)*(Wd-34);
+    ctx.strokeStyle="#cbd5e1"; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(zeroX,8); ctx.lineTo(zeroX,Ht-22); ctx.stroke(); ctx.setLineDash([]);
+    // 柱子
+    const x0=28, plotW=Wd-34, baseY=Ht-22;
+    for(let i=0;i<bins;i++){
+      const h=hist[i]/maxH*(baseY-12);
+      const x=x0+i*plotW/bins;
+      const bw=plotW/bins-1;
+      // 健康=绿，塌缩=蓝，爆炸=红
+      let col="#2563eb";
+      ctx.fillStyle=col;
+      ctx.fillRect(x, baseY-h, bw, h);
+    }
+    // 判定颜色由 verdict 控制整体
+    // meta
+    document.getElementById(mid).textContent="层内方差 ≈ "+variance.toExponential(2)+"，σ ≈ "+sd.toFixed(3);
+    // verdict
+    const v=document.getElementById(vid);
+    let txt, cls;
+    if(sd<0.15){ txt="分布塌缩到 0（梯度消失）"; cls="v-bad"; }
+    else if(sd>8){ txt="分布爆掉（梯度爆炸）"; cls="v-bad"; }
+    else if(sd>=0.6 && sd<=4){ txt="分布健康 ✓ 稳定带"; cls="v-good"; }
+    else { txt="偏窄 / 偏宽（不稳定）"; cls="v-warn"; }
+    v.textContent=txt; v.className="verdict "+cls;
+    // 重画柱子颜色
+    let col = cls==="v-good" ? "#16a34a" : (cls==="v-bad" ? "#dc2626" : "#f59e0b");
+    for(let i=0;i<bins;i++){
+      const h=hist[i]/maxH*(baseY-12);
+      const x=x0+i*plotW/bins; const bw=plotW/bins-1;
+      ctx.fillStyle=col; ctx.fillRect(x, baseY-h, bw, h);
+    }
+  }
+
+  document.getElementById("run").addEventListener("click", run);
+  document.getElementById("reset").addEventListener("click", ()=>{
+    initSlider(); stdVal.textContent="0.1000";
+    [["c1","m1","v1"],["c10","m10","v10"],["c20","m20","v20"]].forEach(([c,m,v])=>{
+      const cv=document.getElementById(c); const ctx=cv.getContext("2d");
+      ctx.clearRect(0,0,cv.width,cv.height);
+      document.getElementById(m).textContent="σ 层方差：—";
+      const vv=document.getElementById(v); vv.textContent="待运行"; vv.className="verdict";
+    });
+  });
+  slider.addEventListener("input",()=>{ stdVal.textContent=sliderToStd(+slider.value).toFixed(4); });
+})();
+</script>
+</body>
+</html>

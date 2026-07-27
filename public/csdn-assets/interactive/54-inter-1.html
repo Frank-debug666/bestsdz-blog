@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>偏差修正可视化 · Adam</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#fff; --ink:#1f2a37; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#2563eb; --soft:#eef2ff;
+    --cUnc1:#e11d48; --cUnc2:#f59e0b; --cCorr:#16a34a;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Microsoft YaHei","PingFang SC",sans-serif;background:var(--bg);
+    color:var(--ink);line-height:1.55;padding:24px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:21px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px 22px;}
+  .ctrl label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .ctrl .val{color:var(--accent);font-weight:600;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  canvas{width:100%;height:360px;display:block;margin-top:16px;background:#fff;border-radius:10px;}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;font-size:13px;margin-top:12px;color:var(--muted);}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;}
+  .readout{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;font-size:13px;color:var(--muted);}
+  .readout b{color:var(--ink);}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>偏差修正可视化</h1>
+  <p class="sub">设真实梯度恒为 1。拖动 β1、β2、步数 t 三个滑块，看「未修正估计值 / 真实值」如何随 t 从很低爬升，而「修正后」始终 ≈ 1（前几步偏差最大，后期自动消失）。</p>
+
+  <div class="card">
+    <div class="controls">
+      <div class="ctrl">
+        <label>β1（一阶动量系数）：<span class="val" id="b1Val">0.900</span></label>
+        <input type="range" id="b1" min="0.5" max="0.999" step="0.001" value="0.9">
+      </div>
+      <div class="ctrl">
+        <label>β2（二阶动量系数）：<span class="val" id="b2Val">0.999</span></label>
+        <input type="range" id="b2" min="0.5" max="0.9999" step="0.0001" value="0.999">
+      </div>
+      <div class="ctrl">
+        <label>步数 t：<span class="val" id="tVal">1</span></label>
+        <input type="range" id="tstep" min="1" max="20" step="1" value="1">
+      </div>
+    </div>
+
+    <canvas id="chart" width="820" height="360"></canvas>
+
+    <div class="legend">
+      <span><span class="dot" style="background:var(--cUnc1)"></span>未修正 m<sub>t</sub>（用 β1）</span>
+      <span><span class="dot" style="background:var(--cUnc2)"></span>未修正 v<sub>t</sub>（用 β2）</span>
+      <span><span class="dot" style="background:var(--cCorr)"></span>修正后（始终 = 1）</span>
+    </div>
+
+    <div class="readout">
+      <span>第 <b id="rT">1</b> 步：</span>
+      <span>未修正 m<sub>t</sub>/真实 = <b id="rM">0.100</b></span>
+      <span>未修正 v<sub>t</sub>/真实 = <b id="rV">0.001</b></span>
+      <span>修正后 = <b>1.000</b></span>
+    </div>
+
+    <div class="hint">
+      公式：m̂<sub>t</sub> = m<sub>t</sub>/(1−β1<sup>t</sup>)，v̂<sub>t</sub> = v<sub>t</sub>/(1−β2<sup>t</sup>)。
+      初始 m<sub>0</sub>=v<sub>0</sub>=0 把前几步估计值拉低，β 越大、t 越小时修正放大越明显；t 增大后分母 1−β<sup>t</sup>→1，修正作用自然消失——偏差修正<b>只在训练前期生效</b>。
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = {l:54, r:18, t:18, b:42};
+  const N = 20;
+
+  const b1El = document.getElementById('b1');
+  const b2El = document.getElementById('b2');
+  const tEl  = document.getElementById('tstep');
+  const b1Val = document.getElementById('b1Val');
+  const b2Val = document.getElementById('b2Val');
+  const tVal  = document.getElementById('tVal');
+  const rT = document.getElementById('rT'), rM = document.getElementById('rM'), rV = document.getElementById('rV');
+
+  function draw(){
+    const b1 = +b1El.value, b2 = +b2El.value, t = +tEl.value;
+    b1Val.textContent = b1.toFixed(3);
+    b2Val.textContent = b2.toFixed(b2>=0.999?3:4);
+    tVal.textContent = t; rT.textContent = t;
+
+    const uncM = [], uncV = [], corr = [];
+    for(let i=1;i<=N;i++){ uncM.push(1-Math.pow(b1,i)); uncV.push(1-Math.pow(b2,i)); corr.push(1); }
+
+    const x0=PAD.l, x1=W-PAD.r, y0=H-PAD.b, y1=PAD.t;
+    const maxV=1.05, minV=0;
+    const sx = i => x0 + (x1-x0)*(i/N);
+    const sy = v => y0 - (y0-y1)*((v-minV)/(maxV-minV));
+
+    ctx.clearRect(0,0,W,H);
+    ctx.strokeStyle='#eef2f7'; ctx.lineWidth=1; ctx.fillStyle='#9aa4b2'; ctx.font='12px sans-serif';
+    for(let i=0;i<=4;i++){ const v=maxV*i/4, y=sy(v);
+      ctx.beginPath();ctx.moveTo(x0,y);ctx.lineTo(x1,y);ctx.stroke();
+      ctx.textAlign='right';ctx.fillText(v.toFixed(2),x0-8,y+4); }
+    ctx.strokeStyle='#cbd5e1';
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x1,y0);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0,y1);ctx.stroke();
+    ctx.fillStyle='#6b7280';ctx.textAlign='center';
+    ctx.fillText('训练步数 t →',(x0+x1)/2,H-12);
+    ctx.save();ctx.translate(15,(y0+y1)/2);ctx.rotate(-Math.PI/2);
+    ctx.fillText('估计值 / 真实值',0,0);ctx.restore();
+
+    function plot(arr,color,dash){
+      ctx.strokeStyle=color;ctx.lineWidth=2.4;ctx.setLineDash(dash||[]);ctx.beginPath();
+      arr.forEach((v,i)=>{ const X=sx(i+1),Y=sy(v); i===0?ctx.moveTo(X,Y):ctx.lineTo(X,Y); });
+      ctx.stroke();ctx.setLineDash([]);
+    }
+    plot(uncM,'#e11d48');
+    plot(uncV,'#f59e0b');
+    plot(corr,'#16a34a',[6,4]);
+
+    // 当前步标记
+    const mx=sx(t);
+    ctx.strokeStyle='#334155';ctx.setLineDash([3,3]);ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(mx,y0);ctx.lineTo(mx,y1);ctx.stroke();ctx.setLineDash([]);
+    [[uncM,'#e11d48'],[uncV,'#f59e0b'],[corr,'#16a34a']].forEach(([a,c])=>{
+      const Y=sy(a[t-1]); ctx.fillStyle=c;ctx.beginPath();ctx.arc(mx,Y,4,0,Math.PI*2);ctx.fill();
+    });
+
+    rM.textContent = uncM[t-1].toFixed(3);
+    rV.textContent = uncV[t-1].toFixed(3);
+  }
+
+  b1El.oninput=draw; b2El.oninput=draw; tEl.oninput=draw;
+  draw();
+})();
+</script>
+</body>
+</html>

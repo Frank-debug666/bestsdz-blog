@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>初始化方法配对实验器：Xavier / Kaiming × 激活函数</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#fff; --ink:#1f2933; --muted:#64748b; --line:#e2e8f0; --accent:#2563eb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); padding:24px; line-height:1.5;}
+  header{max-width:1000px; margin:0 auto 16px;}
+  h1{font-size:22px; margin:0 0 6px;}
+  .desc{color:var(--muted); font-size:14px; margin:0;}
+  .source{display:inline-block; background:#eaf1fb; color:#1f5fb0; font-size:12px; padding:4px 10px; border-radius:6px; margin-top:10px;}
+  .controls{max-width:1000px; margin:0 auto 14px; background:var(--card); border:1px solid var(--line);
+    border-radius:12px; padding:16px; display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+  .ctl{display:flex; flex-direction:column; gap:6px;}
+  .ctl label{font-size:13px; color:var(--muted); font-weight:600;}
+  select{font:inherit; font-size:14px; padding:8px 10px; border-radius:8px; border:1px solid var(--line); background:#fff;}
+  button{font:inherit; font-size:14px; padding:10px 18px; border-radius:8px; border:1px solid var(--line);
+    background:var(--accent); color:#fff; cursor:pointer;}
+  button:active{transform:translateY(1px);}
+  .panels{max-width:1000px; margin:0 auto; display:grid; grid-template-columns:repeat(2,1fr); gap:14px;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px;}
+  .panel h3{font-size:14px; margin:0 0 4px;}
+  .panel .meta{font-size:12px; color:var(--muted); margin:0 0 6px;}
+  .verdict{font-size:12px; font-weight:600; margin-top:6px; padding:4px 8px; border-radius:6px; text-align:center;}
+  .v-good{background:#dcfce7; color:#16a34a;}
+  .v-bad{background:#fee2e2; color:#dc2626;}
+  .v-warn{background:#fef9c3; color:#a16207;}
+  canvas{width:100%; height:180px; display:block; background:#fbfdff; border:1px solid var(--line); border-radius:8px;}
+  .note{max-width:1000px; margin:14px auto 0; font-size:13px; color:var(--muted); background:var(--card);
+    border:1px solid var(--line); border-radius:10px; padding:12px 16px;}
+  code{background:#eef2f7; padding:1px 5px; border-radius:4px;}
+</style>
+</head>
+<body>
+<header>
+  <h1>初始化方法配对实验器：Xavier / Kaiming × 激活函数</h1>
+  <p class="desc">选择激活函数与初始化方法，点击"采样权重并前向传播"，观察权重分布与第 1 层激活值分布，看配对是否合理。</p>
+  <span class="source">原文建议：方法选择速查表——ReLU/LeakyReLU 配 Kaiming；Sigmoid/Tanh 配 Xavier；配对错了信号就崩。</span>
+</header>
+
+<div class="controls">
+  <div class="ctl">
+    <label>激活函数</label>
+    <select id="act">
+      <option value="relu">ReLU</option>
+      <option value="tanh">Tanh</option>
+      <option value="sigmoid">Sigmoid</option>
+    </select>
+  </div>
+  <div class="ctl">
+    <label>初始化方法</label>
+    <select id="init">
+      <option value="xavier">Xavier（Glorot）</option>
+      <option value="kaiming">Kaiming（He，默认）</option>
+      <option value="zeros">全 0（错误示范）</option>
+    </select>
+  </div>
+  <button id="run">▶ 采样权重并前向传播</button>
+</div>
+
+<div class="panels">
+  <div class="panel">
+    <h3>权重 W 分布</h3>
+    <p class="meta" id="mW">—</p>
+    <canvas id="cW" width="460" height="180"></canvas>
+    <div class="verdict" id="vW">待运行</div>
+  </div>
+  <div class="panel">
+    <h3>第 1 层激活值分布</h3>
+    <p class="meta" id="mA">—</p>
+    <canvas id="cA" width="460" height="180"></canvas>
+    <div class="verdict" id="vA">待运行</div>
+  </div>
+</div>
+
+<div class="note">
+  原理：单层 <code>h = activation(W·x)</code>，<code>x~N(0,1)</code>，<code>W</code> 按所选方法采样。Xavier 标准差 <code>√(2/(nin+nout))</code>，Kaiming 标准差 <code>√(2/nin)</code>。
+  配对得当 → 激活值方差稳定、分布健康；配对错（如 Sigmoid 配 Kaiming）→ 大量值挤在饱和两端。本实验 nin=nout=20。
+</div>
+
+<script>
+(function(){
+  const FAN=20, SAMPLES=800;
+  function gauss(){
+    let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+    return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+  }
+  function activation(name, z){
+    if(name==="relu") return z>0?z:0;
+    if(name==="tanh") return Math.tanh(z);
+    return 1/(1+Math.exp(-z)); // sigmoid
+  }
+
+  function run(){
+    const act=document.getElementById("act").value;
+    const init=document.getElementById("init").value;
+
+    let W;
+    if(init==="zeros"){
+      W=new Float64Array(FAN*FAN); // 全 0
+    } else {
+      const std = init==="xavier"
+        ? Math.sqrt(2/(FAN+FAN))
+        : Math.sqrt(2/FAN); // kaiming
+      W=new Float64Array(FAN*FAN);
+      for(let i=0;i<W.length;i++) W[i]=gauss()*std;
+    }
+
+    const weights=Array.from(W);
+    const acts=[];
+    for(let s=0;s<SAMPLES;s++){
+      const x=new Float64Array(FAN);
+      for(let i=0;i<FAN;i++) x[i]=gauss();
+      const out=new Float64Array(FAN);
+      for(let i=0;i<FAN;i++){
+        let sum=0; const base=i*FAN;
+        for(let j=0;j<FAN;j++) sum+=W[base+j]*x[j];
+        out[i]=activation(act, sum);
+      }
+      for(let i=0;i<FAN;i++) acts.push(out[i]);
+    }
+
+    draw("cW", weights, "mW", "vW", init, "weight");
+    draw("cA", acts, "mA", "vA", act, "act");
+  }
+
+  function draw(cid, data, mid, vid, tag, kind){
+    const cv=document.getElementById(cid), ctx=cv.getContext("2d");
+    const Wd=cv.width, Ht=cv.height;
+    ctx.clearRect(0,0,Wd,Ht);
+    let mean=0; for(const v of data) mean+=v; mean/=data.length;
+    let variance=0; for(const v of data) variance+=(v-mean)*(v-mean); variance/=data.length;
+    const sd=Math.sqrt(variance);
+
+    const bins=30;
+    let maxAbs=0; for(const v of data) maxAbs=Math.max(maxAbs,Math.abs(v));
+    let range = kind==="act" ? Math.max(maxAbs, 0.5) : Math.max(maxAbs, 0.5);
+    const lo=-range, hi=range;
+    const hist=new Array(bins).fill(0);
+    const binW=(hi-lo)/bins;
+    for(const v of data){
+      let b=Math.floor((v-lo)/binW); if(b<0)b=0; if(b>=bins)b=bins-1; hist[b]++;
+    }
+    const maxH=Math.max(...hist,1);
+
+    // 坐标轴
+    ctx.strokeStyle="#e2e8f0"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(28,8); ctx.lineTo(28,Ht-22); ctx.lineTo(Wd-6,Ht-22); ctx.stroke();
+    ctx.fillStyle="#94a3b8"; ctx.font="10px sans-serif";
+    ctx.fillText(kind==="act"?"激活值":"权重值", Wd/2-14, Ht-6);
+    ctx.save(); ctx.translate(10,Ht/2+18); ctx.rotate(-Math.PI/2); ctx.fillText("样本数",0,0); ctx.restore();
+    const zeroX=28+(0-lo)/(hi-lo)*(Wd-34);
+    ctx.strokeStyle="#cbd5e1"; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(zeroX,8); ctx.lineTo(zeroX,Ht-22); ctx.stroke(); ctx.setLineDash([]);
+
+    const x0=28, plotW=Wd-34, baseY=Ht-22;
+    let col="#2563eb";
+    for(let i=0;i<bins;i++){
+      const h=hist[i]/maxH*(baseY-12);
+      const x=x0+i*plotW/bins, bw=plotW/bins-1;
+      ctx.fillStyle=col; ctx.fillRect(x, baseY-h, bw, h);
+    }
+
+    // 判定
+    const v=document.getElementById(vid);
+    let txt, cls, color;
+    if(tag==="zeros"){
+      txt="权重全 0 → 对称性未被打破，输出恒为 0（学不动）"; cls="v-bad"; color="#dc2626";
+    } else if(kind==="act"){
+      // 饱和比例
+      let sat=0;
+      for(const a of data){
+        if(tag==="sigmoid" && (a<0.1||a>0.9)) sat++;
+        else if(tag==="tanh" && Math.abs(a)>0.95) sat++;
+      }
+      const satRatio=sat/data.length;
+      if(satRatio>0.4){ txt="大量值挤在饱和两端（配对不当）"; cls="v-bad"; color="#dc2626"; }
+      else if(sd<0.2){ txt="分布塌缩（欠激活 / 接近消失）"; cls="v-warn"; color="#f59e0b"; }
+      else if(sd>4){ txt="分布爆掉（信号过大）"; cls="v-bad"; color="#dc2626"; }
+      else { txt="分布健康 ✓ 配对合理"; cls="v-good"; color="#16a34a"; }
+    } else {
+      txt="权重已随机化，对称性被打破"; cls="v-good"; color="#16a34a";
+    }
+    v.textContent=txt; v.className="verdict "+cls;
+    for(let i=0;i<bins;i++){
+      const h=hist[i]/maxH*(baseY-12);
+      const x=x0+i*plotW/bins, bw=plotW/bins-1;
+      ctx.fillStyle=color; ctx.fillRect(x, baseY-h, bw, h);
+    }
+    document.getElementById(mid).textContent="均值 ≈ "+mean.toFixed(3)+"，标准差 σ ≈ "+sd.toFixed(3);
+  }
+
+  document.getElementById("run").addEventListener("click", run);
+  run();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>梯度计算器：亲手跑一次 backward</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin:0; padding:24px; font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif; background:#f7f9fc; color:#1f2937; }
+  h1 { font-size:22px; margin:0 0 6px; }
+  .desc { font-size:14px; color:#6b7280; margin:0 0 18px; }
+  .wrap { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; }
+  .panel { background:#fff; border:2px solid #e5e7eb; border-radius:16px; padding:18px; }
+  .left { width:320px; }
+  .right { flex:1; min-width:420px; }
+  label { display:block; font-size:13px; font-weight:700; color:#374151; margin:12px 0 4px; }
+  input[type=text], input[type=number] {
+    width:100%; font-size:15px; padding:9px 10px; border-radius:9px; border:2px solid #cbd5e1; font-family:monospace;
+  }
+  .expr { font-size:16px; font-weight:700; color:#3730a3; }
+  .mode { display:flex; gap:10px; margin-top:6px; }
+  .mode button { flex:1; background:#e2e8f0; color:#334155; }
+  .mode button.active { background:#6366f1; color:#fff; }
+  .btnrow { margin-top:16px; display:flex; gap:10px; }
+  button.act { background:#16a34a; color:#fff; font-weight:700; padding:11px 16px; border:none; border-radius:10px; cursor:pointer; }
+  button.reset { background:#9ca3af; color:#fff; font-weight:700; padding:11px 16px; border:none; border-radius:10px; cursor:pointer; }
+  .hint { font-size:12px; color:#9ca3af; margin-top:6px; }
+  #graphBox { width:100%; overflow:auto; background:#fbfdff; border:2px dashed #cbd5e1; border-radius:12px; padding:8px; }
+  #status { margin-top:12px; padding:12px 14px; border-radius:10px; font-size:14px; font-weight:700; }
+  #status.ok { background:#dcfce7; color:#166534; border:2px solid #16a34a; }
+  #status.err { background:#fee2e2; color:#b91c1c; border:2px solid #dc2626; }
+  #status.idle { background:#f1f5f9; color:#475569; border:2px solid #e2e8f0; }
+  .gradout { margin-top:10px; font-size:14px; }
+  code { background:#eef2ff; padding:1px 6px; border-radius:5px; color:#3730a3; }
+</style>
+</head>
+<body>
+  <h1>梯度计算器：亲手跑一次 backward()</h1>
+  <p class="desc">在左侧定义 <code>y = f(w, x, b)</code> 并填数值，右侧实时画出计算图。点「backward」后，虚线从结果流回参数 w、b，并显示算出的 <code>.grad</code>。切换「y 是向量」可亲手触发一次向量 backward 报错，理解为什么要传 <code>gradient</code>。</p>
+
+  <div class="wrap">
+    <div class="panel left">
+      <label>参数 w（requires_grad=True）</label>
+      <input type="number" id="w" value="2" step="0.5">
+
+      <label>参数 b（requires_grad=True）</label>
+      <input type="number" id="b" value="1" step="0.5">
+
+      <label>输入 x（标量或向量，如 1,2,3）</label>
+      <input type="text" id="x" value="3">
+
+      <label>表达式（可用 + - * / ^ 与变量 w x b）</label>
+      <input type="text" class="expr" id="expr" value="w*x + b">
+
+      <label>目标值 target（标量损失用）</label>
+      <input type="number" id="t" value="10" step="0.5">
+
+      <label>输出模式</label>
+      <div class="mode">
+        <button id="mScalar" class="active" onclick="setMode('scalar')">y 是标量 (loss)</button>
+        <button id="mVec" onclick="setMode('vec')">y 是向量</button>
+      </div>
+      <div class="hint">标量模式：loss = mean((y−target)²) 再 backward；向量模式：直接对 y 向量 backward（会报错）。</div>
+
+      <div class="btnrow">
+        <button class="act" onclick="runForward()">① 前向建图</button>
+        <button class="act" onclick="runBackward()">② backward</button>
+      </div>
+      <div class="btnrow">
+        <button class="reset" onclick="resetAll()">重置</button>
+      </div>
+    </div>
+
+    <div class="panel right">
+      <div id="graphBox"></div>
+      <div id="status" class="idle">先点「① 前向建图」生成计算图。</div>
+      <div class="gradout" id="gradOut"></div>
+    </div>
+  </div>
+
+<script>
+// ---------- mini 自动微分（反向模式） ----------
+class N {
+  constructor(val, parents=[]) { this.val = val; this.grad = 0; this.parents = parents; this.isParam = false; }
+}
+function addN(a,b){ return new N(a.val+b.val,[{node:a,local:d=>d},{node:b,local:d=>d}]); }
+function subN(a,b){ return new N(a.val-b.val,[{node:a,local:d=>d},{node:b,local:d=>-d}]); }
+function mulN(a,b){ return new N(a.val*b.val,[{node:a,local:d=>d*b.val},{node:b,local:d=>d*a.val}]); }
+function divN(a,b){ const v=a.val/b.val; return new N(v,[{node:a,local:d=>d/b.val},{node:b,local:d=>-d*a.val/(b.val*b.val)}]); }
+function negN(a){ return new N(-a.val,[{node:a,local:d=>-d}]); }
+function powN(a,k){ const v=Math.pow(a.val,k); return new N(v,[{node:a,local:d=>d*k*Math.pow(a.val,k-1)}]); }
+
+// ---------- 表达式解析（Shunting-yard → RPN → 求值） ----------
+function tokenize(s){
+  const toks=[]; const re=/\s*([A-Za-z]+|\d+\.?\d*|[+\-*/^()]|.)/g; let m;
+  while((m=re.exec(s))!==null){ const t=m[1]; if(t===''||/\s/.test(t))continue; toks.push(t); }
+  return toks;
+}
+function toRPN(toks){
+  const prec={'+':1,'-':1,'*':2,'/':2,'^':3}; const out=[]; const op=[]; let prev=null;
+  toks.forEach(t=>{
+    if(/^\d+\.?\d*$/.test(t)){ out.push({t:'num',v:parseFloat(t)}); }
+    else if(/^[A-Za-z]+$/.test(t)){ out.push({t:'var',v:t}); }
+    else if(t==='('){ op.push(t); }
+    else if(t===')'){ while(op.length && op[op.length-1]!=='('){ out.push({t:'op',v:op.pop()}); } op.pop(); }
+    else if(t in prec){
+      const unary = (prev===null||prev==='('|| (prev in prec) || prev==='(');
+      if(t==='-' && unary){ out.push({t:'num',v:0}); op.push('-'); }
+      else {
+        while(op.length && op[op.length-1]!=='(' && prec[op[op.length-1]]>=prec[t]){ out.push({t:'op',v:op.pop()}); }
+        op.push(t);
+      }
+    }
+    prev=t;
+  });
+  while(op.length) out.push({t:'op',v:op.pop()});
+  return out;
+}
+function applyOp(op,a,b){
+  switch(op){ case '+':return addN(a,b); case '-':return subN(a,b); case '*':return mulN(a,b);
+    case '/':return divN(a,b); case '^':return powN(a, b.val); }
+}
+function evalExpr(rpn, vars){
+  const st=[];
+  rpn.forEach(tok=>{
+    if(tok.t==='num') st.push(new N(tok.v));
+    else if(tok.t==='var'){ const v=vars[tok.v]; if(!v) throw new Error('未知变量: '+tok.v); st.push(v); }
+    else if(tok.t==='op'){
+      if(tok.v==='-'){ const a=st.pop(); st.push(subN(a, st.pop())); }
+      else { const b=st.pop(); const a=st.pop(); st.push(applyOp(tok.v,a,b)); }
+    }
+  });
+  if(st.length!==1) throw new Error('表达式不合法');
+  return st[0];
+}
+
+// ---------- Tensor 包装（标量 / 向量广播） ----------
+function asArr(t){ return t.scalar ? [t.node] : t.nodes; }
+function fromArr(a){ return a.length===1 ? {scalar:true,node:a[0]} : {scalar:false,nodes:a}; }
+function binOp(t1,t2,f){
+  const a=asArr(t1), b=asArr(t2); const n=Math.max(a.length,b.length); const out=[];
+  for(let i=0;i<n;i++){ const na=a.length===1?a[0]:a[i]; const nb=b.length===1?b[0]:b[i]; out.push(f(na,nb)); }
+  return fromArr(out);
+}
+
+// ---------- 全局状态 ----------
+let mode='scalar', wNode=null, bNode=null, yTensor=null, rootDraw=null, lastStatus='';
+
+function getVec(id){
+  const raw=document.getElementById(id).value.trim();
+  if(raw.includes(',')) return raw.split(',').map(s=>parseFloat(s.trim())).filter(v=>!isNaN(v));
+  const v=parseFloat(raw); return isNaN(v)?[0]:[v];
+}
+function setMode(m){ mode=m; document.getElementById('mScalar').classList.toggle('active',m==='scalar'); document.getElementById('mVec').classList.toggle('active',m==='vec'); }
+
+function runForward(){
+  try{
+    const wv=parseFloat(document.getElementById('w').value);
+    const bv=parseFloat(document.getElementById('b').value);
+    const xv=getVec('x');
+    const tv=parseFloat(document.getElementById('t').value);
+    const expr=document.getElementById('expr').value.trim();
+
+    wNode=new N(wv); wNode.isParam=true;
+    bNode=new N(bv); bNode.isParam=true;
+    const xTensor=fromArr(xv.map(v=>{ const n=new N(v); return n; }));
+
+    const rpn=toRPN(tokenize(expr));
+    const vars={w:wNode,b:bNode,x: xTensor.scalar? xTensor.node : xTensor }; // x 标量时直接给节点
+    // 若 x 是向量，变量 x 应返回向量 Tensor；调整：把 x 当作可广播对象
+    let y;
+    try { y = evalExprVec(rpn, {w:wNode,b:bNode,x:xTensor}); }
+    catch(e){ throw e; }
+
+    yTensor=y;
+
+    if(mode==='scalar'){
+      // loss = mean((y - target)^2)
+      const yt=fromArr(xv.map(()=> new N(tv))); // 广播 target
+      const comps=binOp(y, yt, (yi,ti)=> powN(subN(yi,ti),2));
+      const arr=asArr(comps); const n=arr.length;
+      let sum=arr[0];
+      for(let i=1;i<n;i++) sum=addN(sum,arr[i]);
+      const loss=new N(sum.val/n, arr.map(c=>({node:c,local:d=>d/n})));
+      rootDraw=loss; rootDraw.label='loss';
+      lastStatus={type:'ok', msg:'前向完成：loss = '+loss.val.toFixed(4)+'。点「② backward」求 w.grad、b.grad。'};
+    } else {
+      // 向量模式：合成根
+      const arr=asArr(y);
+      const synth=new N(null, arr.map(c=>({node:c,local:()=>0})));
+      synth.isSynth=true; synth.label='y (向量, 长度'+arr.length+')';
+      rootDraw=synth;
+      lastStatus={type:'idle', msg:'向量模式：y 是长度为 '+arr.length+' 的向量。点「② backward」将触发报错。'};
+    }
+    drawGraph(false);
+    setStatus(lastStatus);
+    document.getElementById('gradOut').innerHTML='';
+  }catch(e){ setStatus({type:'err', msg:'解析错误：'+e.message}); }
+}
+
+// evalExpr 支持 x 为 Tensor（广播）
+function evalExprVec(rpn, vars){
+  const st=[];
+  rpn.forEach(tok=>{
+    if(tok.t==='num') st.push(fromArr([new N(tok.v)]));
+    else if(tok.t==='var'){
+      const v=vars[tok.v];
+      if(!v) throw new Error('未知变量: '+tok.v);
+      st.push(v.scalar!==undefined ? v : fromArr([v]));
+    }
+    else if(tok.t==='op'){
+      if(tok.v==='-'){ const a=st.pop(); const b=st.pop(); st.push(binOp(b,a,subN)); }
+      else if(tok.v==='^'){ const b=st.pop(); const a=st.pop(); st.push(binOp(a,b,(x,y)=>powN(x,y.val))); }
+      else {
+        const b=st.pop(); const a=st.pop();
+        const f = tok.v==='+'?addN : tok.v==='-'?subN : tok.v==='*'?mulN : divN;
+        st.push(binOp(a,b,f));
+      }
+    }
+  });
+  if(st.length!==1) throw new Error('表达式不合法');
+  return st[0];
+}
+
+function runBackward(){
+  if(!rootDraw){ setStatus({type:'err',msg:'请先点「① 前向建图」。'}); return; }
+  if(mode==='vec'){
+    if(!rootDraw.isSynth){ setStatus({type:'err',msg:'当前 y 是标量，无法演示向量报错——请把 x 设为向量（如 1,2,3）。'}); return; }
+    setStatus({type:'err',msg:'RuntimeError: grad can be implicitly created only for scalar outputs。\n向量 y 不能直接 backward，必须传 gradient 参数指定权重（如 y.backward(torch.ones_like(y))）。'});
+    return;
+  }
+  // 反向传播
+  backward(rootDraw, 1);
+  drawGraph(true);
+  const wg=wNode.grad, bg=bNode.grad;
+  setStatus({type:'ok', msg:'✔ backward 完成！梯度沿计算图自动回填到叶子节点。'});
+  document.getElementById('gradOut').innerHTML =
+    'w.grad = <b>'+wg.toFixed(4)+'</b>　|　b.grad = <b>'+bg.toFixed(4)+'</b>';
+}
+
+function backward(root, seed){
+  const topo=[]; const seen=new Set();
+  (function visit(n){ if(seen.has(n))return; seen.add(n); n.parents.forEach(p=>visit(p.node)); topo.push(n); })(root);
+  topo.forEach(n=>n.grad=0);
+  root.grad=seed;
+  for(let i=topo.length-1;i>=0;i--){ const n=topo[i]; n.parents.forEach(p=>{ p.node.grad += p.local(n.grad); }); }
+}
+
+// ---------- 计算图 SVG 渲染 ----------
+function drawGraph(backwarded){
+  if(!rootDraw){ document.getElementById('graphBox').innerHTML=''; return; }
+  const L=layout(rootDraw);
+  const boxW=118, boxH=54;
+  const W = L.padX*2 + L.maxD*L.colW + boxW;
+  const rows=Math.max(...Object.values(L.byDepth).map(a=>a.length));
+  const H = L.padY*2 + (rows-1)*L.rowH + boxH;
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="-apple-system,'Microsoft YaHei',sans-serif">`;
+  // 箭头
+  svg += defs();
+  // 边
+  L.nodes.forEach(n=>{
+    const c=L.pos[L.id.get(n)];
+    n.parents.forEach(p=>{
+      const pc=L.pos[L.id.get(p.node)];
+      if(!pc) return;
+      const isGrad = backwarded && (p.node===wNode || p.node===bNode);
+      const col = isGrad ? '#dc2626' : '#94a3b8';
+      const dash = isGrad ? ' stroke-dasharray="6 4"' : '';
+      svg += `<line x1="${pc.x+boxW}" y1="${pc.y+boxH/2}" x2="${c.x}" y2="${c.y+boxH/2}" stroke="${col}" stroke-width="${isGrad?2.6:1.8}"${dash} marker-end="url(#ar)"/>`;
+    });
+  });
+  // 节点
+  L.nodes.forEach(n=>{
+    const p=L.pos[L.id.get(n)];
+    let fill='#e0f2fe', stroke='#0284c7', txt='#075985';
+    if(n===wNode||n===bNode){ fill= backwarded?'#dcfce7':'#dcfce7'; stroke='#16a34a'; txt='#166534'; }
+    else if(n.isSynth){ fill='#fef9c3'; stroke='#ca8a04'; txt='#854d0e'; }
+    else if(n.label==='loss'){ fill='#fef9c3'; stroke='#ca8a04'; txt='#854d0e'; }
+    else if(n.isParam===false && n.parents.length===0){ fill='#f3f4f6'; stroke='#9ca3af'; txt='#4b5563'; }
+    let label = n.isSynth?n.label : (n.label||'');
+    let valTxt = (n.val===null||n.val===undefined)?'' : n.val.toFixed(3);
+    let sub = n===wNode?'requires_grad': n===bNode?'requires_grad': (n.parents.length?'':'');
+    let gradTxt = (backwarded && (n===wNode||n===bNode)) ? 'grad='+n.grad.toFixed(3) : '';
+    svg += `<g><rect x="${p.x}" y="${p.y}" width="${boxW}" height="${boxH}" rx="10" fill="${fill}" stroke="${stroke}" stroke-width="2"/>`;
+    svg += `<text x="${p.x+boxW/2}" y="${p.y+20}" text-anchor="middle" font-size="13" font-weight="700" fill="${txt}">${label||'·'}</text>`;
+    if(valTxt) svg += `<text x="${p.x+boxW/2}" y="${p.y+37}" text-anchor="middle" font-size="12" fill="#475569">${valTxt}</text>`;
+    if(gradTxt) svg += `<text x="${p.x+boxW/2}" y="${p.y+boxH+14}" text-anchor="middle" font-size="12" font-weight="700" fill="#dc2626">${gradTxt}</text>`;
+    svg += `</g>`;
+  });
+  svg += `</svg>`;
+  document.getElementById('graphBox').innerHTML=svg;
+}
+
+function layout(root){
+  const depth=new Map(); const id=new Map(); let c=0;
+  function getId(n){ if(!id.has(n)) id.set(n,'n'+(c++)); return id.get(n); }
+  function dep(n){ if(depth.has(n))return depth.get(n); let d=0; if(n.parents.length){ d=1+Math.max(...n.parents.map(p=>dep(p.node))); } depth.set(n,d); return d; }
+  dep(root);
+  const seen=new Set(); const stack=[root]; const nodes=[];
+  while(stack.length){ const n=stack.pop(); if(seen.has(n))continue; seen.add(n); nodes.push(n); n.parents.forEach(p=>stack.push(p.node)); }
+  const maxD=Math.max(...nodes.map(n=>depth.get(n)));
+  // 用 label 兜底
+  nodes.forEach(n=>{ if(n.label===undefined){ n.label = n===wNode?'w': n===bNode?'b': (n.parents.length? 'op':'x'); } });
+  const padX=40, padY=40, colW=170, rowH=84;
+  const byDepth={}; nodes.forEach(n=>{ const d=depth.get(n); (byDepth[d]=byDepth[d]||[]).push(n); });
+  const maxRows=Math.max(...Object.values(byDepth).map(a=>a.length));
+  const pos={};
+  Object.keys(byDepth).forEach(d=>{
+    const arr=byDepth[d]; const startY = padY + ((maxRows-arr.length)/2)*rowH;
+    arr.forEach((n,i)=>{ pos[getId(n)]={ x: padX + d*colW, y: startY + i*rowH }; });
+  });
+  return {nodes, depth, pos, id, maxD, padX, padY, colW, rowH, byDepth};
+}
+
+function defs(){
+  return `<defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 Z" fill="#94a3b8"/></marker></defs>`;
+}
+
+function setStatus(s){ const el=document.getElementById('status'); el.className=s.type; el.textContent=s.msg; }
+
+function resetAll(){
+  rootDraw=null; wNode=null; bNode=null; yTensor=null;
+  document.getElementById('graphBox').innerHTML='';
+  setStatus({type:'idle', msg:'已重置。先点「① 前向建图」。'});
+  document.getElementById('gradOut').innerHTML='';
+}
+
+runForward();
+</script>
+</body>
+</html>

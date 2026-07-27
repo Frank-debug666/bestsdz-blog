@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习率曲线绘制器 · 交互演示</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#ffffff; --ink:#1f2d3d; --sub:#7b8794;
+    --line:#e3e8ef; --accent:#2f80ed; --green:#27ae60; --orange:#f2994a;
+    --red:#eb5757; --purple:#9b51e0;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"Segoe UI","Microsoft YaHei",sans-serif;line-height:1.5;}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 40px;}
+  h1{font-size:22px;margin:0 0 4px;}
+  .desc{color:var(--sub);font-size:13px;margin:0 0 18px;
+    background:#eef4ff;padding:10px 14px;border-radius:8px;border:1px solid #d6e4ff;}
+  .layout{display:flex;gap:18px;flex-wrap:wrap;}
+  .panel{flex:1 1 300px;min-width:280px;background:var(--card);border:1px solid var(--line);
+    border-radius:12px;padding:16px;}
+  .panel h2{font-size:15px;margin:0 0 12px;color:var(--ink);}
+  label{display:block;font-size:12px;color:var(--sub);margin:12px 0 4px;}
+  select,input[type=text]{width:100%;padding:7px 9px;border:1px solid var(--line);
+    border-radius:7px;font-size:13px;background:#fff;color:var(--ink);}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .val{float:right;font-weight:700;color:var(--accent);}
+  .btns{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;}
+  button{cursor:pointer;border:none;border-radius:8px;padding:9px 13px;font-size:13px;font-weight:600;}
+  .b-primary{background:var(--accent);color:#fff;}
+  .b-ghost{background:#eef2f7;color:var(--ink);}
+  .b-danger{background:#fdecec;color:var(--red);}
+  .chk{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:13px;}
+  canvas{width:100%;height:auto;display:block;background:#fff;border:1px solid var(--line);border-radius:10px;}
+  .canvas-title{font-size:13px;font-weight:600;margin:4px 0 8px;}
+  .legend{font-size:11px;color:var(--sub);margin-top:8px;line-height:1.7;}
+  .legend span{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:middle;}
+  .note{font-size:11px;color:var(--sub);margin-top:6px;}
+  code{background:#eef2f7;padding:1px 5px;border-radius:4px;font-size:12px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>学习率曲线绘制器</h1>
+  <p class="desc">核心需求：选调度器 + 调参后实时重绘学习率随 epoch 的变化曲线，可叠加多条曲线对比；并开启「模拟 loss」开关，根据 lr 大小生成对应形态的 loss 曲线（大 lr → 震荡 / 小 lr → 平缓不动），把衰减策略与训练效果连起来看。</p>
+
+  <div class="layout">
+    <!-- 控制面板 -->
+    <div class="panel">
+      <h2>① 选择调度器与参数</h2>
+      <label>调度器类型</label>
+      <select id="sched">
+        <option value="step">StepLR（等间隔阶梯）</option>
+        <option value="multistep">MultiStepLR（里程碑）</option>
+        <option value="exp">ExponentialLR（指数）</option>
+        <option value="cosine" selected>CosineAnnealingLR（余弦）</option>
+      </select>
+
+      <label>初始学习率 lr₀ <span class="val" id="vInit">0.100</span></label>
+      <input type="range" id="init" min="0.001" max="0.10" step="0.001" value="0.10">
+
+      <label>StepLR · step_size <span class="val" id="vStep">10</span></label>
+      <input type="range" id="step" min="1" max="30" step="1" value="10">
+
+      <label>衰减系数 gamma <span class="val" id="vGamma">0.50</span></label>
+      <input type="range" id="gamma" min="0.10" max="0.99" step="0.01" value="0.50">
+
+      <label>Cosine · T_max（周期） <span class="val" id="vTmax">50</span></label>
+      <input type="range" id="tmax" min="10" max="100" step="1" value="50">
+
+      <label>MultiStep · milestones（逗号分隔）</label>
+      <input type="text" id="miles" value="15,30,45">
+
+      <label>训练总 epoch <span class="val" id="vEpoch">50</span></label>
+      <input type="range" id="epoch" min="20" max="100" step="1" value="50">
+
+      <div class="btns">
+        <button class="b-primary" id="draw">重绘当前</button>
+        <button class="b-ghost" id="overlay">叠加到对比</button>
+        <button class="b-danger" id="clear">清空对比</button>
+      </div>
+
+      <label class="chk"><input type="checkbox" id="simloss"> 模拟 loss 曲线（按 lr 大小定性生成）</label>
+      <p class="note">提示：叠加对比会保留当前曲线，方便横向比较不同调度器/参数的下降节奏。</p>
+    </div>
+
+    <!-- 画布 -->
+    <div class="panel">
+      <h2>② 学习率曲线</h2>
+      <div class="canvas-title">学习率 lr 随 epoch 变化</div>
+      <canvas id="lrCanvas" width="560" height="340"></canvas>
+      <div class="legend" id="legend"></div>
+
+      <div id="lossBox" style="display:none;margin-top:14px;">
+        <div class="canvas-title">模拟 loss 曲线（定性演示：lr 过大→震荡/NaN，偏小→先降后反弹，过小→不动，合适→平稳下降）</div>
+        <canvas id="lossCanvas" width="560" height="220"></canvas>
+        <div class="legend" id="lossTag"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const lrC = $('lrCanvas'), lctx = lrC.getContext('2d');
+  const lossC = $('lossCanvas'), loctx = lossC.getContext('2d');
+  const COLORS = ['#2f80ed','#9b51e0','#27ae60','#f2994a','#eb5757','#56ccf2'];
+  let overlays = [];   // 已叠加的对比曲线
+  let curColorIdx = 0;
+
+  // ---- 调度器计算 ----
+  function lrAt(s, t){
+    const init = +$('init').value;
+    const gamma = +$('gamma').value;
+    const step  = +$('step').value;
+    const tmax  = +$('tmax').value;
+    if(s==='step'){
+      return init * Math.pow(gamma, Math.floor(t/step));
+    }else if(s==='multistep'){
+      const ms = $('miles').value.split(',').map(x=>+x.trim()).filter(x=>!isNaN(x));
+      let c=0; for(const m of ms) if(t>=m) c++;
+      return init * Math.pow(gamma, c);
+    }else if(s==='exp'){
+      return init * Math.pow(gamma, t);
+    }else if(s==='cosine'){
+      const eta_min=0;
+      return eta_min + 0.5*(init-eta_min)*(1+Math.cos(Math.PI*t/tmax));
+    }
+  }
+  function buildSeries(s){
+    const ep = +$('epoch').value;
+    const pts=[]; for(let t=0;t<=ep;t++) pts.push({e:t, lr:lrAt(s,t)});
+    return pts;
+  }
+  const NAMES = {step:'StepLR',multistep:'MultiStepLR',exp:'ExponentialLR',cosine:'CosineAnnealingLR'};
+
+  // ---- 绘图 ----
+  function drawAxes(ctx, W, H, xMax, yMax, xLabel, yLabel){
+    ctx.clearRect(0,0,W,H);
+    const L=46,B=H-34,R=W-14,T=14;
+    ctx.strokeStyle='#cbd2d9'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(L,T); ctx.lineTo(L,B); ctx.lineTo(R,B); ctx.stroke();
+    ctx.fillStyle='#9aa5b1'; ctx.font='11px sans-serif';
+    ctx.textAlign='center'; ctx.fillText(xLabel, (L+R)/2, H-8);
+    ctx.save(); ctx.translate(14,(T+B)/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText(yLabel,0,0); ctx.restore();
+    // 网格 + 刻度
+    ctx.fillStyle='#b0b8c1'; ctx.textAlign='right';
+    for(let i=0;i<=4;i++){
+      const y=B-(B-T)*i/4; const v=(yMax*i/4);
+      ctx.strokeStyle='#eef2f6'; ctx.beginPath(); ctx.moveTo(L,y); ctx.lineTo(R,y); ctx.stroke();
+      ctx.fillText(v.toFixed(yMax<1?3:2), L-6, y+3);
+    }
+    ctx.textAlign='center';
+    for(let i=0;i<=5;i++){
+      const x=L+(R-L)*i/5; const v=Math.round(xMax*i/5);
+      ctx.fillText(v, x, B+14);
+    }
+    return {L,R,T,B};
+  }
+  function plot(ctx, box, pts, xMax, yMax, color, dash){
+    const {L,R,T,B}=box;
+    ctx.save();
+    ctx.setLineDash(dash||[]);
+    ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.beginPath();
+    pts.forEach((p,i)=>{
+      const x=L+(R-L)*p.e/xMax;
+      const y=B-(B-T)*Math.min(p.lr,yMax)/yMax;
+      i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+    });
+    ctx.stroke(); ctx.restore();
+  }
+
+  function render(){
+    const ep=+$('epoch').value;
+    const cur = {s:$('sched').value, pts:buildSeries($('sched').value)};
+    // y 轴自适应：取所有曲线的峰值
+    let yMax=0;
+    [cur,...overlays].forEach(d=>d.pts.forEach(p=>yMax=Math.max(yMax,p.lr)));
+    yMax = Math.max(yMax, 0.001)*1.1;
+    const box = drawAxes(lctx, lrC.width, lrC.height, ep, yMax, 'epoch', '学习率 lr');
+    overlays.forEach(d=>plot(lctx, box, d.pts, ep, yMax, d.color, [5,4]));
+    plot(lctx, box, cur.pts, ep, yMax, COLORS[curColorIdx], null);
+
+    // 图例
+    let html = '当前：<span style="background:'+COLORS[curColorIdx]+'"></span>'+NAMES[cur.s]+'（实线）';
+    overlays.forEach(d=> html += ' &nbsp; <span style="background:'+d.color+'"></span>'+d.name+'（虚线）');
+    $('legend').innerHTML = html || '（暂无叠加曲线，点「叠加到对比」保留当前曲线）';
+
+    if($('simloss').checked) drawLoss(ep, +$('init').value);
+  }
+
+  // ---- 模拟 loss（按 lr 大小定性生成）----
+  function drawLoss(ep, init){
+    const box = drawAxes(loctx, lossC.width, lossC.height, ep, 1.0, 'epoch', 'loss');
+    const {L,R,T,B}=box;
+    // 基于 lr₀ 判定形态
+    let mode, color, label;
+    if(init>=0.08){mode='big';color='#eb5757';label='判定：学习率过大 → 剧烈震荡 / NaN';}
+    else if(init>=0.05){mode='big2';color='#f2994a';label='判定：学习率偏大 → 先降后反弹（V 字）';}
+    else if(init>=0.008){mode='good';color='#27ae60';label='判定：学习率合适 → 平稳下降后收敛';}
+    else {mode='small';color='#95a5a6';label='判定：学习率过小 → 几乎水平不动';}
+
+    // 确定性伪随机
+    let seed=42; const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+    const pts=[]; let loss=1.0;
+    for(let t=0;t<=ep;t++){
+      if(mode==='good'){ loss -= 0.018 + 0.004*rnd(); if(loss<0.05)loss=0.05+0.01*rnd(); }
+      else if(mode==='small'){ loss -= 0.0015 + 0.0008*rnd(); } // 几乎不动
+      else if(mode==='big'){ loss -= 0.01; loss += (rnd()-0.5)*0.45; // 强震荡
+        if(t>ep*0.45 && t<ep*0.6) loss += 0.6; } // 中间一次 NaN 式尖峰
+      else if(mode==='big2'){ // 先降后反弹
+        const mid=ep*0.4;
+        if(t<mid) loss -= 0.02*(1-t/mid); else loss += 0.012;
+      }
+      pts.push({e:t, l:Math.max(0.02, loss)});
+    }
+    // 画折线
+    loctx.save(); loctx.strokeStyle=color; loctx.lineWidth=2.5; loctx.beginPath();
+    pts.forEach((p,i)=>{ const x=L+(R-L)*p.e/ep; const y=B-(B-T)*p.l/Math.max(1,1.0);
+      i?loctx.lineTo(x,y):loctx.moveTo(x,y); });
+    loctx.stroke(); loctx.restore();
+    $('lossTag').innerHTML='<span style="background:'+color+'"></span>'+label;
+  }
+
+  // ---- 事件 ----
+  function syncLabels(){
+    $('vInit').textContent=(+$('init').value).toFixed(3);
+    $('vStep').textContent=$('step').value;
+    $('vGamma').textContent=(+$('gamma').value).toFixed(2);
+    $('vTmax').textContent=$('tmax').value;
+    $('vEpoch').textContent=$('epoch').value;
+  }
+  ['init','step','gamma','tmax','epoch','sched','miles'].forEach(id=>{
+    $(id).addEventListener('input',()=>{syncLabels();render();});
+  });
+  $('draw').addEventListener('click', render);
+  $('overlay').addEventListener('click', ()=>{
+    const s=$('sched').value;
+    overlays.push({name:NAMES[s]+' · lr₀='+$('init').value, pts:buildSeries(s), color:COLORS[curColorIdx]});
+    curColorIdx=(curColorIdx+1)%COLORS.length;
+    render();
+  });
+  $('clear').addEventListener('click', ()=>{ overlays=[]; curColorIdx=0; render(); });
+  $('simloss').addEventListener('change', ()=>{
+    $('lossBox').style.display = $('simloss').checked ? 'block':'none';
+    if($('simloss').checked) drawLoss(+$('epoch').value, +$('init').value);
+  });
+
+  syncLabels(); render();
+})();
+</script>
+</body>
+</html>

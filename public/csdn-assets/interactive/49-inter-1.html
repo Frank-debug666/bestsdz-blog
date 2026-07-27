@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>shuffle 对比：同类聚集 vs 均衡打乱</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f7f9fc;
+    color: #1f3a5f;
+    padding: 24px;
+  }
+  h1 { font-size: 21px; margin: 0 0 6px; }
+  .desc { color: #5a6b82; font-size: 14px; margin: 0 0 18px; }
+  .source {
+    display: inline-block; background: #eaf1fb; color: #1f5fb0;
+    font-size: 12px; padding: 4px 10px; border-radius: 6px; margin-bottom: 16px;
+  }
+  .raw { margin: 8px 0 20px; }
+  .raw .bar { display: flex; height: 30px; border-radius: 6px; overflow: hidden; border: 1px solid #d0dcec; }
+  .raw .cell { flex: 1; }
+  .raw .label { font-size: 12px; color: #5a6b82; margin-bottom: 4px; }
+  .row { display: flex; gap: 20px; flex-wrap: wrap; }
+  .panel {
+    flex: 1; min-width: 300px; background: #fff; border: 1px solid #d0dcec;
+    border-radius: 12px; padding: 16px;
+  }
+  .panel h2 { font-size: 16px; margin: 0 0 4px; }
+  .panel .sub { font-size: 12px; color: #5a6b82; margin-bottom: 12px; }
+  .batches { display: flex; gap: 10px; flex-wrap: wrap; }
+  .batch {
+    border-radius: 8px; padding: 8px; width: 92px;
+    border: 2px solid transparent;
+  }
+  .batch .title { font-size: 11px; color: #5a6b82; margin-bottom: 6px; text-align: center; }
+  .batch .strip { display: flex; height: 22px; border-radius: 4px; overflow: hidden; }
+  .batch .strip div { flex: 1; }
+  .badge {
+    margin-top: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; font-weight: 600;
+  }
+  .badge.warn { background: #fdecea; color: #c0392b; border: 1px solid #f5b7b1; }
+  .badge.ok { background: #eafaf1; color: #1e7a44; border: 1px solid #a9dfbf; }
+  .red { background: #e74c3c; }
+  .blue { background: #3498db; }
+  .green { background: #2ecc71; }
+  .yellow { background: #f1c40f; }
+  .purple { background: #9b59b6; }
+  button {
+    background: #2f80ed; color: #fff; border: none; padding: 10px 18px;
+    font-size: 14px; border-radius: 8px; cursor: pointer; margin-top: 18px;
+  }
+  button:hover { background: #1f6fd6; }
+  .controls { margin-top: 4px; }
+</style>
+</head>
+<body>
+  <h1>shuffle 对比：同类聚集 vs 均衡打乱</h1>
+  <p class="desc">训练集为什么必须 shuffle？看一批按类别排序的数据，被打乱前后，每个 batch 里样本的构成差异。</p>
+  <span class="source">原文建议：做一个"shuffle 对比"动画，左 shuffle=False 同类聚集弹警告，右 shuffle=True 均衡弹绿勾。</span>
+
+  <div class="raw">
+    <div class="label">原始数据（按类别排序：红=猫 / 蓝=狗 / 绿=鸟 / 黄=车 / 紫=花，每类 8 条，共 40 条）</div>
+    <div class="bar" id="rawBar"></div>
+  </div>
+
+  <div class="row">
+    <div class="panel">
+      <h2>shuffle = False（不打乱）</h2>
+      <div class="sub">按原顺序每 4 条一组取 batch</div>
+      <div class="batches" id="batchesNo"></div>
+      <div class="badge warn" id="badgeNo">⚠ 同类聚集，梯度偏颇，模型学崩</div>
+    </div>
+    <div class="panel">
+      <h2>shuffle = True（打乱）</h2>
+      <div class="sub">随机重排后每 4 条一组取 batch</div>
+      <div class="batches" id="batchesYes"></div>
+      <div class="badge ok" id="badgeYes">✓ 分布均衡，训练稳定</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button onclick="reshuffle()">重新洗牌</button>
+  </div>
+
+<script>
+  const COLORS = ["red","blue","green","yellow","purple"];
+  const N_PER = 8;          // 每类条数
+  const BATCH = 4;          // batch 大小
+  const total = COLORS.length * N_PER;
+
+  // 原始有序数据
+  const raw = [];
+  COLORS.forEach(c => { for (let i=0;i<N_PER;i++) raw.push(c); });
+
+  function renderRaw() {
+    const bar = document.getElementById("rawBar");
+    bar.innerHTML = "";
+    raw.forEach(c => {
+      const d = document.createElement("div");
+      d.className = "cell " + c;
+      bar.appendChild(d);
+    });
+  }
+
+  function shuffleArray(arr) {
+    const a = arr.slice();
+    for (let i = a.length-1; i>0; i--) {
+      const j = Math.floor(Math.random()*(i+1));
+      [a[i],a[j]] = [a[j],a[i]];
+    }
+    return a;
+  }
+
+  function renderBatches(containerId, data) {
+    const c = document.getElementById(containerId);
+    c.innerHTML = "";
+    for (let i=0; i<data.length; i+=BATCH) {
+      const grp = data.slice(i, i+BATCH);
+      const div = document.createElement("div");
+      div.className = "batch";
+      const strip = document.createElement("div");
+      strip.className = "strip";
+      grp.forEach(c => {
+        const cell = document.createElement("div");
+        cell.className = c;
+        strip.appendChild(cell);
+      });
+      div.innerHTML = '<div class="title">batch ' + (i/BATCH+1) + '</div>';
+      div.appendChild(strip);
+      c.appendChild(div);
+    }
+  }
+
+  function reshuffle() {
+    const shuffled = shuffleArray(raw);
+    renderBatches("batchesNo", raw);
+    renderBatches("batchesYes", shuffled);
+  }
+
+  renderRaw();
+  reshuffle();
+</script>
+</body>
+</html>

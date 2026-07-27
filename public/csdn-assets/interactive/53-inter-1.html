@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>学习率自适应演示 · AdaGrad / RMSProp</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#ffffff; --ink:#1f2a37; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#2563eb; --adagrad:#e11d48; --rmsprop:#0891b2;
+    --soft:#eef2ff;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Microsoft YaHei","PingFang SC","Hiragino Sans GB",sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.55;padding:24px;}
+  .wrap{max-width:860px;margin:0 auto;}
+  h1{font-size:21px;margin:0 0 4px;}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 18px;}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .controls{display:grid;grid-template-columns:1fr 1fr;gap:18px 26px;margin-bottom:8px;}
+  .ctrl label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .ctrl .val{color:var(--accent);font-weight:600;}
+  input[type=range]{width:100%;accent-color:var(--accent);}
+  .modes{display:flex;gap:10px;margin:14px 0 6px;}
+  .modes button{flex:1;padding:9px 0;border:1px solid var(--line);background:#fff;
+    border-radius:9px;font-size:14px;cursor:pointer;color:var(--ink);transition:.15s;}
+  .modes button.active{background:var(--soft);border-color:var(--accent);color:var(--accent);font-weight:600;}
+  .row2{display:flex;gap:14px;align-items:center;margin-top:10px;}
+  .btn{padding:8px 16px;border:1px solid var(--line);background:#fff;border-radius:9px;
+    font-size:13px;cursor:pointer;color:var(--ink);}
+  .btn:hover{background:var(--soft);}
+  .readout{font-size:13px;color:var(--muted);margin-left:auto;}
+  .readout b{color:var(--ink);}
+  canvas{width:100%;height:340px;display:block;margin-top:8px;background:#fff;border-radius:10px;}
+  .legend{display:flex;gap:18px;font-size:13px;margin-top:10px;color:var(--muted);}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:6px;vertical-align:-1px;}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:14px;border-top:1px dashed var(--line);padding-top:12px;}
+  code{background:#f1f5f9;padding:1px 6px;border-radius:5px;font-size:12.5px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>学习率自适应演示</h1>
+  <p class="sub">拖动滑块，实时观察有效学习率 <code>η / √r<sub>t</sub></code> 如何随「特征出现频率」与「近期梯度大小」自动变化；切换 AdaGrad / RMSProp 模式看曲线形态差异。</p>
+
+  <div class="card">
+    <div class="controls">
+      <div class="ctrl">
+        <label>特征出现频率：<span class="val" id="freqVal">0.60</span></label>
+        <input type="range" id="freq" min="0.05" max="1" step="0.01" value="0.6">
+        <div style="font-size:12px;color:var(--muted)">越高 → 梯度越频繁 → r<sub>t</sub> 越大 → 学习率越小</div>
+      </div>
+      <div class="ctrl">
+        <label>近期梯度大小：<span class="val" id="gVal">0.80</span></label>
+        <input type="range" id="gmag" min="0.1" max="2" step="0.01" value="0.8">
+        <div style="font-size:12px;color:var(--muted)">当前一步梯度 g<sub>t</sub> 的幅度</div>
+      </div>
+    </div>
+
+    <div class="modes">
+      <button id="btnAda" class="active">AdaGrad 模式（累加和，单调衰减）</button>
+      <button id="btnRms">RMSProp 模式（滑动平均，能升能降）</button>
+    </div>
+
+    <div class="row2">
+      <button class="btn" id="reroll">重新随机一次梯度序列</button>
+      <div class="readout">当前有效学习率 <b id="effNow">—</b> ｜ r<sub>t</sub> <b id="rNow">—</b></div>
+    </div>
+
+    <canvas id="chart" width="820" height="340"></canvas>
+
+    <div class="legend">
+      <span><span class="dot" style="background:var(--adagrad)"></span>AdaGrad 有效学习率</span>
+      <span><span class="dot" style="background:var(--rmsprop)"></span>RMSProp 有效学习率</span>
+      <span><span class="dot" style="background:#94a3b8"></span>基础学习率 η（参考线）</span>
+    </div>
+
+    <div class="hint">
+      直觉：频率越高，参数被反复「惩罚」，有效学习率自动变小；切到 <b>AdaGrad</b> 时 r<sub>t</sub> 只增不减，曲线单调衰减直至贴 0（训练后期易停滞）；
+      切到 <b>RMSProp</b> 时 r<sub>t</sub> 是滑动平均，曲线随「近期梯度大小」上下波动、能升能降。
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('chart');
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = {l:56, r:18, t:18, b:40};
+
+  const freqEl = document.getElementById('freq');
+  const gEl = document.getElementById('gmag');
+  const freqVal = document.getElementById('freqVal');
+  const gVal = document.getElementById('gVal');
+  const effNow = document.getElementById('effNow');
+  const rNow = document.getElementById('rNow');
+  const btnAda = document.getElementById('btnAda');
+  const btnRms = document.getElementById('btnRms');
+  const reroll = document.getElementById('reroll');
+
+  const eta = 0.1;          // 基础学习率 η
+  const T = 80;             // 训练步数
+  let mode = 'adagrad';
+  let seed = 20240904;
+
+  function rnd(){
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    return seed / 0x7fffffff;
+  }
+
+  // 生成一条梯度序列：是否「出现」由频率决定，幅度由 gmag 与随时间波动的近期梯度决定
+  function genGrads(freq, gmag){
+    const arr = [];
+    for(let t=1; t<=T; t++){
+      const present = rnd() < freq;
+      let g = present ? gmag : gmag * 0.08;
+      const fluctu = 0.45 + 0.55 * Math.abs(Math.sin(t * 0.35)); // 近期梯度的时变
+      g = g * (0.4 + 0.6 * fluctu);
+      arr.push(g);
+    }
+    return arr;
+  }
+
+  function simulate(grads){
+    let rAda = 0, rRms = 0;
+    const effAda = [], effRms = [];
+    for(let t=0; t<T; t++){
+      const g = grads[t];
+      // AdaGrad：累加和
+      rAda += g * g;
+      effAda.push(eta / Math.sqrt(rAda + 1e-8));
+      // RMSProp：指数滑动平均（α=0.99）
+      rRms = 0.99 * rRms + 0.01 * g * g;
+      effRms.push(eta / Math.sqrt(rRms + 1e-8));
+    }
+    return {effAda, effRms, rAda, rRms};
+  }
+
+  function draw(){
+    const freq = +freqEl.value;
+    const gmag = +gEl.value;
+    freqVal.textContent = freq.toFixed(2);
+    gVal.textContent = gmag.toFixed(2);
+
+    // 重置随机种子，保证拖动滑块时曲线稳定（重随机按钮另给新种子）
+    seed = 20240904;
+    const grads = genGrads(freq, gmag);
+    const {effAda, effRms, rAda, rRms} = simulate(grads);
+
+    const series = mode === 'adagrad' ? effAda : effRms;
+    const rFinal = mode === 'adagrad' ? rAda : rRms;
+
+    // 坐标范围
+    const x0 = PAD.l, x1 = W - PAD.r;
+    const y0 = H - PAD.b, y1 = PAD.t;
+    const maxV = Math.max(eta * 1.05, ...series);
+    const minV = 0;
+    const sx = t => x0 + (x1 - x0) * (t / (T - 1));
+    const sy = v => y0 - (y0 - y1) * ((v - minV) / (maxV - minV || 1));
+
+    ctx.clearRect(0,0,W,H);
+
+    // 网格与坐标轴
+    ctx.strokeStyle = '#eef2f7'; ctx.lineWidth = 1;
+    ctx.fillStyle = '#9aa4b2'; ctx.font = '12px sans-serif';
+    for(let i=0;i<=4;i++){
+      const v = maxV * i / 4;
+      const y = sy(v);
+      ctx.beginPath(); ctx.moveTo(x0,y); ctx.lineTo(x1,y); ctx.stroke();
+      ctx.textAlign = 'right'; ctx.fillText(v.toFixed(2), x0-8, y+4);
+    }
+    ctx.strokeStyle = '#cbd5e1';
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x1,y0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x0,y0); ctx.lineTo(x0,y1); ctx.stroke();
+    ctx.fillStyle = '#6b7280'; ctx.textAlign = 'center';
+    ctx.fillText('训练步数 t →', (x0+x1)/2, H-12);
+    ctx.save(); ctx.translate(16,(y0+y1)/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('有效学习率', 0, 0); ctx.restore();
+
+    // 基础学习率参考线
+    const yEta = sy(eta);
+    ctx.strokeStyle = '#94a3b8'; ctx.setLineDash([5,4]); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(x0,yEta); ctx.lineTo(x1,yEta); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 曲线
+    const color = mode === 'adagrad' ? '#e11d48' : '#0891b2';
+    ctx.strokeStyle = color; ctx.lineWidth = 2.4; ctx.beginPath();
+    series.forEach((v,i)=>{
+      const X = sx(i), Y = sy(v);
+      i===0 ? ctx.moveTo(X,Y) : ctx.lineTo(X,Y);
+    });
+    ctx.stroke();
+
+    // 末端点
+    const lx = sx(T-1), ly = sy(series[T-1]);
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx,ly,4,0,Math.PI*2); ctx.fill();
+
+    effNow.textContent = series[T-1].toFixed(4);
+    rNow.textContent = rFinal.toFixed(3);
+  }
+
+  btnAda.onclick = ()=>{ mode='adagrad'; btnAda.classList.add('active'); btnRms.classList.remove('active'); draw(); };
+  btnRms.onclick = ()=>{ mode='rmsprop'; btnRms.classList.add('active'); btnAda.classList.remove('active'); draw(); };
+  freqEl.oninput = draw;
+  gEl.oninput = draw;
+  reroll.onclick = ()=>{ seed = (Date.now() & 0x7fffffff); draw(); };
+
+  draw();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>损失曲面优化轨迹：SGD vs Momentum（峡谷地形）</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#fff; --ink:#1f2933; --muted:#64748b; --line:#e2e8f0; --accent:#2563eb;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); padding:24px; line-height:1.5;}
+  header{max-width:980px; margin:0 auto 16px;}
+  h1{font-size:22px; margin:0 0 6px;}
+  .desc{color:var(--muted); font-size:14px; margin:0;}
+  .layout{max-width:980px; margin:0 auto; display:grid; grid-template-columns:560px 1fr; gap:18px; align-items:start;}
+  .stage{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px;}
+  canvas{width:100%; height:auto; display:block; border-radius:8px;}
+  .side{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .ctl{margin-bottom:16px;}
+  .ctl label{font-size:13px; color:var(--muted); display:block; margin-bottom:6px;}
+  .ctl .val{color:var(--accent); font-weight:600;}
+  input[type=range]{width:100%;}
+  button{font:inherit; font-size:14px; padding:9px 16px; border-radius:8px; border:1px solid var(--line);
+    background:var(--accent); color:#fff; cursor:pointer; margin-right:8px;}
+  button.ghost{background:#fff; color:var(--ink);}
+  button:active{transform:translateY(1px);}
+  .legend{margin-top:12px; font-size:13px;}
+  .legend div{display:flex; align-items:center; gap:8px; margin:6px 0;}
+  .swatch{width:22px; height:0; border-top:3px solid; display:inline-block;}
+  .note{font-size:12px; color:var(--muted); margin-top:14px; padding-top:12px; border-top:1px dashed var(--line);}
+  .badge{display:inline-block; font-size:12px; padding:3px 10px; border-radius:999px; margin-top:8px;}
+  .b-ok{background:#dcfce7; color:#16a34a;}
+  .b-bad{background:#fee2e2; color:#dc2626;}
+</style>
+</head>
+<body>
+<header>
+  <h1>损失曲面优化轨迹：SGD vs Momentum（峡谷地形）</h1>
+  <p class="desc">拖动滑块调节学习率 lr 与动量 momentum。动画从同一谷口出发，实时画出两条轨迹：红色虚线（无动量，易 zig-zag 反弹）与绿色实线（有动量，平滑下滑）。lr 过大时红色会冲出谷壁。</p>
+</header>
+
+<div class="layout">
+  <div class="stage">
+    <canvas id="cv" width="560" height="440"></canvas>
+  </div>
+  <div class="side">
+    <div class="ctl">
+      <label>学习率 lr = <span class="val" id="lrVal">0.22</span></label>
+      <input type="range" id="lr" min="1" max="60" value="22">
+    </div>
+    <div class="ctl">
+      <label>动量 momentum (β) = <span class="val" id="moVal">0.90</span></label>
+      <input type="range" id="mo" min="0" max="98" value="90">
+    </div>
+    <div>
+      <button id="play">▶ 播放 / 重放</button>
+      <button id="reset" class="ghost">↺ 重置</button>
+    </div>
+    <div class="legend">
+      <div><span class="swatch" style="border-color:#dc2626;border-top-style:dashed"></span> 无动量 SGD（lr 控制）</div>
+      <div><span class="swatch" style="border-color:#16a34a"></span> 有动量 Momentum（lr+β 控制）</div>
+      <div>● 起点（谷口）</div>
+    </div>
+    <div id="status"></div>
+    <div class="note">
+      曲面：L(x,y)=½·k<sub>x</sub>·x² + ½·k<sub>y</sub>·y²，取 k<sub>x</sub>=0.2（平缓，前进方向）、k<sub>y</sub>=8（陡峭，震荡方向），构成又深又窄的峡谷。起点设在 (4, 4)。<br>
+      当 lr·k<sub>y</sub>&gt;2 时 SGD 在 y 方向来回反弹甚至飞出；加动量后震荡被抵消、前进被加速。
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const cv=document.getElementById("cv");
+  const ctx=cv.getContext("2d");
+  const W=cv.width,H=cv.height,pad=34;
+  const KX=0.2, KY=8, START={x:4,y:4}, WMAX=6;
+  const lrEl=document.getElementById("lr"), moEl=document.getElementById("mo");
+  const lrVal=document.getElementById("lrVal"), moVal=document.getElementById("moVal");
+  const statusEl=document.getElementById("status");
+
+  function X(wx){ return pad + (wx+WMAX)/(2*WMAX)*(W-2*pad); }
+  function Y(wy){ return H - pad - (wy+WMAX)/(2*WMAX)*(H-2*pad); }
+
+  function drawSurface(){
+    ctx.clearRect(0,0,W,H);
+    // 等高线填充（由外到内，越靠中心越深）
+    const levels=[60,42,28,18,11,6.5,3.6,1.8,0.8,0.3];
+    for(let i=0;i<levels.length;i++){
+      const C=levels[i];
+      const ax=Math.sqrt(2*C/KX), ay=Math.sqrt(2*C/KY);
+      const t=i/levels.length;
+      const shade=Math.round(238 - t*70);
+      ctx.beginPath();
+      ctx.ellipse(X(0),Y(0), ax*(W-2*pad)/(2*WMAX), ay*(H-2*pad)/(2*WMAX), 0, 0, Math.PI*2);
+      ctx.fillStyle="rgb("+shade+","+(shade+4)+","+(shade+12)+")";
+      ctx.fill();
+      ctx.strokeStyle="rgba(148,163,184,"+(0.25+0.4*t)+")"; ctx.lineWidth=1; ctx.stroke();
+    }
+    // 坐标轴
+    ctx.strokeStyle="#94a3b8"; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(X(-WMAX),Y(0)); ctx.lineTo(X(WMAX),Y(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(X(0),Y(-WMAX)); ctx.lineTo(X(0),Y(WMAX)); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle="#64748b"; ctx.font="11px sans-serif";
+    ctx.fillText("前进方向（平缓 x）", X(2.4), Y(0)-6);
+    ctx.save(); ctx.translate(X(0)+6, Y(2.6)); ctx.fillText("震荡方向（陡峭 y）",0,0); ctx.restore();
+    // 起点小球
+    ctx.beginPath(); ctx.arc(X(START.x),Y(START.y),6,0,Math.PI*2);
+    ctx.fillStyle="#1f2933"; ctx.fill(); ctx.strokeStyle="#fff"; ctx.lineWidth=2; ctx.stroke();
+    ctx.fillStyle="#1f2933"; ctx.fillText("起点", X(START.x)-10, Y(START.y)-12);
+  }
+
+  function simulate(useMomentum){
+    const lr=+lrEl.value/100, beta=+moEl.value/100;
+    let x=START.x, y=START.y, vx=0, vy=0;
+    const path=[{x,y}];
+    let flew=false;
+    for(let i=0;i<300;i++){
+      const gx=KX*x, gy=KY*y;
+      if(useMomentum){ vx=beta*vx+gx; vy=beta*vy+gy; x-=lr*vx; y-=lr*vy; }
+      else { x-=lr*gx; y-=lr*gy; }
+      if(Math.abs(x)>WMAX*1.6||Math.abs(y)>WMAX*1.6||!isFinite(x)||!isFinite(y)){
+        flew=true; path.push({x:Math.max(-WMAX*1.6,Math.min(WMAX*1.6,x)),y:Math.max(-WMAX*1.6,Math.min(WMAX*1.6,y))}); break;
+      }
+      path.push({x,y});
+    }
+    return {path,flew};
+  }
+
+  let sgd, mom, animId=null, drawn=0;
+  function recompute(){
+    sgd=simulate(false); mom=simulate(true);
+    drawn=0; drawSurface(); drawProgress(0);
+    let html="";
+    if(sgd.flew) html+='<span class="badge b-bad">⚠ 无动量 SGD 冲出谷壁（lr 过大）</span><br>';
+    if(mom.flew) html+='<span class="badge b-bad">⚠ Momentum 也冲出（lr·β 过大，请降 lr）</span>';
+    if(!sgd.flew && !mom.flew) html='<span class="badge b-ok">✓ 两条轨迹都收敛到谷底</span>';
+    statusEl.innerHTML=html;
+  }
+
+  function drawPath(path,color,dash){
+    ctx.beginPath();
+    for(let i=0;i<path.length;i++){
+      const px=X(path[i].x), py=Y(path[i].y);
+      if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle=color; ctx.lineWidth=2.4; ctx.setLineDash(dash); ctx.stroke(); ctx.setLineDash([]);
+    // 终点
+    const last=path[path.length-1];
+    ctx.beginPath(); ctx.arc(X(last.x),Y(last.y),3.5,0,Math.PI*2); ctx.fillStyle=color; ctx.fill();
+  }
+
+  function drawProgress(n){
+    if(sgd.path.length>n){ drawPath(sgd.path.slice(0,n+1),"#dc2626",[6,5]); }
+    else drawPath(sgd.path,"#dc2626",[6,5]);
+    if(mom.path.length>n){ drawPath(mom.path.slice(0,n+1),"#16a34a",[]); }
+    else drawPath(mom.path,"#16a34a",[]);
+  }
+
+  function play(){
+    if(animId) cancelAnimationFrame(animId);
+    recompute();
+    const total=Math.max(sgd.path.length, mom.path.length);
+    function step(){
+      drawn+=2;
+      drawSurface(); drawProgress(Math.min(drawn,total-1));
+      if(drawn<total-1) animId=requestAnimationFrame(step);
+    }
+    step();
+  }
+
+  lrEl.addEventListener("input",()=>{ lrVal.textContent=(+lrEl.value/100).toFixed(2); recompute(); });
+  moEl.addEventListener("input",()=>{ moVal.textContent=(+moEl.value/100).toFixed(2); recompute(); });
+  document.getElementById("play").addEventListener("click", play);
+  document.getElementById("reset").addEventListener("click",()=>{
+    if(animId) cancelAnimationFrame(animId);
+    lrEl.value=22; moEl.value=90; lrVal.textContent="0.22"; moVal.textContent="0.90";
+    recompute();
+  });
+
+  recompute();
+})();
+</script>
+</body>
+</html>

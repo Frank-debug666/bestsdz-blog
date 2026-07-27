@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>前向传播高亮：数据如何流过登记好的模块</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif;
+    background: #f7f9fc; color: #1f3a5f; padding: 24px;
+  }
+  h1 { font-size: 21px; margin: 0 0 6px; }
+  .desc { color: #5a6b82; font-size: 14px; margin: 0 0 10px; }
+  .source {
+    display: inline-block; background: #eaf1fb; color: #1f5fb0;
+    font-size: 12px; padding: 4px 10px; border-radius: 6px; margin-bottom: 16px;
+  }
+  .controls { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 8px 0 14px; }
+  button {
+    background: #2f80ed; color: #fff; border: none; padding: 10px 18px;
+    font-size: 14px; border-radius: 8px; cursor: pointer;
+  }
+  button:hover { background: #1f6fd6; }
+  button:disabled { background: #b8c6da; cursor: not-allowed; }
+  .switch { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; user-select: none; }
+  .switch input { width: 18px; height: 18px; cursor: pointer; }
+  svg { background: #fff; border: 1px solid #d0dcec; border-radius: 12px; width: 100%; max-width: 780px; display: block; }
+  .info { margin-top: 14px; font-size: 14px; color: #34495e; min-height: 22px; }
+  .info b { color: #2f80ed; }
+  .node rect { transition: fill .25s, stroke .25s; }
+  .node text { font-size: 13px; font-weight: 700; }
+  .idle rect { fill: #eef2f7; stroke: #b8c6da; }
+  .idle text { fill: #5a6b82; }
+  .active rect { fill: #f39c12; stroke: #d35400; }
+  .active text { fill: #fff; }
+  .done rect { fill: #27ae60; stroke: #1e7a44; }
+  .done text { fill: #fff; }
+  .tensor rect { fill: #d8ecff; stroke: #2f80ed; }
+  .tensor text { fill: #1f5fb0; }
+  .pathline { stroke: #b8c6da; stroke-width: 2.5; fill: none; }
+  .pathline.lit { stroke: #27ae60; }
+  .hidden { display: none; }
+  .residual-line { stroke: #9b59b6; stroke-width: 2.5; fill: none; stroke-dasharray: 6 4; }
+</style>
+</head>
+<body>
+  <h1>前向传播高亮：数据如何流过登记好的模块</h1>
+  <p class="desc">点击"跑一次前向"，观察输入张量依次经过 fc1 → relu → fc2（残差模式下另有一条支路在 + 处汇合）。</p>
+  <span class="source">原文建议：前向传播高亮小演示——点击跑前向，数据方块依次点亮 fc1→relu→fc2，残差开关打开时 residual 支路在 + 处汇合。</span>
+
+  <div class="controls">
+    <button id="runBtn" onclick="runForward()">▶ 跑一次前向</button>
+    <label class="switch"><input type="checkbox" id="resToggle" onchange="toggleRes()"> 开启残差连接 (ResBlock)</label>
+  </div>
+
+  <svg id="svg" viewBox="0 0 780 300">
+    <defs>
+      <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+        <path d="M0,0 L7,3 L0,6 Z" fill="#7a8aa0"/>
+      </marker>
+    </defs>
+
+    <!-- 主链路径 -->
+    <path id="p_in_fc1" class="pathline" d="M100,150 L160,150"/>
+    <path id="p_fc1_relu" class="pathline" d="M250,150 L310,150"/>
+    <path id="p_relu_fc2" class="pathline" d="M390,150 L450,150"/>
+    <path id="p_fc2_out" class="pathline" d="M540,150 L600,150"/>
+
+    <!-- 残差路径（默认隐藏） -->
+    <path id="p_res" class="residual-line hidden" d="M100,200 C100,270 560,270 583,173"/>
+
+    <!-- 节点 -->
+    <g class="node tensor" id="n_in"><rect x="30" y="120" width="70" height="60" rx="8"/><text x="65" y="155" text-anchor="middle">输入 x</text></g>
+    <g class="node idle" id="n_fc1"><rect x="160" y="120" width="90" height="60" rx="8"/><text x="205" y="155" text-anchor="middle">fc1</text></g>
+    <g class="node idle" id="n_relu"><rect x="310" y="120" width="80" height="60" rx="8"/><text x="350" y="155" text-anchor="middle">relu</text></g>
+    <g class="node idle" id="n_fc2"><rect x="450" y="120" width="90" height="60" rx="8"/><text x="495" y="155" text-anchor="middle">fc2</text></g>
+    <g class="node idle hidden" id="n_plus"><rect x="560" y="135" width="46" height="46" rx="8"/><text x="583" y="164" text-anchor="middle">+</text></g>
+    <g class="node tensor" id="n_out"><rect x="600" y="120" width="100" height="60" rx="8"/><text x="650" y="155" text-anchor="middle">logits</text></g>
+
+    <!-- 流动小球 -->
+    <circle id="dot" r="7" fill="#e67e22" class="hidden"/>
+  </svg>
+
+  <div class="info" id="info">提示：先点“跑一次前向”，再试试勾选“残差连接”看 + 处汇合。</div>
+
+<script>
+  const SVGNS = "http://www.w3.org/2000/svg";
+  let running = false;
+
+  function setClass(id, cls) {
+    const g = document.getElementById(id);
+    g.setAttribute("class", "node " + cls);
+  }
+  function reset() {
+    ["n_fc1","n_relu","n_fc2","n_plus"].forEach(id => setClass(id, "idle"));
+    document.querySelectorAll(".pathline").forEach(p => p.classList.remove("lit"));
+    document.getElementById("dot").classList.add("hidden");
+  }
+  function toggleRes() {
+    const on = document.getElementById("resToggle").checked;
+    document.getElementById("p_res").classList.toggle("hidden", !on);
+    document.getElementById("n_plus").classList.toggle("hidden", !on);
+    reset();
+    document.getElementById("info").textContent = on
+      ? "残差模式：输入 x 先被存为 residual，主干算完 fc2 后在 + 处两者相加。"
+      : "普通模式：数据依次流经 fc1 → relu → fc2 → 输出 logits。";
+  }
+
+  function animateAlong(pathId, dur) {
+    return new Promise(resolve => {
+      const path = document.getElementById(pathId);
+      path.classList.add("lit");
+      const dot = document.getElementById("dot");
+      dot.classList.remove("hidden");
+      const len = path.getTotalLength();
+      let start = null;
+      function step(ts){
+        if(!start) start = ts;
+        const p = Math.min((ts-start)/dur, 1);
+        const pt = path.getPointAtLength(p*len);
+        dot.setAttribute("cx", pt.x);
+        dot.setAttribute("cy", pt.y);
+        if(p < 1) requestAnimationFrame(step);
+        else { dot.classList.add("hidden"); resolve(); }
+      }
+      requestAnimationFrame(step);
+    });
+  }
+  function light(id) {
+    setClass(id, "active");
+    return new Promise(r => setTimeout(() => { setClass(id, "done"); r(); }, 260));
+  }
+
+  async function runForward() {
+    if (running) return;
+    running = true;
+    document.getElementById("runBtn").disabled = true;
+    const res = document.getElementById("resToggle").checked;
+    reset();
+    const info = document.getElementById("info");
+
+    info.innerHTML = "输入张量 <b>x</b> 进入 <b>fc1</b> …";
+    await animateAlong("p_in_fc1", 500);
+    await light("n_fc1");
+
+    info.innerHTML = "<b>fc1</b> 线性变换 → 进入 <b>relu</b> 激活 …";
+    await animateAlong("p_fc1_relu", 500);
+    await light("n_relu");
+
+    info.innerHTML = "<b>relu</b> 非线性 → 进入 <b>fc2</b> …";
+    await animateAlong("p_relu_fc2", 500);
+    await light("n_fc2");
+
+    if (res) {
+      info.innerHTML = "主干输出与 <b>residual(x)</b> 在 <b>+</b> 处汇合 …";
+      // 点亮残差支路
+      const resPath = document.getElementById("p_res");
+      resPath.classList.add("lit");
+      const dot = document.getElementById("dot");
+      dot.classList.remove("hidden");
+      const len = resPath.getTotalLength();
+      await new Promise(r => {
+        let s=null;
+        (function step(ts){ if(!s)s=ts; const p=Math.min((ts-s)/900,1);
+          const pt=resPath.getPointAtLength(p*len); dot.setAttribute("cx",pt.x); dot.setAttribute("cy",pt.y);
+          if(p<1) requestAnimationFrame(step); else { dot.classList.add("hidden"); r(); } })(performance.now());
+      });
+      await light("n_plus");
+      await animateAlong("p_fc2_out", 500);
+    } else {
+      info.innerHTML = "<b>fc2</b> 输出 → <b>logits</b> 完成前向！";
+      await animateAlong("p_fc2_out", 500);
+    }
+    setClass("n_out", "active");
+    setTimeout(() => setClass("n_out", "tensor"), 300);
+
+    info.innerHTML = res
+      ? "✅ 前向完成：<b>output = fc2(relu(fc1(x))) + x</b>（残差让梯度更容易回传）。"
+      : "✅ 前向完成：<b>output = fc2(relu(fc1(x)))</b>。forward 就是数据流过登记好的户籍模块。";
+
+    running = false;
+    document.getElementById("runBtn").disabled = false;
+  }
+
+  reset();
+</script>
+</body>
+</html>

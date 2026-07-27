@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对称性演示：为什么全 0 初始化会学废</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --card:#ffffff; --ink:#1f2933; --muted:#64748b;
+    --line:#e2e8f0; --accent:#2563eb; --good:#16a34a; --bad:#dc2626;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg); color:var(--ink); padding:24px; line-height:1.5;
+  }
+  header{max-width:960px; margin:0 auto 18px;}
+  h1{font-size:22px; margin:0 0 6px;}
+  .desc{color:var(--muted); font-size:14px; margin:0;}
+  .wrap{max-width:960px; margin:0 auto; display:grid; grid-template-columns:1fr 1fr; gap:18px;}
+  .panel{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .panel h2{font-size:16px; margin:0 0 4px; display:flex; align-items:center; gap:8px;}
+  .tag{font-size:11px; padding:2px 8px; border-radius:999px;}
+  .tag.ok{background:#dcfce7; color:var(--good);}
+  .tag.no{background:#fee2e2; color:var(--bad);}
+  .panel p.sub{font-size:12px; color:var(--muted); margin:2px 0 12px;}
+  svg{width:100%; height:auto; display:block;}
+  .controls{max-width:960px; margin:18px auto; display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+    background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px;}
+  button{font:inherit; font-size:14px; padding:9px 16px; border-radius:8px; border:1px solid var(--line);
+    background:var(--accent); color:#fff; cursor:pointer;}
+  button.ghost{background:#fff; color:var(--ink);}
+  button:active{transform:translateY(1px);}
+  .step{font-size:13px; color:var(--muted);}
+  .caption{max-width:960px; margin:8px auto 0; background:#fffbeb; border:1px solid #fde68a;
+    border-radius:10px; padding:14px 16px; font-size:14px; text-align:center; color:#92400e;}
+  .caption b{color:#b45309;}
+  .legend{display:flex; gap:14px; font-size:12px; color:var(--muted); margin-top:8px; flex-wrap:wrap;}
+  .legend span{display:inline-flex; align-items:center; gap:5px;}
+  .dot{width:10px; height:10px; border-radius:50%; display:inline-block;}
+</style>
+</head>
+<body>
+<header>
+  <h1>对称性演示：为什么全 0 初始化让模型学不动</h1>
+  <p class="desc">左侧随机初始化（打破对称性），右侧全 0 初始化（对称性未打破）。点击"训练 1 步"，观察两边 5 个神经元如何分化——右侧永远一模一样。</p>
+</header>
+
+<div class="wrap">
+  <!-- 左：随机初始化 -->
+  <div class="panel">
+    <h2>① 随机初始化 <span class="tag ok">打破对称性</span></h2>
+    <p class="sub">每个神经元权重各不相同（彩色），前向输出不同、梯度不同、更新不同。</p>
+    <svg id="svgL" viewBox="0 0 360 300" role="img" aria-label="随机初始化神经元"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:#e74c3c"></i>神经元(权重)</span>
+      <span><i class="dot" style="background:#16a34a"></i>学到的特征强度</span>
+    </div>
+  </div>
+
+  <!-- 右：全 0 初始化 -->
+  <div class="panel">
+    <h2>② 全 0 初始化 <span class="tag no">对称性未打破</span></h2>
+    <p class="sub">所有神经元权重均为 0（灰色），输出永远相同、梯度永远相同、更新永远相同。</p>
+    <svg id="svgR" viewBox="0 0 360 300" role="img" aria-label="全零初始化神经元"></svg>
+    <div class="legend">
+      <span><i class="dot" style="background:#bdc3c7"></i>神经元(权重=0)</span>
+      <span><i class="dot" style="background:#94a3b8"></i>恒为 0 的特征</span>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="train">▶ 训练 1 步</button>
+  <button id="reset" class="ghost">↺ 重置</button>
+  <span class="step">已训练步数：<b id="stepN">0</b></span>
+</div>
+
+<div class="caption" id="caption">
+  权重相同 → 梯度相同 → 更新相同 → <b>永远学不出差异</b>。
+</div>
+
+<script>
+(function(){
+  const NS="http://www.w3.org/2000/svg";
+  const hues=["#e74c3c","#f39c12","#27ae60","#2980b9","#8e44ad"];
+  // 左侧每个神经元"学到的特征强度"目标值（各不相同）
+  const leftFeature=[0.95,0.55,0.80,0.35,0.68];
+  const leftGrad=[1,-1,0.6,-0.7,0.9]; // 梯度方向各异
+  const leftW=[0.7,-0.4,0.9,-0.2,0.5]; // 初始权重（各不相同）
+
+  let step=0;
+
+  function el(tag,attrs){const e=document.createElementNS(NS,tag);
+    for(const k in attrs)e.setAttribute(k,attrs[k]);return e;}
+
+  function build(svg,mode){
+    svg.innerHTML="";
+    // 输入节点
+    svg.appendChild(el("circle",{cx:40,cy:150,r:16,fill:"#cbd5e1"}));
+    svg.appendChild(el("text",{x:40,y:154,"text-anchor":"middle","font-size":11,fill:"#475569"}).appendChild(document.createTextNode("x")).parentNode);
+    const cx=200;
+    for(let i=0;i<5;i++){
+      const cy=40+i*55;
+      // 连线
+      svg.appendChild(el("line",{x1:56,y1:150,x2:cx-20,y2:cy,stroke:"#cbd5e1","stroke-width":2}));
+      // 特征强度竖条（每步增长）
+      const barX=cx+34, barW=14, barH=46, barY=cy;
+      svg.appendChild(el("rect",{x:barX,y:barY-barH/2,width:barW,height:barH,rx:3,fill:"#f1f5f9",stroke:"#e2e8f0"}));
+      const fmode=(mode==="L")?leftFeature[i]:0;
+      const fill=(mode==="L")?"#16a34a":"#94a3b8";
+      const bh=barH*0.06; // 初始极小
+      const bar=el("rect",{x:barX,y:barY+barH/2-bh,width:barW,height:bh,rx:3,fill:fill,
+        style:"transition:all .5s ease"});
+      bar.dataset.bar="1"; bar.dataset.target=fmode; bar.dataset.base=barH/2; bar.dataset.barx=barX;
+      bar.dataset.barw=barW; bar.dataset.top=barY-barH/2;
+      svg.appendChild(bar);
+      // 神经元圆
+      const col=(mode==="L")?hues[i]:"#bdc3c7";
+      const cir=el("circle",{cx:cx,cy:cy,r:18,fill:col,stroke:"#fff","stroke-width":2,
+        style:"transition:fill .5s ease"});
+      cir.dataset.cir="1"; cir.dataset.hue=hues[i];
+      svg.appendChild(cir);
+      svg.appendChild(el("text",{x:cx,y:cy+4,"text-anchor":"middle","font-size":11,fill:"#fff","font-weight":600})
+        .appendChild(document.createTextNode(mode==="L"?("n"+(i+1)):("n"+(i+1)))).parentNode);
+      // 权重标签
+      const wtxt=(mode==="L")?("w="+leftW[i].toFixed(1)):"w=0";
+      svg.appendChild(el("text",{x:cx,y:cy+34,"text-anchor":"middle","font-size":10,fill:"#94a3b8"})
+        .appendChild(document.createTextNode(wtxt)).parentNode);
+      // 梯度箭头（每步显示）
+      if(mode==="L"){
+        const g=leftGrad[i];
+        const len=8+Math.abs(g)*10;
+        const dir=g>=0?-1:1; // 向上为正梯度减少? 仅示意
+        const ax=cx-30, ay=cy;
+        svg.appendChild(el("line",{x1:ax,y1:ay,x2:ax,y2:ay+dir*len,stroke:"#dc2626","stroke-width":2,
+          "marker-end":"url(#arr)"}));
+        svg.appendChild(el("text",{x:ax-6,y:cy+dir*len+4,"text-anchor":"end","font-size":9,fill:"#dc2626"})
+          .appendChild(document.createTextNode("g"+g.toFixed(1))).parentNode);
+      } else {
+        const ax=cx-30, ay=cy;
+        svg.appendChild(el("line",{x1:ax,y1:ay,x2:ax,y2:ay,"stroke":"#94a3b8","stroke-width":2}));
+        svg.appendChild(el("text",{x:ax-6,y:cy+4,"text-anchor":"end","font-size":9,fill:"#94a3b8"})
+          .appendChild(document.createTextNode("g=0")).parentNode);
+      }
+    }
+    // 箭头 marker
+    if(!svg.querySelector("defs")){
+      const defs=el("defs",{});
+      const m=el("marker",{id:"arr",viewBox:"0 0 10 10",refX:8,refY:5,markerWidth:6,markerHeight:6,orient:"auto"});
+      m.appendChild(el("path",{d:"M0,0 L10,5 L0,10 z",fill:"#dc2626"}));
+      defs.appendChild(m); svg.appendChild(defs);
+    }
+  }
+
+  function update(){
+    document.getElementById("stepN").textContent=step;
+    [["svgL","L"],["svgR","R"]].forEach(([id,m])=>{
+      const svg=document.getElementById(id);
+      svg.querySelectorAll('[data-bar="1"]').forEach(bar=>{
+        const top=+bar.dataset.top, baseY=top+46; // barH=46
+        const target=+bar.dataset.target;
+        const h=6+step* (target*40);
+        const hh=Math.min(46, h);
+        bar.setAttribute("y", baseY-hh);
+        bar.setAttribute("height", hh);
+      });
+      if(m==="R"){
+        // 右侧颜色随步数变深灰（同步），但始终保持相同
+        svg.querySelectorAll('[data-cir="1"]').forEach(c=>c.setAttribute("fill","#9aa6b2"));
+      } else {
+        // 左侧颜色随步数更鲜亮（学到特征）
+        svg.querySelectorAll('[data-cir="1"]').forEach(c=>{
+          const hue=c.dataset.hue;
+          c.setAttribute("fill",hue);
+        });
+      }
+    });
+    const cap=document.getElementById("caption");
+    if(step===0){
+      cap.innerHTML='初始：左侧权重各不相同，右侧权重全为 0。点击"训练 1 步"开始。';
+    } else {
+      cap.innerHTML='权重相同 → 梯度相同 → 更新相同 → <b>永远学不出差异</b>。';
+    }
+  }
+
+  document.getElementById("train").addEventListener("click",()=>{
+    if(step<6) step++;
+    update();
+  });
+  document.getElementById("reset").addEventListener("click",()=>{
+    step=0; build(document.getElementById("svgL"),"L"); build(document.getElementById("svgR"),"R"); update();
+  });
+
+  build(document.getElementById("svgL"),"L");
+  build(document.getElementById("svgR"),"R");
+  update();
+})();
+</script>
+</body>
+</html>
