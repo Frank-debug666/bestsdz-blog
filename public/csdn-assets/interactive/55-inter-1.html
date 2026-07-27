@@ -186,7 +186,7 @@
 
     // 图例
     let html = '当前：<span style="background:'+COLORS[curColorIdx]+'"></span>'+NAMES[cur.s]+'（实线）';
-    overlays.forEach(d=> html += ' &nbsp; <span style="background:'+d.color+'"></span>'+d.name+'（虚线）');
+    overlays.forEach(d=> html += ' &#160; <span style="background:'+d.color+'"></span>'+d.name+'（虚线）');
     $('legend').innerHTML = html || '（暂无叠加曲线，点「叠加到对比」保留当前曲线）';
 
     if($('simloss').checked) drawLoss(ep, +$('init').value);
