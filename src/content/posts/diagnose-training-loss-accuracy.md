@@ -14,6 +14,7 @@ tags: [PyTorch, 训练诊断, loss曲线, 梯度, 过拟合, 欠拟合]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/diagnose-training-loss-accuracy-video.jpg" aria-label="第 58 课：训练诊断">
     <source src="/videos/lesson-58-diagnose-training-loss-accuracy.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-58-diagnose-training-loss-accuracy.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 58 课视频 - 怎样根据 loss、accuracy 和梯度诊断训练问题</figcaption>

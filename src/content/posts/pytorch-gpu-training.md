@@ -20,6 +20,7 @@ RuntimeError: Expected all tensors to be on the same device, but found at least 
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/pytorch-gpu-training-video.jpg" aria-label="第 56 课：PyTorch GPU 训练">
     <source src="/videos/lesson-56-pytorch-gpu-training.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-56-pytorch-gpu-training.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 56 课视频 - PyTorch GPU 训练：模型和数据如何放到同一设备</figcaption>

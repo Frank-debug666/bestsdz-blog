@@ -14,6 +14,7 @@ SGD 和 Momentum 就是回答这些问题的。它们是所有优化器的基石
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/sgd-momentum-video.jpg" aria-label="第 52 课：SGD 与 Momentum">
     <source src="/videos/lesson-52-sgd-momentum.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-52-sgd-momentum.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 52 课视频 - SGD 与 Momentum：最基础的优化器怎样更新参数</figcaption>

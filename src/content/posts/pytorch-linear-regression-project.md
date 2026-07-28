@@ -14,6 +14,7 @@ tags: [PyTorch, 线性回归, 深度学习项目, 完整流程, 从零开始]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/pytorch-linear-regression-project-video.jpg" aria-label="第 59 课：线性回归项目">
     <source src="/videos/lesson-59-pytorch-linear-regression-project.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-59-pytorch-linear-regression-project.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 59 课视频 - PyTorch 线性回归项目：从造数据到预测</figcaption>

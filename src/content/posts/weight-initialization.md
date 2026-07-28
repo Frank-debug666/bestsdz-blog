@@ -14,6 +14,7 @@ tags: [PyTorch, 参数初始化, 权重初始化, Xavier, Kaiming, 梯度稳定�
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/weight-initialization-video.jpg" aria-label="第 51 课：权重初始化">
     <source src="/videos/lesson-51-weight-initialization.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-51-weight-initialization.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 51 课视频 - 权重、偏置和参数初始化会怎样影响训练</figcaption>

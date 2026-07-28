@@ -22,6 +22,7 @@ Shape 不是"凑对就行"的细节，它是模型每一层之间的**数据契�
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/shape-data-contract-video.jpg" aria-label="第 46 课：Shape 数据契约">
     <source src="/videos/lesson-46-shape-data-contract.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-46-shape-data-contract.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 46 课视频 - Shape 是深度学习最重要的数据契约</figcaption>

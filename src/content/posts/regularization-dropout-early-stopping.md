@@ -14,6 +14,7 @@ tags: [PyTorch, 正则化, Dropout, Early Stopping, 过拟合, Weight Decay]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/regularization-dropout-early-stopping-video.jpg" aria-label="第 57 课：正则化与早停">
     <source src="/videos/lesson-57-regularization-dropout-early-stopping.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-57-regularization-dropout-early-stopping.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 57 课视频 - 正则化、Dropout 与 Early Stopping：防止过拟合的方法地图</figcaption>

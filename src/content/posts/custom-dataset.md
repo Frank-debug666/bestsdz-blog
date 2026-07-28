@@ -14,6 +14,7 @@ tags: [PyTorch, Dataset, 自定义数据集, 数据加载, __getitem__]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/custom-dataset-video.jpg" aria-label="第 48 课：自定义 Dataset">
     <source src="/videos/lesson-48-custom-dataset.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-48-custom-dataset.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 48 课视频 - 自定义 Dataset：怎样封装自己的训练数据</figcaption>

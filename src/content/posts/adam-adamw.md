@@ -14,6 +14,7 @@ tags: [PyTorch, Adam, AdamW, 优化器, 权重衰减, Transformer]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/adam-adamw-video.jpg" aria-label="第 54 课：Adam 与 AdamW">
     <source src="/videos/lesson-54-adam-adamw.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-54-adam-adamw.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 54 课视频 - Adam 和 AdamW 为什么成为常用选择</figcaption>

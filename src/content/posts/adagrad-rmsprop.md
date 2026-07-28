@@ -14,6 +14,7 @@ AdaGrad 和 RMSProp 就是来解决"每个参数该有不同学习率"这个问�
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/adagrad-rmsprop-video.jpg" aria-label="第 53 课：AdaGrad 与 RMSProp">
     <source src="/videos/lesson-53-adagrad-rmsprop.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-53-adagrad-rmsprop.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 53 课视频 - AdaGrad 与 RMSProp：学习率如何自动调整</figcaption>

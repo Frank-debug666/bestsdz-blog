@@ -14,6 +14,7 @@ tags: [PyTorch, reshape, view, transpose, 广播机制, 张量]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/reshape-view-transpose-broadcast-video.jpg" aria-label="第 47 课：张量形状转换实战">
     <source src="/videos/lesson-47-reshape-view-transpose-broadcast.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-47-reshape-view-transpose-broadcast.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 47 课视频 - reshape、view、transpose 和广播机制怎么选：张量形状转换实战</figcaption>

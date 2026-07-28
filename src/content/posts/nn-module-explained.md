@@ -14,6 +14,7 @@ tags: [PyTorch, nn.Module, 模型定义, 参数注册, forward]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/nn-module-explained-video.jpg" aria-label="第 50 课：nn.Module 详解">
     <source src="/videos/lesson-50-nn-module-explained.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-50-nn-module-explained.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 50 课视频 - nn.Module 详解：模型为什么要继承这个类</figcaption>

@@ -22,6 +22,7 @@ optimizer.step()
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/computation-graph-gradient-accumulation-video.jpg" aria-label="第 45 课：计算图与梯度累积">
     <source src="/videos/lesson-45-computation-graph-gradient-accumulation.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-45-computation-graph-gradient-accumulation.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 45 课视频 - 计算图与梯度累积：为什么训练前必须清空梯度</figcaption>

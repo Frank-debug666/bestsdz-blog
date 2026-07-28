@@ -14,6 +14,7 @@ tags: [PyTorch, DataLoader, batch_size, num_workers, 训练效率]
 <figure class="lesson-video">
   <video controls playsinline preload="metadata" poster="/images/covers/dataloader-advanced-video.jpg" aria-label="第 49 课：DataLoader 进阶">
     <source src="/videos/lesson-49-dataloader-advanced.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-49-dataloader-advanced.vtt" srclang="zh-CN" label="中文" default />
     你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
   </video>
   <figcaption>第 49 课视频 - DataLoader 进阶：batch、shuffle 与并行加载怎样影响训练效率</figcaption>

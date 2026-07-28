@@ -1,6 +1,9 @@
-# 博客可选功能配置
+# 博客第三方功能配置
 
-下面两个功能已经接入代码，但需要第三方参数才会正式启用。
+最后核对：2026-07-28
+
+Giscus 评论和 Cloudflare Web Analytics 已经接入并在线启用。本文件记录重新
+部署、迁移账号或轮换参数时需要检查的位置，不保存任何密钥。
 
 ## Cloudflare Web Analytics
 
@@ -10,7 +13,8 @@
 PUBLIC_CLOUDFLARE_ANALYTICS_TOKEN=你的 Cloudflare Web Analytics token
 ```
 
-重新部署后，页面会自动加载 Cloudflare 统计脚本。
+重新部署后，页面会加载 Cloudflare 统计脚本。不要把真实 token 写入仓库；
+本地开发时使用被 `.gitignore` 忽略的 `.env.local`。
 
 ## Giscus 评论区
 
@@ -26,4 +30,12 @@ PUBLIC_GISCUS_CATEGORY=Announcements
 PUBLIC_GISCUS_CATEGORY_ID=你的 category id
 ```
 
-重新部署后，文章页底部的“留言讨论”会自动变成正式评论区。
+当前仓库和分类的默认公开参数已写在 `src/site.config.ts`，环境变量可以覆盖
+默认值。重新部署后，文章页底部的“留言讨论”会加载 Giscus 评论区。
+
+## 上线后验证
+
+1. 打开任意文章，确认评论框正常加载。
+2. 查看页面源代码，确认存在 `giscus.app/client.js`。
+3. 查看首页源代码，确认存在 `static.cloudflareinsights.com/beacon.min.js`。
+4. 不要在 Git 历史、截图或公开日志中暴露 Cloudflare token。
