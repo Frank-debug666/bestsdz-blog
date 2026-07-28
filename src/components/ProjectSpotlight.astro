@@ -21,7 +21,17 @@ const { variant = 'legacy', headingId = 'echo-project-title' } = Astro.props;
       <p>把散落的对话、资料和行动，连接成可确认、可追溯、可以再次找到的个人记忆。</p>
       <a class="project-link" href="/projects/echo-memory/">
         认识 EchoMemory
-        <svg viewBox="0 0 24 24" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          width="20"
+          height="20"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
           <path d="M5 12h13M13 6l6 6-6 6"></path>
         </svg>
       </a>
@@ -39,7 +49,7 @@ const { variant = 'legacy', headingId = 'echo-project-title' } = Astro.props;
   </div>
 </section>
 
-<style>
+<style is:inline>
   .project-spotlight {
     padding: 42px 0 22px;
     background: #f6f1ea;
