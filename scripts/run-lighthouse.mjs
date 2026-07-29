@@ -9,6 +9,7 @@ const distRoot = resolve(projectRoot, 'dist');
 const outputRoot = resolve(projectRoot, '.lighthouseci');
 const lighthouseCli = resolve(projectRoot, 'node_modules', 'lighthouse', 'cli', 'index.js');
 const paths = ['/', '/posts/', '/videos/'];
+const runsPerPage = Math.max(1, Number(process.env.LIGHTHOUSE_RUNS ?? 1));
 const contentTypes = {
   '.css': 'text/css; charset=utf-8',
   '.gif': 'image/gif',
@@ -115,8 +116,10 @@ try {
   for (const path of paths) {
     const slug = path === '/' ? 'home' : path.replaceAll('/', '-').replace(/^-|-$/g, '');
     const url = `http://127.0.0.1:${address.port}${path}`;
-    console.log(`Running Lighthouse for ${url}`);
-    await runLighthouse(url, resolve(outputRoot, `${slug}.report.json`));
+    for (let run = 1; run <= runsPerPage; run += 1) {
+      console.log(`Running Lighthouse for ${url} (${run}/${runsPerPage})`);
+      await runLighthouse(url, resolve(outputRoot, `${slug}-run-${run}.report.json`));
+    }
   }
 } finally {
   await new Promise((resolvePromise) => server.close(resolvePromise));

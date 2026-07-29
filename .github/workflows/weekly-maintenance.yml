@@ -66,6 +66,8 @@ jobs:
         if: steps.build.outcome == 'success'
         continue-on-error: true
         run: npm run lighthouse
+        env:
+          LIGHTHOUSE_RUNS: 3
 
       - name: Upload weekly reports
         if: always()

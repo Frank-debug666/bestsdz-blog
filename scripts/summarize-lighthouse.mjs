@@ -22,12 +22,12 @@ const files = (await readdir(lighthouseDir))
   .filter((name) => name.endsWith('.json'))
   .map((name) => resolve(lighthouseDir, name));
 
-const current = [];
+const samples = [];
 for (const path of files) {
   const report = JSON.parse(await readFile(path, 'utf8'));
   if (!report.categories || !report.finalDisplayedUrl) continue;
 
-  current.push({
+  samples.push({
     url: report.finalDisplayedUrl,
     scores: Object.fromEntries(
       categories.map((category) => [category, Math.round((report.categories[category]?.score ?? 0) * 100)]),
@@ -35,9 +35,32 @@ for (const path of files) {
   });
 }
 
-if (current.length === 0) {
+if (samples.length === 0) {
   throw new Error('没有找到可用的 Lighthouse JSON 报告');
 }
+
+function median(values) {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0
+    ? Math.round((sorted[middle - 1] + sorted[middle]) / 2)
+    : sorted[middle];
+}
+
+const samplesByPath = new Map();
+for (const sample of samples) {
+  const path = new URL(sample.url).pathname;
+  if (!samplesByPath.has(path)) samplesByPath.set(path, []);
+  samplesByPath.get(path).push(sample);
+}
+
+const current = [...samplesByPath.entries()].map(([path, pageSamples]) => ({
+  url: new URL(path, pageSamples[0].url).toString(),
+  sampleCount: pageSamples.length,
+  scores: Object.fromEntries(
+    categories.map((category) => [category, median(pageSamples.map((sample) => sample.scores[category]))]),
+  ),
+}));
 
 let previous = [];
 try {
@@ -55,6 +78,7 @@ for (const page of current) {
   const old = previousByPath.get(path);
   rows.push({
     path,
+    sampleCount: page.sampleCount,
     scores: page.scores,
     changes: Object.fromEntries(
       categories.map((category) => [
@@ -94,6 +118,7 @@ const markdown = `# 每周 Lighthouse 趋势
 
 - 检查时间：${new Date().toISOString()}
 - 页面数量：${rows.length}
+- 每页采样：${rows[0]?.sampleCount ?? 0} 次，使用中位数
 - 括号内为相对上一次周检的分数变化
 
 | 页面 | 性能 | 可访问性 | 最佳实践 | SEO |
