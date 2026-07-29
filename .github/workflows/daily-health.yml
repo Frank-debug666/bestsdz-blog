@@ -34,7 +34,7 @@ jobs:
 
       - name: Upload health report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: daily-health-${{ github.run_id }}
           path: .maintenance-reports/
