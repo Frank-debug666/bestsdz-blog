@@ -5,3 +5,6 @@ dist/
 .env
 .env.*
 npm-debug.log*
+.lighthouseci/
+.maintenance-reports/
+.maintenance-state/

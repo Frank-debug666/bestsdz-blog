@@ -1,0 +1,42 @@
+name: Daily production health
+
+on:
+  schedule:
+    - cron: "37 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: daily-production-health
+  cancel-in-progress: true
+
+jobs:
+  health:
+    name: Check production website
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run production health checks
+        run: node scripts/check-production.mjs
+        env:
+          SITE_URL: https://bestsdz.xyz
+
+      - name: Upload health report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-health-${{ github.run_id }}
+          path: .maintenance-reports/
+          if-no-files-found: warn
+          retention-days: 30

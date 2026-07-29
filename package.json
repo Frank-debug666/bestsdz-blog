@@ -7,7 +7,10 @@
     "dev": "astro dev",
     "build": "astro check && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "maintenance:daily": "node scripts/check-production.mjs",
+    "maintenance:weekly": "node scripts/check-repository.mjs && node scripts/check-external-links.mjs",
+    "lighthouse": "node scripts/run-lighthouse.mjs && node scripts/summarize-lighthouse.mjs"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -15,6 +18,7 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
+    "lighthouse": "^13.4.1",
     "typescript": "^6.0.3"
   }
 }

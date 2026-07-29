@@ -1,0 +1,93 @@
+name: Weekly website maintenance
+
+on:
+  schedule:
+    - cron: "20 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: weekly-website-maintenance
+  cancel-in-progress: true
+
+jobs:
+  maintenance:
+    name: Repository, links, security and Lighthouse
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout with Git LFS
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Restore Lighthouse history
+        uses: actions/cache@v4
+        with:
+          path: .maintenance-state
+          key: lighthouse-${{ github.run_id }}
+          restore-keys: |
+            lighthouse-
+
+      - name: Check repository assets and Git LFS
+        id: repository
+        continue-on-error: true
+        run: node scripts/check-repository.mjs
+
+      - name: Check external links
+        id: links
+        continue-on-error: true
+        run: node scripts/check-external-links.mjs
+
+      - name: Audit npm dependencies
+        id: audit
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+      - name: Build website
+        id: build
+        continue-on-error: true
+        run: npm run build
+
+      - name: Run Lighthouse and compare scores
+        id: lighthouse
+        if: steps.build.outcome == 'success'
+        continue-on-error: true
+        run: npm run lighthouse
+
+      - name: Upload weekly reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: weekly-maintenance-${{ github.run_id }}
+          path: |
+            .maintenance-reports/
+            .lighthouseci/
+          if-no-files-found: warn
+          retention-days: 90
+
+      - name: Fail when a required check failed
+        if: >-
+          always() &&
+          (
+            steps.repository.outcome == 'failure' ||
+            steps.links.outcome == 'failure' ||
+            steps.audit.outcome == 'failure' ||
+            steps.build.outcome == 'failure' ||
+            steps.lighthouse.outcome == 'failure'
+          )
+        run: |
+          echo "One or more required maintenance checks failed. Review the job summary and artifacts."
+          exit 1
