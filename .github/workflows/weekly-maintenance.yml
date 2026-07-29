@@ -76,6 +76,7 @@ jobs:
             .maintenance-reports/
             .lighthouseci/
           if-no-files-found: warn
+          include-hidden-files: true
           retention-days: 90
 
       - name: Fail when a required check failed

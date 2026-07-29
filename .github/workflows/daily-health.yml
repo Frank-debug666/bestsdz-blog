@@ -39,4 +39,5 @@ jobs:
           name: daily-health-${{ github.run_id }}
           path: .maintenance-reports/
           if-no-files-found: warn
+          include-hidden-files: true
           retention-days: 30
