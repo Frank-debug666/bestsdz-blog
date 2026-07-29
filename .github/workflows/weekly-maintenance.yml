@@ -34,7 +34,7 @@ jobs:
         run: npm ci
 
       - name: Restore Lighthouse history
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .maintenance-state
           key: lighthouse-${{ github.run_id }}
