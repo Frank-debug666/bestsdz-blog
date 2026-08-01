@@ -398,9 +398,9 @@ export const graduationProjects: GraduationProject[] = [
 ];
 
 export const upcomingLessons = [
-  ['下一篇', 'PyTorch 二维分类项目：从回归到分类边界', '阶段五：深度学习项目'],
-  ['后续', '表格分类项目：从特征到评估闭环', '阶段五：深度学习项目'],
-  ['规划中', 'CNN 图像分类项目：让模型读懂图片', '阶段五：深度学习项目'],
+  ['下一篇', '文本怎样变成编号：语料、Token 和词表', '阶段六：NLP 与序列模型'],
+  ['后续', '从词到 ID：构建词表映射和未知词机制', '阶段六：NLP 与序列模型'],
+  ['规划中', '变长文本怎样组成 batch：Padding、截断与 Mask', '阶段六：NLP 与序列模型'],
 ] as const;
 
 export function getLessonSortKey(label: string | number | undefined) {
