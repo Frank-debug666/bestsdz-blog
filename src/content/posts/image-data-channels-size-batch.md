@@ -1,9 +1,9 @@
 ---
 title: "图像数据怎样进入网络：通道、尺寸和批次"
 description: "一张普通图片进入 PyTorch 后为什么会变成 [B, C, H, W]？这篇从 PIL、NumPy、Tensor、归一化和 DataLoader 出发，把图像送进 CNN 前的完整数据流讲清楚。"
-cover: /images/covers/image-data-channels-size-batch.png
-coverAlt: "第 65 课知识图，展示图片读取、统一通道与尺寸、组成训练批次和送入神经网络的完整数据流。"
-pubDate: 2026-07-27T09:00:00+08:00
+cover: /images/covers/image-data-channels-size-batch-video.jpg
+coverAlt: "第 65 课视频封面，展示图片从通道与尺寸变换到组成训练批次的完整数据流。"
+pubDate: 2026-08-03T10:00:00+08:00
 tags: [PyTorch, 图像分类, Tensor, Dataset, DataLoader, torchvision]
 ---
 
@@ -15,6 +15,15 @@ tags: [PyTorch, 图像分类, Tensor, Dataset, DataLoader, torchvision]
 - 为什么忘记归一化以后，模型可能学得很慢？
 
 这篇把一张图片从磁盘走到 CNN 输入端的全过程拆开。
+
+<figure class="lesson-video">
+  <video controls playsinline preload="metadata" poster="/images/covers/image-data-channels-size-batch-video.jpg" aria-label="第 65 课：图像数据的通道、尺寸和批次">
+    <source src="/videos/lesson-65-image-data-channels-size-batch.mp4" type="video/mp4" />
+    <track kind="captions" src="/videos/lesson-65-image-data-channels-size-batch.vtt" srclang="zh-CN" label="中文" default />
+    你的浏览器暂不支持视频播放，可以继续阅读下方文字版课程。
+  </video>
+  <figcaption>第 65 课视频 - 图像数据怎样进入网络：通道、尺寸和批次</figcaption>
+</figure>
 
 ---
 
